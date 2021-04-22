@@ -1,0 +1,6 @@
+The pin_pulse component modulates the pulsing signal on a digital pin. It can
+be configured via the config attributes 'pcm_period_ms' and 'pulse_ms'. The
+'pcm_period_ms' defines the base frequency. E.g., for connecting an LED, the
+base frequency must be 20 to attain a flickerless appearance - toggling the
+LED state 50 times per second. The 'pulse_ms' value defines the duration of
+one pulse sequence. E.g., the value 1000 for 1 second.
