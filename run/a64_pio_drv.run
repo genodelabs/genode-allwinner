@@ -1,4 +1,5 @@
-build { core init drivers/platform drivers/pin/a64 }
+build { core init timer drivers/platform drivers/pin/a64 server/dynamic_rom
+        app/pin_pulse app/pin_event }
 
 create_boot_directory
 
@@ -15,6 +16,12 @@ install_config {
 
 		<default caps="100"/>
 
+		<start name="timer">
+			<resource name="RAM" quantum="1M"/>
+			<route> <any-service> <parent/> </any-service> </route>
+			<provides> <service name="Timer"/> </provides>
+		</start>
+
 		<start name="platform_drv">
 			<resource name="RAM" quantum="1M"/>
 			<provides> <service name="Platform"/> </provides>
@@ -22,7 +29,9 @@ install_config {
 			<config>
 				<device name="pio">
 					<io_mem address="0x1c20800" size="0x400"/>
-					<irq number="43"/>
+					<irq number="43"/> <!-- Port B -->
+					<irq number="49"/> <!-- Port G -->
+					<irq number="53"/> <!-- Port H -->
 				</device>
 				<policy label="a64_pio_drv -> ">
 					<device name="pio"/>
@@ -30,20 +39,92 @@ install_config {
 			</config>
 		</start>
 
+		<start name="dynamic_rom">
+			<resource name="RAM" quantum="1M"/>
+			<provides> <service name="ROM"/> </provides>
+			<route>
+				<service name="Timer"> <child name="timer"/> </service>
+				<any-service> <parent/> </any-service>
+			</route>
+			<config verbose="yes">
+				<rom name="config">
+					<inline description="LED pulse">
+						<config>
+							<out name="led"    bank="B" index="2"/>
+							<in  name="button" bank="H" index="8" pull="up" irq="edges"/>
+							<policy label_prefix="pin_event ->" pin="button"/>
+							<policy label_prefix="pin_pulse ->" pin="led"/>
+						</config>
+					</inline>
+					<sleep milliseconds="5000" />
+					<inline description="LED off">
+						<config>
+							<out name="led"    bank="B" index="2" default="off"/>
+							<in  name="button" bank="H" index="8" pull="up" irq="edges"/>
+							<policy label_prefix="pin_event ->" pin="button"/>
+						</config>
+					</inline>
+					<sleep milliseconds="1000" />
+					<inline description="LED on">
+						<config>
+							<out name="led"    bank="B" index="2" default="on"/>
+							<in  name="button" bank="H" index="8" pull="up" irq="edges"/>
+							<policy label_prefix="pin_event ->" pin="button"/>
+						</config>
+					</inline>
+					<sleep milliseconds="1000" />
+				</rom>
+			</config>
+		</start>
+
 		<start name="a64_pio_drv">
 			<resource name="RAM" quantum="1M"/>
+			<provides>
+				<service name="Pin_state"/>
+				<service name="Pin_control"/>
+				<service name="IRQ"/>
+			</provides>
 			<route>
+				<service name="ROM" label="config">
+					<child name="dynamic_rom"/> </service>
 				<service name="ROM"> <parent/> </service>
 				<service name="CPU"> <parent/> </service>
 				<service name="PD">  <parent/> </service>
 				<service name="LOG"> <parent/> </service>
 				<service name="Platform"> <child name="platform_drv"/> </service>
 			</route>
+		</start>
+
+		<start name="pin_pulse">
+			<resource name="RAM" quantum="1M"/>
+			<route>
+				<service name="Timer">       <child name="timer"/>       </service>
+				<service name="Pin_control"> <child name="a64_pio_drv"/> </service>
+				<service name="ROM"> <parent/> </service>
+				<service name="CPU"> <parent/> </service>
+				<service name="PD">  <parent/> </service>
+				<service name="LOG"> <parent/> </service>
+			</route>
+			<config pulse_ms="500" pcm_period_ms="10"/>
+		</start>
+
+		<start name="pin_event">
+			<resource name="RAM" quantum="1M"/>
+			<route>
+				<service name="Pin_state"> <child name="a64_pio_drv"/> </service>
+				<service name="IRQ">       <child name="a64_pio_drv"/> </service>
+				<service name="ROM"> <parent/> </service>
+				<service name="CPU"> <parent/> </service>
+				<service name="PD">  <parent/> </service>
+				<service name="LOG"> <parent/> </service>
+			</route>
 			<config/>
 		</start>
+
 	</config>
 }
 
-build_boot_image { core ld.lib.so init platform_drv a64_pio_drv }
+build_boot_image { core ld.lib.so init timer platform_drv a64_pio_drv
+                   pin_pulse pin_event dynamic_rom }
 
 run_genode_until forever

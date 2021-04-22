@@ -1,0 +1,48 @@
+The a64_pio_drv component provides pin-state, pin-control, and IRQ session
+interfaces for accessing the pins of the PIO device of the Allwinner A64 SoC.
+
+Its configuration consists of two parts, pin declarations and policies. Pin
+declarations have following form (note that the example contains hypothetical
+bank and index values):
+
+! <config>
+!   ...
+!   <in     name="volume-up" bank="H" index="10" pull="down" irq="edges"/>
+!   <out    name="led"       bank="B" index="2"  default="on"/>
+!   <select name="uart4_tx"  bank="D" index="2"  function="3"/>
+!   ...
+! </config>
+
+Each declaration must feature a physical location in the form of a 'bank' and
+an 'index' attribute. Banks are specified as upper-case letters "B" to "H".
+The index refers to the selected bank.
+
+An input pin is declared via an '<in>' node that accepts the optional
+attributes 'pull' and 'irq'. The 'pull' attribute can be specified with the
+values "up" and "down" to enable a pull-up or pull-down resistor for the pin.
+The 'irq' attribute allows for the customization of the pin's interrupt
+trigger by specifying one of the following values:
+
+:"high":    triggered while the signal level is high
+:"low":     triggered while the signal level is low
+:"rising":  triggered on rising signal edges
+:"falling": triggered on falling signal edges
+:"edges":   triggered on both rising and falling signal edges
+
+An output pin is declared via an '<out>' node. By default, the signal level is
+low. The default signal level can be set to high by specifying the attribute
+'default="on"'.
+
+Besides input and output pins, the PIO device allows for the configuration of
+pin multiplexing. The function of a pin can be selected via a '<select>' node,
+specifying the function as a number to 'function' attribute.
+
+The pin driver is able to respond to dynamic configuration updates, which in
+principle allows for driving pins without a client by the sole means of
+updating the 'default' attributes of '<out>' nodes, or changing pin functions
+during runtime.
+
+The definition of client policies follows Genode's usual pattern of the
+server-side policy selection based on the client's label. Each '<policy>'
+contains a 'pin' attribute referring to the 'name' of the assigned '<in>' or
+'<out>' pin. The policy is applied regardless of the session type.

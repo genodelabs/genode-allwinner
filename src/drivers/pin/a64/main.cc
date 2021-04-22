@@ -6,75 +6,278 @@
 
 /* Genode includes */
 #include <base/component.h>
-#include <base/log.h>
-#include <platform_session/device.h>
+#include <base/heap.h>
+#include <base/attached_rom_dataspace.h>
+#include <os/session_policy.h>
+#include <pin_state_session/component.h>
+#include <pin_control_session/component.h>
 
-namespace Pio_drv {
+/* local includes */
+#include <pio.h>
+#include <update_list_model.h>
 
-	using namespace Genode;
+namespace Pio_driver {
 
+	struct Pin_declaration;
+	struct Irq_handler;
 	struct Main;
 }
 
 
-struct Pio_drv::Main
+/**
+ * Pin information obtained from the configuration
+ */
+struct Pio_driver::Pin_declaration : List_model<Pin_declaration>::Element
 {
-	Env &_env;
+	Name const name;
 
-	Platform::Connection _platform { _env };
-
-	Platform::Device _device { _platform };
-
-	struct Pio : Platform::Device::Mmio
+	/**
+	 * Expected by 'update_list_model_from_xml'
+	 */
+	static bool type_matches(Xml_node const &node)
 	{
-		struct Pb_cfg0 : Register<0x24, 32>
-		{
-			struct Pb2_select : Bitfield<8, 3>
-			{
-				enum { IN = 0 };
-			};
-		};
+		bool const valid_type = node.has_type("in")
+		                     || node.has_type("out")
+		                     || node.has_type("select");
 
-		struct Pb_data : Register<0x34, 32>
-		{
-			struct Pb2 : Bitfield<2, 1> { };
-		};
+		return valid_type && node.has_attribute("name");
+	}
 
-		struct Pb_pull0 : Register<0x40, 32>
-		{
-			enum { PULL_DOWN = 2 };
-
-			struct Pb2 : Bitfield<4, 2> { };
-		};
-
-		Pio(Platform::Device &device) : Mmio(device)
-		{
-			/* configure PB2 pin to input mode */
-			write<Pb_cfg0::Pb2_select>(Pb_cfg0::Pb2_select::IN);
-
-			/* enable pull down to avoid high-impedance (undefined) signal */
-			write<Pb_pull0::Pb2>(Pb_pull0::PULL_DOWN);
-		}
-
-		bool pb2_state()
-		{
-			return read<Pb_data::Pb2>();
-		}
-	};
-
-	Pio _pio { _device };
-
-	Main(Env &env) : _env(env)
+	/**
+	 * Expected by 'update_list_model_from_xml'
+	 */
+	bool matches(Xml_node const &node) const
 	{
-		/* print state of PB2 signal in busy loop */
-		while (true)
-			log("PB2: ", _pio.pb2_state());
+		return type_matches(node) && name == Name::from_xml(node);
+	}
+
+	Constructible<Pin_id> id { };
+
+	Attr attr = Attr::disabled();
+
+	unsigned ref_count = 0;
+
+	Pin_declaration(Xml_node const &node) : name(Name::from_xml(node)) { }
+
+	void update_from_xml(Xml_node const &pin, Pio &pio)
+	{
+		try {
+			Pin_id const new_id = Pin_id::from_xml(pin);
+
+			attr = Attr::from_xml(pin);
+
+			/* reset original pin if physical location has changed */
+			bool const id_changed = (id.constructed() && *id != new_id);
+			if (id_changed)
+				pio.configure(*id, Attr::disabled());
+
+			id.construct(new_id);
+
+			/* update device configuration */
+			pio.configure(new_id, attr);
+
+			if (ref_count == 0 && attr.function.value == Function::OUTPUT)
+				pio.state(new_id, attr.default_state);
+		}
+		catch (... /* malformed pin declaration */ ) {
+
+			if (id.constructed())
+				pio.configure(*id, Attr::disabled());
+
+			id.destruct();
+			attr = Attr::disabled();
+		}
 	}
 };
 
 
-void Component::construct(Genode::Env &env)
+struct Pio_driver::Irq_handler
 {
-	static Pio_drv::Main main(env);
+	struct Fn : Interface { virtual void handle_irq() = 0; };
+
+	using Device = Platform::Device;
+
+	Device::Irq _irq;
+
+	Fn &_fn; /* Main::handle_irq */
+
+	Signal_handler<Irq_handler> _handler;
+
+	void _handle_irq()
+	{
+		_fn.handle_irq();
+
+		/* acknowledge at GIC */
+		_irq.ack();
+	}
+
+	Irq_handler(Env &env, Device &device, Device::Irq::Index index, Fn &fn)
+	:
+		_irq(device, index), _fn(fn),
+		_handler(env.ep(), *this, &Irq_handler::_handle_irq)
+	{
+		_irq.sigh(_handler);
+	}
+};
+
+
+struct Pio_driver::Main : Pin::Driver<Pin_id>, Irq_handler::Fn
+{
+	Env &_env;
+
+	Platform::Connection _platform { _env };
+	Platform::Device     _device   { _platform };
+	Pio                  _pio      { _device };
+
+	using Irq = Platform::Device::Irq;
+
+	Irq_handler _irq_port_b { _env, _device, Irq::Index { 0 }, *this };
+	Irq_handler _irq_port_g { _env, _device, Irq::Index { 1 }, *this };
+	Irq_handler _irq_port_h { _env, _device, Irq::Index { 2 }, *this };
+
+	/**
+	 * Irq_handler::Fn interface
+	 */
+	void handle_irq() override { deliver_pin_irqs(); }
+
+	Attached_rom_dataspace _config { _env, "config" };
+
+	Signal_handler<Main> _config_handler {
+		_env.ep(), *this, &Main::_handle_config };
+
+	void _handle_config();
+
+	Heap _heap { _env.ram(), _env.rm() };
+
+	Pin_state::Root<Pin_id>   _pin_state_root   { _env, _heap, *this };
+	Pin_control::Root<Pin_id> _pin_control_root { _env, _heap, *this };
+	Pin::Irq_root<Pin_id>     _irq_root         { _env, _heap, *this };
+
+	List_model<Pin_declaration> _pins { };
+
+	template <typename FN>
+	void _with_pin_declaration(Pin_id id, FN const &fn)
+	{
+		_pins.for_each([&] (Pin_declaration &pin) {
+			if (!pin.id.constructed() || *pin.id != id)
+				return;
+
+			fn(pin);
+		});
+	}
+
+	bool pin_state(Pin_id id) const override
+	{
+		return _pio.state(id);
+	}
+
+	void pin_state(Pin_id id, bool enabled) override
+	{
+		return _pio.state(id, enabled);
+	}
+
+	Pin_id assigned_pin(Session_label) const override;
+
+	void acquire_pin(Pin_id id) override
+	{
+		_with_pin_declaration(id, [&] (Pin_declaration &pin) {
+			pin.ref_count++; });
+	}
+
+	void release_pin(Pin_id id) override
+	{
+		_with_pin_declaration(id, [&] (Pin_declaration &pin) {
+			if (--pin.ref_count == 0 && pin.attr.output())
+				_pio.state(id, pin.attr.default_state); });
+	}
+
+	void irq_enabled(Pin_id id, bool enabled) override
+	{
+		_pio.irq_enabled(id, enabled);
+	}
+
+	bool irq_pending(Pin_id id) const override
+	{
+		return _pio.irq_pending(id);
+	}
+
+	void ack_irq(Pin_id id) override
+	{
+		_pio.clear_irq_status(id);
+	}
+
+	Main(Env &env) : _env(env)
+	{
+		/* subscribe to config updates and import initial config */
+		_config.sigh(_config_handler);
+		_handle_config();
+	}
+};
+
+
+Pio_driver::Pin_id Pio_driver::Main::assigned_pin(Session_label label) const
+{
+	/*
+	 * \throw Service_denied
+	 */
+	Session_policy policy { label, _config.xml() };
+
+	Name const name { policy.attribute_value("pin", Name::String()) };
+
+	Constructible<Pin_id> pin_id { };
+
+	_pins.for_each([&] (Pin_declaration const &pin) {
+		if (pin.id.constructed() && pin.name == name)
+			pin_id.construct(*pin.id); });
+
+	if (!pin_id.constructed()) {
+		warning("pin for session '", label, "' unassigned");
+		throw Service_denied();
+	}
+
+	return *pin_id;
 }
 
+
+void Pio_driver::Main::_handle_config()
+{
+	_config.update();
+
+	/*
+	 * Update pin declarations
+	 */
+
+	auto create = [&] (Xml_node const &node) -> Pin_declaration &
+	{
+		return *new (_heap) Pin_declaration(node);
+	};
+
+	auto destroy = [&] (Pin_declaration &pin)
+	{
+		if (pin.id.constructed())
+			_pio.configure(*pin.id, Attr::disabled());
+
+		Genode::destroy(_heap, &pin);
+	};
+
+	auto update = [&] (Pin_declaration &pin, Xml_node node)
+	{
+		pin.update_from_xml(node, _pio);
+	};
+
+	update_list_model_from_xml(_pins, _config.xml(), create, destroy, update);
+
+	/*
+	 * Re-assign sessions to pins
+	 */
+
+	_pin_state_root  .update_assignments();
+	_pin_control_root.update_assignments();
+	_irq_root        .update_assignments();
+}
+
+
+void Component::construct(Genode::Env &env)
+{
+	static Pio_driver::Main main(env);
+}
