@@ -1,0 +1,81 @@
+build { core init timer drivers/platform drivers/nic/emac server/nic_router }
+
+create_boot_directory
+
+install_config {
+	<config>
+		<parent-provides>
+			<service name="LOG"/>
+			<service name="PD"/>
+			<service name="CPU"/>
+			<service name="ROM"/>
+			<service name="IO_MEM"/>
+			<service name="IRQ"/>
+		</parent-provides>
+
+		<default caps="100"/>
+
+		<start name="timer">
+			<resource name="RAM" quantum="1M"/>
+			<route> <any-service> <parent/> </any-service> </route>
+			<provides> <service name="Timer"/> </provides>
+		</start>
+
+		<start name="platform_drv" caps="200">
+			<resource name="RAM" quantum="1M"/>
+			<provides> <service name="Platform"/> </provides>
+			<route> <any-service> <parent/> </any-service> </route>
+			<config>
+				<device name="syscon" type="allwinner,sun50i-a64-system-control">
+					<io_mem address="0x1c00000" size="0x1000"/>
+				</device>
+				<device name="emac" type="allwinner,sun50i-a64-emac">
+					<io_mem address="0x1c30000" size="0x10000"/>;
+					<irq number="114"/>
+				</device>
+				<policy label="emac_nic_drv -> " info="yes">
+					<device name="syscon"/>
+					<device name="emac"/>
+				</policy>
+			</config>
+		</start>
+
+		<start name="emac_nic_drv" caps="2000">
+			<resource name="RAM" quantum="10M"/>
+			<route>
+				<service name="ROM" label="dtb">
+					<parent label="emac-pine_a64lts.dtb"/> </service>
+				<service name="ROM"> <parent/> </service>
+				<service name="CPU"> <parent/> </service>
+				<service name="PD">  <parent/> </service>
+				<service name="LOG"> <parent/> </service>
+				<service name="Timer">    <child name="timer"/> </service>
+				<service name="Uplink">   <child name="nic_router"/> </service>
+				<service name="Platform"> <child name="platform_drv"/> </service>
+			</route>
+			<config/>
+		</start>
+
+		<start name="nic_router" caps="200">
+			<resource name="RAM" quantum="10M"/>
+			<provides>
+				<service name="Nic"/>
+				<service name="Uplink"/>
+			</provides>
+			<route>
+				<service name="Timer"> <child name="timer"/> </service>
+				<any-service> <parent/> </any-service>
+			</route>
+			<config verbose_domain_state="yes" dhcp_discover_timeout_sec="1">
+				<policy label_prefix="emac_nic_drv" domain="uplink"/>
+				<domain name="uplink"/>
+			</config>
+		</start>
+
+	</config>
+}
+
+build_boot_image { core ld.lib.so init timer platform_drv nic_router
+                   emac_nic_drv emac-pine_a64lts.dtb }
+
+run_genode_until forever
