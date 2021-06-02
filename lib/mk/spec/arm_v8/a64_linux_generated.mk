@@ -1,6 +1,3 @@
-TARGET   := a64_linux
-REQUIRES := arm_64
-
 CUSTOM_TARGET_DEPS := kernel_build.phony
 
 LX_DIR := $(call select_from_ports,a64_linux)/src/linux
@@ -10,9 +7,6 @@ LX_MK_ARGS = ARCH=arm64 CROSS_COMPILE=$(CROSS_DEV_PREFIX)
 
 #
 # Linux kernel configuration
-#
-# Start with 'make tinyconfig', enable/disable options via 'scripts/config',
-# and resolve config dependencies via 'make olddefconfig'.
 #
 
 # define 'LX_ENABLE' and 'LX_DISABLE'
@@ -27,12 +21,10 @@ kernel_config.tag:
 	$(VERBOSE)$(LX_DIR)/scripts/config $(addprefix --enable ,$(LX_ENABLE))
 	$(VERBOSE)$(LX_DIR)/scripts/config $(addprefix --disable ,$(LX_DISABLE))
 	$(VERBOSE)$(MAKE) $(LX_MK_ARGS) olddefconfig $(BUILD_OUTPUT_FILTER)
+	$(VERBOSE)$(MAKE) $(LX_MK_ARGS) prepare      $(BUILD_OUTPUT_FILTER)
 	$(VERBOSE)touch $@
 
 # update Linux kernel config on makefile changes
 kernel_config.tag: $(MAKEFILE_LIST)
 
 kernel_build.phony: kernel_config.tag
-	$(MSG_BUILD)Linux
-	$(VERBOSE)$(MAKE) $(LX_MK_ARGS) dtbs Image $(BUILD_OUTPUT_FILTER)
-
