@@ -1,0 +1,7 @@
+a64_linux
+uplink_session
+nic_session
+platform_session
+base
+os
+genode_c_api
