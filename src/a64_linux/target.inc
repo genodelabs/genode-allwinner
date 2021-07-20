@@ -26,6 +26,24 @@ LX_ENABLE += OF_MDIO MDIO_DEVICE PHYLIB
 # network protocols
 LX_ENABLE += INET IP_PNP IP_PNP_DHCP
 
+# framebuffer driver
+LX_ENABLE += DRM DRM_SUN4I DRM_SUN8I_MIXER DRM_SUN8I_DW_HDMI
+
+# LCD display support (MIPI/DSI + panel + backlight)
+LX_ENABLE += DRM_MIPI_DSI DRM_SUN6I_DSI GENERIC_PHY_MIPI_DPHY PHY_SUN6I_MIPI_DPHY
+LX_ENABLE += DRM_PANEL_SITRONIX_ST7703
+LX_ENABLE += PWM PWM_SUN4I BACKLIGHT_PWM BACKLIGHT_CLASS_DEVICE
+
+# determined by bisecting kernel configuration options (needed by fb driver)
+LX_ENABLE += CMA DMA_CMA MFD_AXP20X_RSB REGULATOR REGULATOR_AXP20X
+LX_ENABLE += PROC_FS SYSFS
+
+# to automatically set up screen mode at boot time
+LX_ENABLE += FRAMEBUFFER_CONSOLE
+
+# show Tux
+LX_ENABLE += LOGO
+
 # slim down kernel by removing superfluous drivers
 LX_DISABLE += $(addprefix NET_VENDOR_, ALACRITECH AMAZON AQUANTIA ARC BROADCOM \
                                        CADENCE CAVIUM CORTINA EZCHIP GOOGLE \
