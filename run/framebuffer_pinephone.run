@@ -1,0 +1,138 @@
+assert_spec arm_v8a
+
+create_boot_directory
+import_from_depot [depot_user]/src/[base_src] \
+                  [depot_user]/src/init
+
+build {
+	drivers/platform
+	drivers/framebuffer/de
+	test/framebuffer
+}
+
+install_config {
+<config>
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="IRQ"/>
+		<service name="IO_MEM"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="CPU"/>
+		<service name="LOG"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+	<default caps="100"/>
+
+	<start name="timer">
+		<resource name="RAM" quantum="1M"/>
+		<provides><service name="Timer"/></provides>
+	</start>
+
+	<start name="platform_drv" caps="150">
+		<resource name="RAM" quantum="1M"/>
+		<provides> <service name="Platform"/> </provides>
+		<config>
+
+			<device name="dphy" type="allwinner,sun50i-a64-mipi-dphy">
+				<io_mem address="0x01ca1000" size="0x1000"/>
+			</device>
+			<device name="pio" type="allwinner,sun50i-a64-pinctrl">
+				<io_mem address="0x01c20800" size="0x400"/>
+				<irq number="43"/> <!-- Port B -->
+				<irq number="49"/> <!-- Port G -->
+				<irq number="53"/> <!-- Port H -->
+			</device>
+			<device name="r_pio" type="allwinner,sun50i-a64-r-pinctrl">
+				<io_mem address="0x01f02c00" size="0x400"/>
+				<irq number="77"/>
+			</device>
+			<device name="ccu" type="allwinner,sun50i-a64-ccu">
+				<io_mem address="0x01c20000" size="0x400"/>
+			</device>
+			<device name="dsi" type="allwinner,sun50i-a64-mipi-dsi">
+				<io_mem address="0x01ca0000" size="0x1000"/>
+			</device>
+			<device name="r_rsb" type="allwinner,sun8i-a23-rsb">
+				<io_mem address="0x01f03400" size="0x400"/>
+				<irq number="71"/>
+			</device>
+			<device name="syscon" type="allwinner,sun50i-a64-system-control">
+				<io_mem address="0x01c00000" size="0x1000"/>
+			</device>
+			<device name="de2_bus" type="allwinner,sun50i-a64-de2">
+				<io_mem address="0x1000000" size="0x400000"/>
+			</device>
+			<device name="r_ccu" type="allwinner,sun50i-a64-r-ccu">
+				<io_mem address="0x01f01400" size="0x100"/>
+			</device>
+			<device name="r_intc" type="allwinner,sun6i-a31-r-intc">
+				<io_mem address="0x01f00c00" size="0x400"/>
+				<irq number="64"/>
+			</device>
+			<device name="r_pwm" type="allwinner,sun5i-a13-pwm">
+				<io_mem address="0x01f03800" size="0x400"/>
+			</device>
+			<device name="tcon0" type="allwinner,sun8i-a83t-tcon-lcd">
+				<io_mem address="0x01c0c000" size="0x1000"/>
+				<irq number="118"/>
+			</device>
+			<device name="tcon1" type="allwinner,sun8i-a83t-tcon-tv">
+				<io_mem address="0x01c0d000" size="0x1000"/>
+				<irq number="119"/>
+			</device>
+
+			<policy label="fb_drv -> " info="yes">
+				<device name="dphy"/>
+				<device name="pio"/>
+				<device name="r_pio"/>
+				<device name="ccu"/>
+				<device name="dsi"/>
+				<device name="r_rsb"/>
+				<device name="syscon"/>
+				<device name="de2_bus"/>
+				<device name="r_ccu"/>
+				<device name="r_intc"/>
+				<device name="r_pwm"/>
+				<device name="tcon0"/>
+				<device name="tcon1"/>
+			</policy>
+
+		</config>
+		<route> <any-service> <parent/> </any-service> </route>
+	</start>
+
+	<start name="fb_drv" caps="250">
+		<binary name="de_fb_drv"/>
+		<resource name="RAM" quantum="40M"/>
+		<route>
+			<service name="ROM" label="dtb"> <parent label="de-pinephone.dtb"/> </service>
+			<service name="RM">       <parent/> </service>
+			<service name="ROM">      <parent/> </service>
+			<service name="PD">       <parent/> </service>
+			<service name="CPU">      <parent/> </service>
+			<service name="LOG">      <parent/> </service>
+			<service name="Timer">    <child name="timer"/>            </service>
+			<service name="Platform"> <child name="platform_drv"/>     </service>
+			<service name="Capture">  <child name="test-framebuffer"/> </service>
+		</route>
+	</start>
+
+	<start name="test-framebuffer">
+		<resource name="RAM" quantum="10M"/>
+		<provides> <service name="Capture"/> </provides>
+		<config/>
+	</start>
+
+</config>}
+
+build_boot_image {
+	test-framebuffer
+	platform_drv
+	de_fb_drv
+	de-pinephone.dtb
+}
+
+run_genode_until forever
