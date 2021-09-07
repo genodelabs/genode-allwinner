@@ -1,7 +1,7 @@
 /*
  * \brief  Dummy definitions of Linux Kernel functions
  * \author Automatically generated file - do no edit
- * \date   2021-08-23
+ * \date   2021-09-14
  */
 
 #include <lx_emul.h>
@@ -225,30 +225,6 @@ void bust_spinlocks(int yes)
 }
 
 
-#include <linux/fb.h>
-
-void cfb_copyarea(struct fb_info * p,const struct fb_copyarea * area)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/fb.h>
-
-void cfb_fillrect(struct fb_info * p,const struct fb_fillrect * rect)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/fb.h>
-
-void cfb_imageblit(struct fb_info * p,const struct fb_image * image)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
 #include <linux/console.h>
 
 void console_flush_on_panic(enum con_flush_mode mode)
@@ -289,6 +265,30 @@ void console_unlock(void)
 #include <linux/fs.h>
 
 struct file * dentry_open(const struct path * path,int flags,const struct cred * cred)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/property.h>
+
+int device_add_software_node(struct device * dev,const struct software_node * node)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/property.h>
+
+void device_remove_software_node(struct device * dev)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/dma-mapping.h>
+
+struct page * dma_alloc_pages(struct device * dev,size_t size,dma_addr_t * dma_handle,enum dma_data_direction dir,gfp_t gfp)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -382,6 +382,14 @@ bool dma_default_coherent;
 #include <linux/dma-fence.h>
 
 int dma_fence_add_callback(struct dma_fence * fence,struct dma_fence_cb * cb,dma_fence_func_t func)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/dma-fence.h>
+
+struct dma_fence * dma_fence_allocate_private_stub(void)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -488,6 +496,14 @@ int dma_mmap_attrs(struct device * dev,struct vm_area_struct * vma,void * cpu_ad
 }
 
 
+#include <linux/dma-mapping.h>
+
+int dma_mmap_pages(struct device * dev,struct vm_area_struct * vma,size_t size,struct page * page)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
 #include <linux/dma-resv.h>
 
 void dma_resv_fini(struct dma_resv * obj)
@@ -512,30 +528,6 @@ void emergency_restart(void)
 }
 
 
-#include <linux/fb.h>
-
-void fb_deferred_io_cleanup(struct fb_info * info)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/fb.h>
-
-void fb_deferred_io_init(struct fb_info * info)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/fb.h>
-
-void fb_set_suspend(struct fb_info * info,int state)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
 #include <linux/file.h>
 
 void fd_install(unsigned int fd,struct file * file)
@@ -552,14 +544,6 @@ struct kobject *firmware_kobj;
 #include <linux/file.h>
 
 void fput(struct file * file)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/fb.h>
-
-void framebuffer_release(struct fb_info * info)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -836,6 +820,14 @@ int __init_memblock memblock_add(phys_addr_t base,phys_addr_t size)
 
 #include <linux/memblock.h>
 
+int __init_memblock memblock_clear_nomap(phys_addr_t base,phys_addr_t size)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/memblock.h>
+
 phys_addr_t __init_memblock memblock_find_in_range(phys_addr_t start,phys_addr_t end,phys_addr_t size,phys_addr_t align)
 {
 	lx_emul_trace_and_stop(__func__);
@@ -869,14 +861,6 @@ int __init_memblock memblock_mark_hotplug(phys_addr_t base,phys_addr_t size)
 #include <linux/memblock.h>
 
 int __init_memblock memblock_mark_nomap(phys_addr_t base,phys_addr_t size)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/memblock.h>
-
-int __init_memblock memblock_remove(phys_addr_t base,phys_addr_t size)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -1042,22 +1026,6 @@ void queued_write_lock_slowpath(struct qrwlock * lock)
 enum reboot_mode reboot_mode;
 
 
-#include <linux/refcount.h>
-
-bool refcount_dec_not_one(refcount_t * r)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/refcount.h>
-
-void refcount_warn_saturate(refcount_t * r,enum refcount_saturation_type t)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
 #include <linux/ioport.h>
 
 int release_resource(struct resource * old)
@@ -1100,7 +1068,7 @@ void show_mem(unsigned int filter,nodemask_t * nodemask)
 
 #include <linux/sched/debug.h>
 
-void show_state_filter(unsigned long state_filter)
+void show_state_filter(unsigned int state_filter)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -1164,30 +1132,6 @@ struct dma_fence * sync_file_get_fence(int fd)
 }
 
 
-#include <linux/fb.h>
-
-void sys_copyarea(struct fb_info * p,const struct fb_copyarea * area)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/fb.h>
-
-void sys_fillrect(struct fb_info * p,const struct fb_fillrect * rect)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/fb.h>
-
-void sys_imageblit(struct fb_info * p,const struct fb_image * image)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
 #include <linux/sysfs.h>
 
 int sysfs_emit(char * buf,const char * fmt,...)
@@ -1223,14 +1167,6 @@ void tick_broadcast(const struct cpumask * mask)
 #include <linux/vt_kern.h>
 
 void unblank_screen(void)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/fb.h>
-
-void unregister_framebuffer(struct fb_info * fb_info)
 {
 	lx_emul_trace_and_stop(__func__);
 }

@@ -2,7 +2,6 @@ arch/arm64/boot/dts/allwinner/sun50i-a64-pinephone-1.2.dts
 arch/arm64/lib/memchr.S
 arch/arm64/lib/memcmp.S
 arch/arm64/lib/memcpy.S
-arch/arm64/lib/memmove.S
 arch/arm64/lib/memset.S
 arch/arm64/lib/strchr.S
 arch/arm64/lib/strcmp.S
@@ -102,6 +101,7 @@ drivers/gpio/gpiolib-of.c
 drivers/gpio/gpiolib.c
 drivers/gpu/drm/bridge/panel.c
 drivers/gpu/drm/bridge/synopsys/dw-hdmi.c
+drivers/gpu/drm/drm_aperture.c
 drivers/gpu/drm/drm_atomic.c
 drivers/gpu/drm/drm_atomic_helper.c
 drivers/gpu/drm/drm_atomic_state_helper.c
@@ -118,6 +118,7 @@ drivers/gpu/drm/drm_connector.c
 drivers/gpu/drm/drm_crtc.c
 drivers/gpu/drm/drm_crtc_helper.c
 drivers/gpu/drm/drm_damage_helper.c
+drivers/gpu/drm/drm_displayid.c
 drivers/gpu/drm/drm_dp_dual_mode_helper.c
 drivers/gpu/drm/drm_dp_helper.c
 drivers/gpu/drm/drm_dp_mst_topology.c
@@ -135,6 +136,7 @@ drivers/gpu/drm/drm_format_helper.c
 drivers/gpu/drm/drm_fourcc.c
 drivers/gpu/drm/drm_framebuffer.c
 drivers/gpu/drm/drm_gem.c
+drivers/gpu/drm/drm_gem_atomic_helper.c
 drivers/gpu/drm/drm_gem_cma_helper.c
 drivers/gpu/drm/drm_gem_framebuffer_helper.c
 drivers/gpu/drm/drm_gem_shmem_helper.c
@@ -145,7 +147,6 @@ drivers/gpu/drm/drm_irq.c
 drivers/gpu/drm/drm_kms_helper_common.c
 drivers/gpu/drm/drm_lease.c
 drivers/gpu/drm/drm_managed.c
-drivers/gpu/drm/drm_memory.c
 drivers/gpu/drm/drm_mipi_dsi.c
 drivers/gpu/drm/drm_mm.c
 drivers/gpu/drm/drm_mode_config.c
@@ -318,6 +319,7 @@ lib/linear_ranges.c
 lib/list_sort.c
 lib/radix-tree.c
 lib/rbtree.c
+lib/refcount.c
 lib/sort.c
 lib/string.c
 lib/timerqueue.c

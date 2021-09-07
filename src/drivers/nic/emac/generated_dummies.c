@@ -1,7 +1,7 @@
 /*
  * \brief  Dummy definitions of Linux Kernel functions
  * \author Automatically generated file - do no edit
- * \date   2021-08-24
+ * \date   2021-09-08
  */
 
 #include <lx_emul.h>
@@ -10,6 +10,14 @@
 #include <linux/ratelimit_types.h>
 
 int ___ratelimit(struct ratelimit_state * rs,const char * func)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/gfp.h>
+
+struct page * __alloc_pages(gfp_t gfp,unsigned int order,int preferred_nid,nodemask_t * nodemask)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -81,6 +89,11 @@ struct nlmsghdr * __nlmsg_put(struct sk_buff * skb,u32 portid,u32 seq,int type,i
 }
 
 
+#include <linux/cpumask.h>
+
+atomic_t __num_online_cpus;
+
+
 #include <linux/reset.h>
 
 struct reset_control * __of_reset_control_get(struct device_node * node,const char * id,int index,bool shared,bool optional,bool acquired)
@@ -105,6 +118,14 @@ void __put_page(struct page * page)
 #include <linux/sched/task.h>
 
 void __put_task_struct(struct task_struct * tsk)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/rhashtable.h>
+
+struct rhash_lock_head __rcu ** __rht_bucket_nested(const struct bucket_table * tbl,unsigned int hash)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -159,6 +180,13 @@ unsigned int _parse_integer(const char * s,unsigned int base,unsigned long long 
 
 extern const char * _parse_integer_fixup_radix(const char * s,unsigned int * base);
 const char * _parse_integer_fixup_radix(const char * s,unsigned int * base)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+extern unsigned int _parse_integer_limit(const char * s,unsigned int base,unsigned long long * p,size_t max_chars);
+unsigned int _parse_integer_limit(const char * s,unsigned int base,unsigned long long * p,size_t max_chars)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -403,6 +431,14 @@ void flow_rule_match_ports(const struct flow_rule * rule,struct flow_match_ports
 }
 
 
+#include <net/flow_offload.h>
+
+void flow_rule_match_vlan(const struct flow_rule * rule,struct flow_match_vlan * out)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
 #include <linux/sched/user.h>
 
 void free_uid(struct user_struct * up)
@@ -608,7 +644,7 @@ int kobject_synth_uevent(struct kobject * kobj,const char * buf,size_t count)
 }
 
 
-#include <linux/string.h>
+#include <linux/kstrtox.h>
 
 int kstrtobool(const char * s,bool * res)
 {
@@ -616,7 +652,7 @@ int kstrtobool(const char * s,bool * res)
 }
 
 
-#include <linux/kernel.h>
+#include <linux/kstrtox.h>
 
 int kstrtoint(const char * s,unsigned int base,int * res)
 {
@@ -624,7 +660,7 @@ int kstrtoint(const char * s,unsigned int base,int * res)
 }
 
 
-#include <linux/kernel.h>
+#include <linux/kstrtox.h>
 
 int kstrtoll(const char * s,unsigned int base,long long * res)
 {
@@ -632,7 +668,7 @@ int kstrtoll(const char * s,unsigned int base,long long * res)
 }
 
 
-#include <linux/kernel.h>
+#include <linux/kstrtox.h>
 
 int kstrtouint(const char * s,unsigned int base,unsigned int * res)
 {
@@ -640,7 +676,7 @@ int kstrtouint(const char * s,unsigned int base,unsigned int * res)
 }
 
 
-#include <linux/kernel.h>
+#include <linux/kstrtox.h>
 
 int kstrtoull(const char * s,unsigned int base,unsigned long long * res)
 {
@@ -690,9 +726,9 @@ void mdio_mux_uninit(void * mux_handle)
 }
 
 
-#include <linux/pcs/pcs-xpcs.h>
+#include <linux/memblock.h>
 
-struct mdio_xpcs_ops * mdio_xpcs_get_ops(void)
+int __init_memblock memblock_add(phys_addr_t base,phys_addr_t size)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -700,7 +736,7 @@ struct mdio_xpcs_ops * mdio_xpcs_get_ops(void)
 
 #include <linux/memblock.h>
 
-int __init_memblock memblock_add(phys_addr_t base,phys_addr_t size)
+int __init_memblock memblock_clear_nomap(phys_addr_t base,phys_addr_t size)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -748,15 +784,23 @@ int __init_memblock memblock_mark_nomap(phys_addr_t base,phys_addr_t size)
 
 #include <linux/memblock.h>
 
-int __init_memblock memblock_remove(phys_addr_t base,phys_addr_t size)
+int __init_memblock memblock_reserve(phys_addr_t base,phys_addr_t size)
 {
 	lx_emul_trace_and_stop(__func__);
 }
 
 
-#include <linux/memblock.h>
+#include <linux/preempt.h>
 
-int __init_memblock memblock_reserve(phys_addr_t base,phys_addr_t size)
+void migrate_disable(void)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/preempt.h>
+
+void migrate_enable(void)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -836,7 +880,7 @@ void osq_unlock(struct optimistic_spin_queue * lock)
 }
 
 
-#include <linux/kernel.h>
+#include <linux/panic.h>
 
 void panic(const char * fmt,...)
 {
@@ -894,22 +938,6 @@ void rcu_barrier(void)
 }
 
 
-#include <linux/refcount.h>
-
-bool refcount_dec_not_one(refcount_t * r)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/refcount.h>
-
-void refcount_warn_saturate(refcount_t * r,enum refcount_saturation_type t)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
 #include <linux/regulator/consumer.h>
 
 int regulator_disable(struct regulator * regulator)
@@ -945,6 +973,54 @@ void reset_control_put(struct reset_control * rstc)
 #include <linux/reset.h>
 
 int reset_control_reset(struct reset_control * rstc)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/rhashtable.h>
+
+void * rhashtable_insert_slow(struct rhashtable * ht,const void * key,struct rhash_head * obj)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/rhashtable.h>
+
+void rhashtable_walk_enter(struct rhashtable * ht,struct rhashtable_iter * iter)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/rhashtable.h>
+
+void rhashtable_walk_exit(struct rhashtable_iter * iter)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/rhashtable.h>
+
+void * rhashtable_walk_next(struct rhashtable_iter * iter)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/rhashtable.h>
+
+int rhashtable_walk_start_check(struct rhashtable_iter * iter)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/rhashtable.h>
+
+void rhashtable_walk_stop(struct rhashtable_iter * iter)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -1040,6 +1116,14 @@ u64 siphash_1u64(const u64 first,const siphash_key_t * key)
 
 #include <net/sock.h>
 
+void sk_error_report(struct sock * sk)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <net/sock.h>
+
 void sk_free(struct sock * sk)
 {
 	lx_emul_trace_and_stop(__func__);
@@ -1056,7 +1140,7 @@ int smp_call_function_single(int cpu,smp_call_func_t func,void * info,int wait)
 
 #include <linux/smp.h>
 
-int smp_call_function_single_async(int cpu,call_single_data_t * csd)
+int smp_call_function_single_async(int cpu,struct __call_single_data * csd)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -1081,6 +1165,20 @@ void sort(void * base,size_t num,size_t size,cmp_func_t cmp_func,swap_func_t swa
 #include <linux/jump_label.h>
 
 bool static_key_initialized;
+
+
+extern int stmmac_xdp_set_prog(struct stmmac_priv * priv,struct bpf_prog * prog,struct netlink_ext_ack * extack);
+int stmmac_xdp_set_prog(struct stmmac_priv * priv,struct bpf_prog * prog,struct netlink_ext_ack * extack)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+extern int stmmac_xdp_setup_pool(struct stmmac_priv * priv,struct xsk_buff_pool * pool,u16 queue);
+int stmmac_xdp_setup_pool(struct stmmac_priv * priv,struct xsk_buff_pool * pool,u16 queue)
+{
+	lx_emul_trace_and_stop(__func__);
+}
 
 
 #include <linux/string_helpers.h>
@@ -1206,7 +1304,63 @@ void wake_up_q(struct wake_q_head * head)
 
 #include <linux/filter.h>
 
+void xdp_do_flush(void)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/filter.h>
+
 int xdp_do_generic_redirect(struct net_device * dev,struct sk_buff * skb,struct xdp_buff * xdp,struct bpf_prog * xdp_prog)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/filter.h>
+
+int xdp_do_redirect(struct net_device * dev,struct xdp_buff * xdp,struct bpf_prog * xdp_prog)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/pcs/pcs-xpcs.h>
+
+int xpcs_config_eee(struct dw_xpcs * xpcs,int mult_fact_100ns,int enable)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/pcs/pcs-xpcs.h>
+
+struct dw_xpcs * xpcs_create(struct mdio_device * mdiodev,phy_interface_t interface)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/pcs/pcs-xpcs.h>
+
+void xpcs_destroy(struct dw_xpcs * xpcs)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/pcs/pcs-xpcs.h>
+
+int xpcs_get_an_mode(struct dw_xpcs * xpcs,phy_interface_t interface)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/pcs/pcs-xpcs.h>
+
+void xpcs_validate(struct dw_xpcs * xpcs,unsigned long * supported,struct phylink_link_state * state)
 {
 	lx_emul_trace_and_stop(__func__);
 }

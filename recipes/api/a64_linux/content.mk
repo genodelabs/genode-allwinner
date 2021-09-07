@@ -43,22 +43,25 @@ LX_FILES += Makefile \
             scripts/Makefile \
             scripts/Kbuild.include \
             scripts/subarch.include \
-            scripts/mkmakefile \
             scripts/Makefile.build \
             scripts/basic/Makefile \
             scripts/Makefile.extrawarn \
             scripts/Makefile.lib \
             scripts/Makefile.host \
             scripts/Makefile.asm-generic \
+            scripts/Makefile.compiler \
             scripts/config \
             scripts/basic/fixdep.c \
             scripts/cc-version.sh \
             scripts/ld-version.sh \
             scripts/dtc \
             scripts/kconfig/merge_config.sh \
+            scripts/remove-stale-files \
             scripts/sorttable.h \
             scripts/sorttable.c \
             scripts/setlocalversion \
+            scripts/min-tool-version.sh \
+            scripts/as-version.sh \
             scripts/mod \
             scripts/checksyscalls.sh \
             scripts/atomic/check-atomics.sh \
@@ -66,14 +69,19 @@ LX_FILES += Makefile \
             arch/arm64/Makefile \
             arch/arm64/configs \
             kernel/configs/tiny.config \
+            kernel/configs/tiny-base.config \
             arch/arm64/boot/dts \
             arch/arm64/include/asm/Kbuild \
+            arch/arm64/include/uapi/asm/Kbuild \
+            arch/arm64/tools/Makefile \
+            arch/arm64/tools/gen-cpucaps.awk \
+            arch/arm64/tools/cpucaps \
             arch/x86/entry/syscalls/syscall_32.tbl \
             include/asm-generic/Kbuild \
             include/linux/compiler-version.h \
             include/linux/license.h \
             include/linux/kbuild.h \
-            include/linux/atomic-fallback.h \
+            include/uapi/Kbuild \
             include/uapi/asm-generic/Kbuild
 
 LX_SCRIPTS_KCONFIG_FILES := $(notdir $(wildcard $(LX_ABS_DIR)/scripts/kconfig/*.c)) \

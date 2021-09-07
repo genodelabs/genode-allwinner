@@ -2,7 +2,6 @@ arch/arm64/lib/crc32.S
 arch/arm64/lib/memchr.S
 arch/arm64/lib/memcmp.S
 arch/arm64/lib/memcpy.S
-arch/arm64/lib/memmove.S
 arch/arm64/lib/memset.S
 arch/arm64/lib/strchr.S
 arch/arm64/lib/strcmp.S
@@ -56,6 +55,7 @@ drivers/net/ethernet/stmicro/stmmac/stmmac_mdio.c
 drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c
 drivers/net/ethernet/stmicro/stmmac/stmmac_ptp.c
 drivers/net/ethernet/stmicro/stmmac/stmmac_tc.c
+drivers/net/mdio/fwnode_mdio.c
 drivers/net/mdio/of_mdio.c
 drivers/net/phy/fixed_phy.c
 drivers/net/phy/linkmode.c
@@ -131,6 +131,7 @@ lib/klist.c
 lib/kobject.c
 lib/radix-tree.c
 lib/rbtree.c
+lib/refcount.c
 lib/string.c
 lib/timerqueue.c
 lib/vsprintf.c

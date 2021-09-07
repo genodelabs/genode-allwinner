@@ -180,3 +180,29 @@ struct regulator * devm_regulator_get_optional(struct device * dev,const char * 
 	return ERR_PTR(-ENODEV);
 }
 
+
+#include <linux/gfp.h>
+
+unsigned long __alloc_pages_bulk(gfp_t gfp,int preferred_nid,
+                                 nodemask_t * nodemask, int nr_pages,
+                                 struct list_head * page_list, struct page ** page_array)
+{
+	if (page_list)
+		lx_emul_trace_and_stop("__alloc_pages_bulk unsupported argument");
+
+	{
+		void const  *ptr  = lx_emul_mem_alloc_aligned(PAGE_SIZE*nr_pages, PAGE_SIZE);
+		struct page *page = lx_emul_virt_to_pages(ptr, nr_pages);
+		int i;
+
+		for (i = 0; i < nr_pages; i++) {
+
+			if (page_array[i])
+				lx_emul_trace_and_stop("__alloc_pages_bulk: page_array entry not null");
+
+			page_array[i] = page + i;
+		}
+	}
+
+	return nr_pages;
+}

@@ -22,3 +22,5 @@
 //
 ///* fix for missing include in linux/irqdesc.h */
 //#include <linux/irq.h>
+
+struct stmmac_priv;

@@ -1,7 +1,7 @@
 /*
  * \brief  Array defining order of Linux Kernel initcalls
  * \author Automatically generated file - do no edit
- * \date   2021-07-22
+ * \date   2021-09-07
  */
 
 #pragma once
@@ -12,7 +12,6 @@ static const char * lx_emul_initcall_order[] = {
 	"__initcall_spawn_ksoftirqdearly",
 	"__initcall_migration_initearly",
 	"__initcall_srcu_bootup_announceearly",
-	"__initcall_rcu_spawn_core_kthreadsearly",
 	"__initcall_rcu_spawn_gp_kthreadearly",
 	"__initcall_check_cpu_stall_initearly",
 	"__initcall_rcu_sysrq_initearly",
@@ -79,7 +78,6 @@ static const char * lx_emul_initcall_order[] = {
 	"__initcall_init_admin_reserve4",
 	"__initcall_init_reserve_notifier4",
 	"__initcall_pwm_sysfs_init4",
-	"__initcall_fbmem_init4",
 	"__initcall_misc_init4",
 	"__initcall_register_cpu_capacity_sysctl4",
 	"__initcall_dma_buf_init4",
@@ -93,6 +91,7 @@ static const char * lx_emul_initcall_order[] = {
 	"__initcall_fib_notifier_init4",
 	"__initcall_ethnl_init4",
 	"__initcall_nexthop_init4",
+	"__initcall_init_32bit_el0_mask4s",
 	"__initcall_create_debug_debugfs_entry5",
 	"__initcall_iomem_init_inode5",
 	"__initcall_clocksource_done_booting5",
@@ -123,7 +122,6 @@ static const char * lx_emul_initcall_order[] = {
 	"__initcall_cpuinfo_regs_init6",
 	"__initcall_proc_execdomains_init6",
 	"__initcall_ioresources_init6",
-	"__initcall_init_sched_debug_procfs6",
 	"__initcall_irq_gc_init_ops6",
 	"__initcall_timekeeping_init_ops6",
 	"__initcall_init_clocksource_sysfs6",
@@ -189,7 +187,7 @@ static const char * lx_emul_initcall_order[] = {
 	"__initcall_sun4i_frontend_driver_init6",
 	"__initcall_sun4i_hdmi_driver_init6",
 	"__initcall_sun6i_dsi_platform_driver_init6",
-	"__initcall_sun8i_dw_hdmi_pltfm_driver_init6",
+	"__initcall_sun8i_dw_hdmi_init6",
 	"__initcall_sun8i_mixer_platform_driver_init6",
 	"__initcall_sun8i_tcon_top_platform_driver_init6",
 	"__initcall_st7703_driver_init6",
@@ -230,7 +228,6 @@ static const char * lx_emul_initcall_order[] = {
 	"__initcall_of_fdt_raw_init7",
 	"__initcall_tcp_congestion_default7",
 	"__initcall_ip_auto_config7",
-	"__initcall_fb_logo_late_init7s",
 	"__initcall_clk_disable_unused7s",
 	"__initcall_regulator_init_complete7s",
 	"__initcall_of_platform_sync_state_init7s",

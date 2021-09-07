@@ -458,3 +458,79 @@ void __const_udelay(unsigned long xloops)
 {
 	lx_emul_trace(__func__);
 }
+
+
+#include <linux/srcutree.h>
+
+void synchronize_srcu(struct srcu_struct * ssp)
+{
+	lx_emul_trace(__func__);
+}
+
+
+#include <linux/fb.h>
+
+void fb_set_suspend(struct fb_info *info, int state)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+void framebuffer_release(struct fb_info *info)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+void unregister_framebuffer(struct fb_info *fb_info)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+void fb_deferred_io_cleanup(struct fb_info *info)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+void sys_fillrect(struct fb_info *info, const struct fb_fillrect *rect)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+void sys_copyarea(struct fb_info *info, const struct fb_copyarea *area)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+void sys_imageblit(struct fb_info *info, const struct fb_image *image)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+void cfb_fillrect(struct fb_info *info, const struct fb_fillrect *rect)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+void cfb_copyarea(struct fb_info *info, const struct fb_copyarea *area)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+void cfb_imageblit(struct fb_info *info, const struct fb_image *image)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+void fb_deferred_io_init(struct fb_info *info)
+{
+	lx_emul_trace_and_stop(__func__);
+}

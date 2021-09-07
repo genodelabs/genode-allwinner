@@ -654,3 +654,24 @@ void queued_spin_lock_slowpath(struct qspinlock * lock,u32 val)
 	lx_emul_trace(__func__);
 }
 
+
+#include <linux/srcutree.h>
+
+void synchronize_srcu(struct srcu_struct * ssp)
+{
+	lx_emul_trace(__func__);
+}
+
+
+#include <linux/filter.h>
+
+DEFINE_PER_CPU(struct bpf_redirect_info, bpf_redirect_info);
+
+
+#include <linux/rhashtable-types.h>
+
+int rhashtable_init(struct rhashtable * ht,const struct rhashtable_params * params)
+{
+	lx_emul_trace(__func__);
+	return -EINVAL;
+}

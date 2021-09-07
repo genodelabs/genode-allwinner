@@ -11,6 +11,10 @@ INC_DIR += $(REP_DIR)/src/include
 #
 LD_OPT += --defsym=jiffies=jiffies_64
 
+#
+# Quirk needed as task->state has been renamed to task->__state in Linux 5.14
+#
+CC_OPT += -D__state=state
 
 #
 # Lx_emul + Lx_kit definitions
