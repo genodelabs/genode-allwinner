@@ -198,6 +198,7 @@ static const char * lx_emul_initcall_order[] = {
 	"__initcall_net_olddevs_init6",
 	"__initcall_blackhole_netdev_init6",
 	"__initcall_fixed_mdio_bus_init6",
+	"__initcall_phy_module_init6",
 	"__initcall_stmmac_init6",
 	"__initcall_sun7i_dwmac_driver_init6",
 	"__initcall_sun8i_dwmac_driver_init6",
