@@ -1,0 +1,15 @@
+LICENSE := GPLv2
+VERSION := 2
+
+DOWNLOADS := uboot.git arm_trusted_firmware.git
+
+REV(uboot) := v2021.07
+URL(uboot) := https://github.com/u-boot/u-boot.git \
+              --branch ${REV(uboot)} --depth 1 --no-checkout
+DIR(uboot) := uboot
+PATCHES    := src/u-boot/pine/fastboot.patch
+
+REV(arm_trusted_firmware) := v2.5
+URL(arm_trusted_firmware) := https://github.com/ARM-software/arm-trusted-firmware.git \
+                             --branch ${REV(arm_trusted_firmware)} --depth 1 --no-checkout
+DIR(arm_trusted_firmware) := arm_trusted_firmware

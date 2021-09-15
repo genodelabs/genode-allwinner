@@ -1,0 +1,22 @@
+Remove quirk that causes fastboot to block infinitely
+
+index 8ba55aab9f..5c95a3f8a1 100644
+--- uboot/drivers/usb/gadget/f_fastboot.c
++++ uboot/drivers/usb/gadget/f_fastboot.c
+@@ -434,16 +434,6 @@ static unsigned int rx_bytes_expected(struct usb_ep *ep)
+ 	else if (rx_remain > EP_BUFFER_SIZE)
+ 		return EP_BUFFER_SIZE;
+ 
+-	/*
+-	 * Some controllers e.g. DWC3 don't like OUT transfers to be
+-	 * not ending in maxpacket boundary. So just make them happy by
+-	 * always requesting for integral multiple of maxpackets.
+-	 * This shouldn't bother controllers that don't care about it.
+-	 */
+-	rem = rx_remain % maxpacket;
+-	if (rem > 0)
+-		rx_remain = rx_remain + (maxpacket - rem);
+-
+ 	return rx_remain;
+ }
+ 
