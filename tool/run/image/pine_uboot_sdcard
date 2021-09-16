@@ -1,0 +1,86 @@
+proc run_image {elf_img} {
+
+	set sgdisk     [installed_command sgdisk]
+	set mkenvimage [installed_command mkenvimage]
+
+	#
+	# Build U-Boot if needed
+	#
+
+	set uboot_bin u-boot/pine/[board]/u-boot-sunxi-with-spl.bin
+
+	if {![file exists $uboot_bin]} {
+		build { u-boot/pine } }
+
+	#
+	# Build uImage
+	#
+
+	set bin_img   [run_dir]/image.bin
+	set uboot_img [run_dir]/ext2/uImage
+	set entrypoint [exec [cross_dev_prefix]readelf -h $elf_img | \
+	                grep "Entry point address: " | \
+	                sed -e "s/.*Entry point address: *//"]
+	set load_addr [exec [cross_dev_prefix]readelf -l $elf_img | \
+	               grep -m 1 "LOAD"]
+	set load_addr [lindex [regexp -inline -all -- {\S+} $load_addr] 3]
+
+	exec mkdir -p [run_dir]/ext2
+	exec [cross_dev_prefix]objcopy -O binary $elf_img $bin_img
+	exec gzip --best --force $bin_img
+	exec mkimage -A arm64 -O linux -T kernel -C gzip -a $load_addr \
+	              -e $entrypoint -d $bin_img.gz $uboot_img
+	exec rm -rf $bin_img.gz
+
+	#
+	# U-Boot boot env script
+	#
+	# The uboot.env size must be 128KiB (depends on U-Boot configuration).
+	# Otherwise, the U-Boot's CRC check fails.
+	#
+
+	set image_load_addr [get_cmd_arg --image-load-address "0x42000000"]
+
+	exec echo "bootcmd=ext2load mmc 0:1 $image_load_addr /uImage; bootm $image_load_addr\n" \
+	          "bootdelay=0" \
+	   | $mkenvimage -s 0x20000 -o [run_dir]/ext2/uboot.env -
+
+	#
+	# Create GPT partitioning scheme with an ext2 file system in partition 1
+	#
+
+	set part_start_kb      4096
+	set bytes_per_block    512
+	set gpt_start_blocks   2048
+	set tailroom_kb        64
+	set content_size_bytes [expr [regsub {\s.*} [exec du -b [run_dir]/ext2] {}]]
+	set part_size_kb       [expr ($content_size_bytes / 1024) + 1800]
+	set part_start_bytes   [expr $part_start_kb*1024]
+	set part_blocks        [expr ($part_size_kb*1024) / $bytes_per_block]
+	set part_first_block   [expr $part_start_bytes / $bytes_per_block]
+	set part_last_block    [expr $part_first_block + $part_blocks - 1]
+	set disk_size_kb       [expr $part_start_kb + $part_size_kb + $tailroom_kb]
+
+	set img_file [run_dir].img.incomplete
+
+	exec dd if=/dev/zero of=$img_file bs=1K count=$disk_size_kb 2> /dev/null
+
+	# create ext2 file system with content copied from [run_dir]/ext2
+	exec mkfs.ext2 -q -F -L 'GENODE' -N 0 -E offset=$part_start_bytes \
+	               -m 5 -r 1 -t ext2 -d [run_dir]/ext2 \
+	               $img_file ${part_size_kb}K
+
+	# create GPT partition table
+	exec $sgdisk -z $img_file
+	exec $sgdisk -j $gpt_start_blocks $img_file
+	exec $sgdisk --new=1:$part_first_block:$part_last_block $img_file
+	exec $sgdisk --change-name=1:GENODE $img_file
+	exec $sgdisk --hybrid $img_file
+
+	# install boot loader
+	exec dd if=$uboot_bin of=$img_file bs=1024 seek=8 conv=notrunc 2> /dev/null
+
+	exec mv $img_file [run_dir].img
+
+	puts "Created SD-card image file [run_dir].img (${disk_size_kb}kiB)"
+}
