@@ -180,6 +180,9 @@ $(INSTALL_DIR)/%.dtb: %.dtb
 # dependencies of driver-specifc dts files from board's dts files
 $(foreach B,$(BOARDS),$(eval $(DRIVER)-$B.dts: $(LX_SRC_DIR)/${DTS_PATH($B)}))
 
+# dependencies of driver-specifc dts files from target-description files
+$(foreach B,$(BOARDS),$(eval $(DRIVER)-$B.dts: $(MAKEFILE_LIST)))
+
 $(DRIVER)-%.dts:
 	$(VERBOSE)$(CROSS_DEV_PREFIX)cpp -I$(LX_SRC_DIR)/include \
 	          -x assembler-with-cpp -MMD -P $(LX_SRC_DIR)/${DTS_PATH($*)} |\
