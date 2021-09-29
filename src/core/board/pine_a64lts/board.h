@@ -17,6 +17,7 @@
 #include <hw/spec/arm_64/pine_a64lts_board.h>
 #include <spec/arm/generic_timer.h>
 #include <spec/arm/virtualization/gicv2.h>
+#include <spec/arm_v8/cpu.h>
 #include <spec/arm_64/cpu/vm_state_virtualization.h>
 #include <spec/arm/virtualization/board.h>
 
