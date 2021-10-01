@@ -126,3 +126,11 @@ struct file * shmem_file_setup(const char * name,loff_t size,unsigned long flags
 	return &file;
 }
 
+
+#include <linux/sched/wake_q.h>
+
+void wake_q_add(struct wake_q_head * head,struct task_struct * task)
+{
+	lx_emul_trace(__func__);
+	wake_up_process(task);
+}

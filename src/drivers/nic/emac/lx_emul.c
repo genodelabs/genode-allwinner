@@ -141,7 +141,7 @@ void * page_frag_alloc_align(struct page_frag_cache * nc, unsigned int fragsz,
 		printk("page_frag_alloc_align: unsupported align_mask=%x\n", align_mask);
 		lx_emul_trace_and_stop(__func__);
 	}
-	return lx_emul_mem_alloc(fragsz);
+	return lx_emul_mem_alloc_aligned(fragsz, ARCH_KMALLOC_MINALIGN);
 }
 
 
