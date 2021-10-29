@@ -147,3 +147,18 @@ int request_firmware_nowait(struct module * module,bool uevent,const char * name
 	cont(NULL, context);
 	return 0;
 }
+
+
+#include <linux/sched/wake_q.h>
+
+void wake_q_add(struct wake_q_head * head,struct task_struct * task)
+{
+	lx_emul_trace(__func__);
+	wake_up_process(task);
+}
+
+
+void wake_up_q(struct wake_q_head * head)
+{
+	lx_emul_trace(__func__);
+}
