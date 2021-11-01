@@ -133,17 +133,6 @@ drivers/pinctrl/pinconf-generic.c
 drivers/pinctrl/pinconf.c
 drivers/pinctrl/pinctrl-utils.c
 drivers/pinctrl/pinmux.c
-drivers/pinctrl/sunxi/pinctrl-sun50i-a100-r.c
-drivers/pinctrl/sunxi/pinctrl-sun50i-a100.c
-drivers/pinctrl/sunxi/pinctrl-sun50i-a64-r.c
-drivers/pinctrl/sunxi/pinctrl-sun50i-a64.c
-drivers/pinctrl/sunxi/pinctrl-sun50i-h5.c
-drivers/pinctrl/sunxi/pinctrl-sun50i-h6-r.c
-drivers/pinctrl/sunxi/pinctrl-sun50i-h6.c
-drivers/pinctrl/sunxi/pinctrl-sun50i-h616-r.c
-drivers/pinctrl/sunxi/pinctrl-sun50i-h616.c
-drivers/pinctrl/sunxi/pinctrl-sun8i-h3-r.c
-drivers/pinctrl/sunxi/pinctrl-sunxi.c
 drivers/regulator/axp20x-regulator.c
 drivers/regulator/core.c
 drivers/regulator/devres.c

@@ -8,6 +8,7 @@ build {
 	drivers/platform
 	drivers/touch/goodix
 	server/event_dump
+	drivers/pin/a64
 }
 
 install_config {
@@ -41,10 +42,6 @@ install_config {
 		<resource name="RAM" quantum="1M"/>
 		<provides> <service name="Platform"/> </provides>
 		<config>
-			<device name="r_pio" type="allwinner,sun50i-a64-r-pinctrl">
-				<io_mem address="0x01f02c00" size="0x400"/>
-				<irq number="77"/>
-			</device>
 			<device name="r_ccu" type="allwinner,sun50i-a64-r-ccu">
 				<io_mem address="0x01f01400" size="0x100"/>
 			</device>
@@ -70,13 +67,15 @@ install_config {
 				<irq number="38"/>
 			</device>
 
-			<policy label="goodix_touch_drv -> " info="yes">
-				<device name="r_pio"/>
-				<device name="r_ccu"/>
-				<device name="r_intc"/>
-				<device name="r_rsb"/>
-				<device name="ccu"/>
+			<policy label="a64_pio_drv -> ">
 				<device name="pio"/>
+			</policy>
+
+			<policy label="goodix_touch_drv -> " info="yes">
+				<device name="ccu"/>
+				<device name="r_ccu"/>
+				<device name="r_rsb"/>
+				<device name="r_intc"/>
 				<device name="i2c0"/>
 			</policy>
 
@@ -84,18 +83,47 @@ install_config {
 		<route> <any-service> <parent/> </any-service> </route>
 	</start>
 
+	<start name="a64_pio_drv">
+		<resource name="RAM" quantum="1M"/>
+		<provides>
+			<service name="Pin_state"/>
+			<service name="Pin_control"/>
+			<service name="IRQ"/>
+		</provides>
+		<route>
+			<service name="ROM"> <parent/> </service>
+			<service name="CPU"> <parent/> </service>
+			<service name="PD">  <parent/> </service>
+			<service name="LOG"> <parent/> </service>
+			<service name="Platform"> <child name="platform_drv"/> </service>
+		</route>
+		<config>
+			<select name="touchscreen-i2c-sck"  bank="H" index="0" function="2"/>
+			<select name="touchscreen-i2c-sda"  bank="H" index="1" function="2"/>
+			<out    name="touchscreen-int"      bank="H" index="4"/>
+			<in     name="touchscreen-int"      bank="H" index="4" irq="falling"/>
+			<out    name="touchscreen-reset"    bank="H" index="11"/>
+
+			<policy label="goodix_touch_drv -> PH11" pin="touchscreen-reset"/>
+			<policy label="goodix_touch_drv -> PH4"  pin="touchscreen-int"/>
+		</config>
+	</start>
+
 	<start name="goodix_touch_drv" caps="250">
 		<resource name="RAM" quantum="40M"/>
 		<route>
 			<service name="ROM" label="dtb"> <parent label="goodix-pinephone.dtb"/> </service>
-			<service name="RM">       <parent/> </service>
-			<service name="ROM">      <parent/> </service>
-			<service name="PD">       <parent/> </service>
-			<service name="CPU">      <parent/> </service>
-			<service name="LOG">      <parent/> </service>
-			<service name="Timer">    <child name="timer"/>            </service>
-			<service name="Platform"> <child name="platform_drv"/>     </service>
-			<service name="Event">    <child name="event_dump"/>       </service>
+			<service name="RM">          <parent/> </service>
+			<service name="ROM">         <parent/> </service>
+			<service name="PD">          <parent/> </service>
+			<service name="CPU">         <parent/> </service>
+			<service name="LOG">         <parent/> </service>
+			<service name="Timer">       <child name="timer"/>        </service>
+			<service name="Platform">    <child name="platform_drv"/> </service>
+			<service name="Event">       <child name="event_dump"/>   </service>
+			<service name="Pin_control"> <child name="a64_pio_drv"/>  </service>
+			<service name="IRQ">
+				<child name="a64_pio_drv" label="goodix_touch_drv -> PH4"/> </service>
 		</route>
 	</start>
 
@@ -103,6 +131,7 @@ install_config {
 
 build_boot_image {
 	platform_drv
+	a64_pio_drv
 	goodix_touch_drv
 	goodix-pinephone.dtb
 	event_dump
