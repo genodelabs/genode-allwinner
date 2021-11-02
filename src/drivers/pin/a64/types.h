@@ -102,10 +102,17 @@ struct Pio_driver::Pin_id
 		         .index = Index::from_xml(node) };
 	}
 
-	bool operator != (Pin_id const &other) const
+	bool operator == (Pin_id const &other) const
 	{
-		return other.bank.value  != bank.value
-		    || other.index.value != index.value;
+		return other.bank.value  == bank.value
+		    && other.index.value == index.value;
+	}
+
+	bool operator != (Pin_id const &other) const { return !(operator == (other)); }
+
+	void print(Output &out) const
+	{
+		Genode::print(out, "P", Char('A' + (unsigned)bank.value), index.value);
 	}
 };
 
@@ -150,6 +157,11 @@ struct Pio_driver::Function
 
 		return Function { (Value)n };
 	};
+
+	Pin::Direction direction() const
+	{
+		return (value == OUTPUT) ? Pin::Direction::OUT : Pin::Direction::IN;
+	}
 };
 
 
@@ -210,17 +222,20 @@ struct Pio_driver::Attr
 	Pull        pull;
 	Function    function;
 	Irq_trigger irq_trigger;
+	bool        out_on_demand;  /* activate output on access by 'Pin_control' client */
 	bool        default_state;
 
 	Attr() = delete;
 
 	bool output() const { return function.value == Function::OUTPUT; }
+	bool irq()    const { return function.value == Function::IRQ; }
 
 	static Attr from_xml(Xml_node const &node)
 	{
 		return { .pull          = Pull::from_xml(node),
 		         .function      = Function::from_xml(node),
 		         .irq_trigger   = Irq_trigger::from_xml(node),
+		         .out_on_demand = !node.has_attribute("default"),
 		         .default_state = node.attribute_value("default", false) };
 	}
 
@@ -229,6 +244,7 @@ struct Pio_driver::Attr
 		return { .pull          = { Pull::DISABLE },
 		         .function      = { Function::DISABLE },
 		         .irq_trigger   = { Irq_trigger::RISING },
+		         .out_on_demand = false,
 		         .default_state = false };
 	}
 };

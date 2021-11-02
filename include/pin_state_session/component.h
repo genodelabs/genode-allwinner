@@ -23,9 +23,9 @@ namespace Pin_state {
 	template <typename> class Session_component;
 
 	template <typename ID>
-	struct Root : Pin::Root<Session_component<ID>>
+	struct Root : Pin::Root<Session_component<ID>, Pin::Direction::IN>
 	{
-		using Pin::Root<Session_component<ID>>::Root;
+		using Pin::Root<Session_component<ID>, Pin::Direction::IN>::Root;
 	};
 }
 
@@ -55,13 +55,16 @@ class Pin_state::Session_component : public Session_object<Session>
 		 */
 		bool state() const override
 		{
-			if (!_assignment.id.constructed())
+			if (!_assignment.target.constructed())
 				return false;
 
-			return _assignment.driver.pin_state(*_assignment.id);
+			return _assignment.driver.pin_state(_assignment.target->id);
 		}
 
-		void update_assignment() { _assignment.update(label()); }
+		void update_assignment()
+		{
+			_assignment.update(label(), Pin::Direction::IN);
+		}
 };
 
 #endif /* _INCLUDE__PIN_STATE_SESSION__COMPONENT_H_ */

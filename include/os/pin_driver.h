@@ -24,16 +24,20 @@ namespace Pin {
 
 	using namespace Genode;
 
+	enum class Direction { IN, OUT };
+
 	template <typename> struct Driver;
 	template <typename> struct Assignment;
-	template <typename> class  Root;
+
+	template <typename, Direction> class Root;
+
 	template <typename> class  Irq_session_component;
 	template <typename> class  Irq_root;
 
 	template <typename ID>
-	struct Irq_root : Pin::Root<Irq_session_component<ID>>
+	struct Irq_root : Pin::Root<Irq_session_component<ID>, Direction::IN>
 	{
-		using Pin::Root<Irq_session_component<ID>>::Root;
+		using Pin::Root<Irq_session_component<ID>, Direction::IN>::Root;
 	};
 }
 
@@ -56,15 +60,17 @@ struct Pin::Driver : Interface
 	 *
 	 * \throw Service_denied
 	 */
-	virtual ID assigned_pin(Session_label) const = 0;
+	virtual ID assigned_pin(Session_label, Direction) const = 0;
 
 	/**
 	 * Inform driver that the specified pin is in use
 	 *
 	 * The driver may use this information to maintain a reference counter
-	 * per pin.
+	 * per pin. The specified direction allows the driver to select one of
+	 * multiple pin declarations used for time-multiplexing a pin between input
+	 * and output.
 	 */
-	virtual void acquire_pin(ID) { };
+	virtual void acquire_pin(ID, Direction) { };
 
 	/**
 	 * Inform driver that the specified pin is not longer in use
@@ -74,7 +80,7 @@ struct Pin::Driver : Interface
 	 * When releasing an output pin, the driver may respond by resetting the
 	 * pin to its default state.
 	 */
-	virtual void release_pin(ID) = 0;
+	virtual void release_pin(ID, Direction) = 0;
 
 	/**
 	 * Enable/disable interrupt for specified pin
@@ -130,13 +136,27 @@ struct Pin::Assignment : Noncopyable
 {
 	Driver<ID> &driver;
 
-	Constructible<ID> id { };
+	struct Target
+	{
+		ID id;
+
+		Pin::Direction direction;
+
+		Target(ID id, Pin::Direction dir) : id(id), direction(dir) { }
+
+		bool operator != (Target const &other) const
+		{
+			return (id != other.id) || (direction != other.direction);
+		}
+	};
+
+	Constructible<Target> target { };
 
 	void _release()
 	{
-		if (id.constructed()) {
-			driver.release_pin(*id);
-			id.destruct();
+		if (target.constructed()) {
+			driver.release_pin(target->id, target->direction);
+			target.destruct();
 		}
 	}
 
@@ -153,24 +173,24 @@ struct Pin::Assignment : Noncopyable
 	 *
 	 * \return CHANGED if assignment to physical pin was modified
 	 */
-	Update update(Session_label const &label)
+	Update update(Session_label const &label, Pin::Direction direction)
 	{
 		bool changed = false;
 		try {
 			/*
 			 * \throw Service_denied
 			 */
-			ID const new_id = driver.assigned_pin(label);
+			Target const new_target { driver.assigned_pin(label, direction), direction };
 
 			/* assignment changed from one pin to another */
-			if (id.constructed() && *id != new_id) {
+			if (target.constructed() && (*target != new_target)) {
 				_release();
 				changed = true;
 			}
 
-			if (!id.constructed()) {
-				driver.acquire_pin(new_id);
-				id.construct(new_id);
+			if (!target.constructed()) {
+				driver.acquire_pin(new_target.id, new_target.direction);
+				target.construct(new_target.id, new_target.direction);
 				changed = true;
 			}
 		}
@@ -186,7 +206,7 @@ struct Pin::Assignment : Noncopyable
  *
  * \param SC  session-component type
  */
-template <typename SC>
+template <typename SC, Pin::Direction DIRECTION>
 class Pin::Root : Genode::Root_component<SC>
 {
 	private:
@@ -270,23 +290,28 @@ class Pin::Irq_session_component : public Session_object<Irq_session>
 
 		void update_assignment()
 		{
-			if (_assignment.id.constructed())
-				_assignment.driver.irq_enabled(*_assignment.id, false);
+			if (_assignment.target.constructed())
+				_assignment.driver.irq_enabled(_assignment.target->id, false);
 
-			if (_assignment.update(label()) == Assignment::Update::CHANGED) {
+			typename Assignment::Update const update_result =
+				_assignment.update(label(), Pin::Direction::IN);
+
+			if (update_result == Assignment::Update::CHANGED) {
 
 				_ack_dangling_irq();
 
-				_subscriber.construct(_assignment.driver.irq_subscribers,
-				                      *_assignment.id, _sigh);
+				if (_assignment.target.constructed())
+					_subscriber.construct(_assignment.driver.irq_subscribers,
+					                      _assignment.target->id, _sigh);
+				else
+					_subscriber.destruct();
 			}
 
-			bool const charged = _assignment.id.constructed()
+			bool const charged = _assignment.target.constructed()
 			                  && _subscriber.constructed()
 			                  && !_subscriber->outstanding_ack;
-
 			if (charged)
-				_assignment.driver.irq_enabled(*_assignment.id, true);
+				_assignment.driver.irq_enabled(_assignment.target->id, true);
 		}
 
 		/**
@@ -294,9 +319,9 @@ class Pin::Irq_session_component : public Session_object<Irq_session>
 		 */
 		void ack_irq() override
 		{
-			if (_assignment.id.constructed()) {
-				_assignment.driver.ack_irq(*_assignment.id);
-				_assignment.driver.irq_enabled(*_assignment.id, true);
+			if (_assignment.target.constructed()) {
+				_assignment.driver.ack_irq(_assignment.target->id);
+				_assignment.driver.irq_enabled(_assignment.target->id, true);
 			}
 
 			if (_subscriber.constructed())
@@ -316,8 +341,8 @@ class Pin::Irq_session_component : public Session_object<Irq_session>
 			update_assignment();
 
 			bool initial_irq = _subscriber.constructed()
-			                && _assignment.id.constructed()
-			                && _assignment.driver.irq_pending(*_assignment.id);
+			                && _assignment.target.constructed()
+			                && _assignment.driver.irq_pending(_assignment.target->id);
 
 			if (initial_irq)
 				_subscriber->submit_irq();

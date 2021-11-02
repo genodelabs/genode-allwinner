@@ -15,6 +15,7 @@
 #define _INCLUDE__PIN_CONTROL_SESSION__CONNECTION_H_
 
 #include <pin_control_session/pin_control_session.h>
+#include <base/rpc_client.h>
 #include <base/connection.h>
 
 namespace Pin_control { struct Connection; }

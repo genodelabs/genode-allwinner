@@ -23,9 +23,9 @@ namespace Pin_control {
 	template <typename> class Session_component;
 
 	template <typename ID>
-	struct Root : Pin::Root<Session_component<ID>>
+	struct Root : Pin::Root<Session_component<ID>, Pin::Direction::OUT>
 	{
-		using Pin::Root<Session_component<ID>>::Root;
+		using Pin::Root<Session_component<ID>, Pin::Direction::OUT>::Root;
 	};
 }
 
@@ -36,6 +36,8 @@ class Pin_control::Session_component : public Session_object<Session>
 	private:
 
 		Pin::Assignment<ID> _assignment;
+
+		using Session_object<Session>::label;
 
 	public:
 
@@ -55,11 +57,14 @@ class Pin_control::Session_component : public Session_object<Session>
 		 */
 		void state(bool enabled) override
 		{
-			if (_assignment.id.constructed())
-				_assignment.driver.pin_state(*_assignment.id, enabled);
+			if (_assignment.target.constructed())
+				_assignment.driver.pin_state(_assignment.target->id, enabled);
 		}
 
-		void update_assignment() { _assignment.update(label()); }
+		void update_assignment()
+		{
+			_assignment.update(label(), Pin::Direction::OUT);
+		}
 };
 
 #endif /* _INCLUDE__PIN_CONTROL_SESSION__COMPONENT_H_ */

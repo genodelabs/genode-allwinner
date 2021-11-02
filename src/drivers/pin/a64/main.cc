@@ -48,7 +48,9 @@ struct Pio_driver::Pin_declaration : List_model<Pin_declaration>::Element
 	 */
 	bool matches(Xml_node const &node) const
 	{
-		return type_matches(node) && name == Name::from_xml(node);
+		return type_matches(node)
+		    && (name == Name::from_xml(node))
+		    && (attr.function.direction() == Function::from_xml(node).direction());
 	}
 
 	Constructible<Pin_id> id { };
@@ -73,10 +75,21 @@ struct Pio_driver::Pin_declaration : List_model<Pin_declaration>::Element
 
 			id.construct(new_id);
 
-			/* update device configuration */
-			pio.configure(new_id, attr);
+			/*
+			 * Update device configuration, except for <out> pins without an
+			 * 'default' attribute. The configuration of such pins as output
+			 * depends on the lifetime of a corresponding 'Pin_control' session.
+			 */
 
-			if (ref_count == 0 && attr.function.value == Function::OUTPUT)
+			bool const output = (attr.function.value == Function::OUTPUT);
+			bool const on_demand_output = (output && attr.out_on_demand);
+
+			if (!on_demand_output)
+				pio.configure(new_id, attr);
+
+			bool const configured_default_output = (output && !attr.out_on_demand);
+
+			if (ref_count == 0 && configured_default_output)
 				pio.state(new_id, attr.default_state);
 		}
 		catch (... /* malformed pin declaration */ ) {
@@ -87,6 +100,11 @@ struct Pio_driver::Pin_declaration : List_model<Pin_declaration>::Element
 			id.destruct();
 			attr = Attr::disabled();
 		}
+	}
+
+	bool matches(Pin_id pin_id, Pin::Direction dir) const
+	{
+		return id.constructed() && (*id == pin_id) && (dir == attr.function.direction());
 	}
 };
 
@@ -156,14 +174,11 @@ struct Pio_driver::Main : Pin::Driver<Pin_id>, Irq_handler::Fn
 	List_model<Pin_declaration> _pins { };
 
 	template <typename FN>
-	void _with_pin_declaration(Pin_id id, FN const &fn)
+	void _with_pin_declaration(Pin_id id, Pin::Direction dir, FN const &fn)
 	{
 		_pins.for_each([&] (Pin_declaration &pin) {
-			if (!pin.id.constructed() || *pin.id != id)
-				return;
-
-			fn(pin);
-		});
+			if (pin.matches(id, dir))
+				fn(pin); });
 	}
 
 	bool pin_state(Pin_id id) const override
@@ -176,19 +191,43 @@ struct Pio_driver::Main : Pin::Driver<Pin_id>, Irq_handler::Fn
 		return _pio.state(id, enabled);
 	}
 
-	Pin_id assigned_pin(Session_label) const override;
+	Pin_id assigned_pin(Session_label, Pin::Direction) const override;
 
-	void acquire_pin(Pin_id id) override
+	void acquire_pin(Pin_id id, Pin::Direction dir) override
 	{
-		_with_pin_declaration(id, [&] (Pin_declaration &pin) {
-			pin.ref_count++; });
+		_with_pin_declaration(id, dir, [&] (Pin_declaration &pin) {
+
+			pin.ref_count++;
+
+			if (pin.attr.output()) {
+				if (pin.attr.out_on_demand)
+					_pio.configure(id, pin.attr);
+				else
+					_pio.state(id, pin.attr.default_state);
+			}
+
+			if (pin.attr.irq())
+				_pio.configure(id, pin.attr);
+		});
 	}
 
-	void release_pin(Pin_id id) override
+	void release_pin(Pin_id id, Pin::Direction direction) override
 	{
-		_with_pin_declaration(id, [&] (Pin_declaration &pin) {
-			if (--pin.ref_count == 0 && pin.attr.output())
-				_pio.state(id, pin.attr.default_state); });
+		_with_pin_declaration(id, direction, [&] (Pin_declaration &pin) {
+
+			if (--pin.ref_count > 0)
+				return;
+
+			if (pin.attr.output()) {
+				if (pin.attr.out_on_demand)
+					_pio.configure(id, Attr::disabled());
+				else
+					_pio.state(id, pin.attr.default_state);
+			}
+
+			if (pin.attr.irq())
+				_pio.configure(id, Attr::disabled());
+		});
 	}
 
 	void irq_enabled(Pin_id id, bool enabled) override
@@ -215,7 +254,8 @@ struct Pio_driver::Main : Pin::Driver<Pin_id>, Irq_handler::Fn
 };
 
 
-Pio_driver::Pin_id Pio_driver::Main::assigned_pin(Session_label label) const
+Pio_driver::Pin_id Pio_driver::Main::assigned_pin(Session_label label,
+                                                  Pin::Direction dir) const
 {
 	/*
 	 * \throw Service_denied
@@ -227,11 +267,12 @@ Pio_driver::Pin_id Pio_driver::Main::assigned_pin(Session_label label) const
 	Constructible<Pin_id> pin_id { };
 
 	_pins.for_each([&] (Pin_declaration const &pin) {
-		if (pin.id.constructed() && pin.name == name)
+		if (pin.name == name && pin.attr.function.direction() == dir)
 			pin_id.construct(*pin.id); });
 
 	if (!pin_id.constructed()) {
-		warning("pin for session '", label, "' unassigned");
+		char const *node_type = (dir == Pin::Direction::IN) ? "<in>" : "<out>";
+		warning("missing ", node_type, " pin assignment for session '", label, "'");
 		throw Service_denied();
 	}
 
