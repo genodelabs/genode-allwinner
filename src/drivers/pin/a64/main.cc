@@ -5,6 +5,7 @@
  */
 
 /* Genode includes */
+#include <util/list_model.h>
 #include <base/component.h>
 #include <base/heap.h>
 #include <base/attached_rom_dataspace.h>
@@ -14,7 +15,6 @@
 
 /* local includes */
 #include <pio.h>
-#include <update_list_model.h>
 
 namespace Pio_driver {
 
