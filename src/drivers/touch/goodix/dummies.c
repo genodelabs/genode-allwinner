@@ -448,3 +448,13 @@ void release_firmware(const struct firmware * fw)
 }
 
 
+#include <linux/reset.h>
+
+int reset_control_reset(struct reset_control * rstc)
+{
+	printk("reset_control_reset called, ignored\n");
+	lx_emul_trace(__func__);
+	return 0;
+}
+
+

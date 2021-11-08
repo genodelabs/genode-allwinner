@@ -5,7 +5,7 @@ import_from_depot [depot_user]/src/[base_src] \
                   [depot_user]/src/init
 
 build {
-	drivers/platform
+	drivers/platform/a64
 	drivers/touch/goodix
 	server/event_dump
 	drivers/pin/a64
@@ -39,12 +39,10 @@ install_config {
 	</start>
 
 	<start name="platform_drv" caps="150">
+		<binary name="a64_platform_drv"/>
 		<resource name="RAM" quantum="1M"/>
 		<provides> <service name="Platform"/> </provides>
 		<config>
-			<device name="r_ccu" type="allwinner,sun50i-a64-r-ccu">
-				<io_mem address="0x01f01400" size="0x100"/>
-			</device>
 			<device name="r_intc" type="allwinner,sun6i-a31-r-intc">
 				<io_mem address="0x01f00c00" size="0x400"/>
 				<irq number="64"/>
@@ -52,9 +50,7 @@ install_config {
 			<device name="r_rsb" type="allwinner,sun8i-a23-rsb">
 				<io_mem address="0x01f03400" size="0x400"/>
 				<irq number="71"/>
-			</device>
-			<device name="ccu" type="allwinner,sun50i-a64-ccu">
-				<io_mem address="0x01c20000" size="0x400"/>
+				<clock name="r_twi" driver_name=""/>
 			</device>
 			<device name="pio" type="allwinner,sun50i-a64-pinctrl">
 				<io_mem address="0x01c20800" size="0x400"/>
@@ -65,6 +61,9 @@ install_config {
 			<device name="i2c0" type="allwinner,sun6i-a31-i2c">
 				<io_mem address="0x01c2ac00" size="0x400"/>
 				<irq number="38"/>
+				<clock name="bus-i2s0" driver_name=""/>
+				<clock name="bus-twi0" driver_name=""/>
+				<reset-domain name="twi0"/>
 			</device>
 
 			<policy label="a64_pio_drv -> ">
@@ -72,8 +71,6 @@ install_config {
 			</policy>
 
 			<policy label="goodix_touch_drv -> " info="yes">
-				<device name="ccu"/>
-				<device name="r_ccu"/>
 				<device name="r_rsb"/>
 				<device name="r_intc"/>
 				<device name="i2c0"/>
@@ -130,7 +127,7 @@ install_config {
 </config>}
 
 build_boot_image {
-	platform_drv
+	a64_platform_drv
 	a64_pio_drv
 	goodix_touch_drv
 	goodix-pinephone.dtb

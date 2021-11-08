@@ -1,7 +1,7 @@
 /*
  * \brief  Dummy definitions of Linux Kernel functions
  * \author Automatically generated file - do no edit
- * \date   2021-09-28
+ * \date   2021-11-08
  */
 
 #include <lx_emul.h>
@@ -15,9 +15,9 @@ int ___ratelimit(struct ratelimit_state * rs,const char * func)
 }
 
 
-#include <asm-generic/delay.h>
+#include <linux/clk-provider.h>
 
-void __delay(unsigned long cycles)
+const char * __clk_get_name(const struct clk * clk)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -641,6 +641,14 @@ int release_resource(struct resource * old)
 }
 
 
+#include <linux/reset.h>
+
+int reset_control_assert(struct reset_control * rstc)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
 #include <linux/sched/rt.h>
 
 void rt_mutex_setprio(struct task_struct * p,struct task_struct * pi_task)
@@ -796,3 +804,4 @@ void wake_q_add_safe(struct wake_q_head * head,struct task_struct * task)
 {
 	lx_emul_trace_and_stop(__func__);
 }
+
