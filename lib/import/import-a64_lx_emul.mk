@@ -132,6 +132,8 @@ vpath %.c $(LX_SRC_DIR)
 vpath %.S $(LX_SRC_DIR)
 vpath %.S $(LX_GEN_DIR)
 
+CUSTOM_TARGET_DEPS += $(PRG_DIR)/source.list
+
 # Define per-compilation-unit CC_OPT defines needed by MODULE* macros in Linux
 define CC_OPT_LX_RULES =
 CC_OPT_$(1) = -DKBUILD_MODFILE='"$(1)"' -DKBUILD_BASENAME='"$(notdir $(1))"' -DKBUILD_MODNAME='"$(notdir $(1))"'
