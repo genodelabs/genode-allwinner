@@ -534,3 +534,11 @@ void fb_deferred_io_init(struct fb_info *info)
 {
 	lx_emul_trace_and_stop(__func__);
 }
+
+
+#include <linux/sched/wake_q.h>
+
+void wake_up_q(struct wake_q_head * head)
+{
+	lx_emul_trace(__func__);
+}
