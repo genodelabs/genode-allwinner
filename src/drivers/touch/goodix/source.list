@@ -27,7 +27,6 @@ drivers/base/regmap/regmap-irq.c
 drivers/base/regmap/regmap-mmio.c
 drivers/base/regmap/regmap-spi.c
 drivers/base/regmap/regmap.c
-drivers/bus/sunxi-rsb.c
 drivers/clk/clk-devres.c
 drivers/hid/hid-quirks.c
 drivers/hid/hid-generic.c
@@ -47,7 +46,6 @@ drivers/input/touchscreen/goodix.c
 drivers/input/touchscreen.c
 drivers/irqchip/irq-sun6i-r.c
 drivers/irqchip/irqchip.c
-drivers/mfd/axp20x-rsb.c
 drivers/mfd/axp20x.c
 drivers/mfd/mfd-core.c
 drivers/mfd/sun6i-prcm.c

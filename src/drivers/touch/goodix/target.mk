@@ -8,11 +8,13 @@ SRC_C   += lx_emul/pin.c
 SRC_C   += lx_emul/a64/pio.c
 SRC_C   += lx_emul/a64/reset.cc
 SRC_C   += lx_emul/a64/reset_core.c
+SRC_C   += lx_emul/a64/pmic.c
 SRC_C   += lx_emul/shadow/drivers/clk/clk.c
 SRC_C   += lx_emul/shadow/drivers/clk/clkdev.c
 SRC_C   += lx_emul/shadow/mm/page_alloc.c
 
 vpath lx_emul/a64/pio.c        $(REP_DIR)/src/lib
+vpath lx_emul/a64/pmic.c       $(REP_DIR)/src/lib
 vpath lx_emul/a64/reset.cc     $(REP_DIR)/src/lib
 vpath lx_emul/a64/reset_core.c $(REP_DIR)/src/lib
 
