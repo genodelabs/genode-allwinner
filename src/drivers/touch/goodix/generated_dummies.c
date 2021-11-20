@@ -1,7 +1,7 @@
 /*
  * \brief  Dummy definitions of Linux Kernel functions
  * \author Automatically generated file - do no edit
- * \date   2021-11-08
+ * \date   2021-11-19
  */
 
 #include <lx_emul.h>
@@ -591,11 +591,6 @@ unsigned long phys_initrd_size;
 phys_addr_t phys_initrd_start;
 
 
-#include <linux/pm.h>
-
-void (*pm_power_off)(void);
-
-
 #include <linux/printk.h>
 
 int printk_deferred(const char * fmt,...)
@@ -631,6 +626,38 @@ void queued_spin_lock_slowpath(struct qspinlock * lock,u32 val)
 #include <linux/reboot.h>
 
 enum reboot_mode reboot_mode;
+
+
+#include <linux/regulator/consumer.h>
+
+int regulator_bulk_register_supply_alias(struct device * dev,const char * const * id,struct device * alias_dev,const char * const * alias_id,int num_id)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/regulator/consumer.h>
+
+void regulator_bulk_unregister_supply_alias(struct device * dev,const char * const * id,int num_id)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/regulator/consumer.h>
+
+int regulator_disable(struct regulator * regulator)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/regulator/driver.h>
+
+struct regulator_dev * regulator_register(const struct regulator_desc * regulator_desc,const struct regulator_config * cfg)
+{
+	lx_emul_trace_and_stop(__func__);
+}
 
 
 #include <linux/ioport.h>

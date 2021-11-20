@@ -168,9 +168,42 @@ void wake_up_q(struct wake_q_head * head)
 
 int of_clk_set_defaults(struct device_node * node,bool clk_supplier)
 {
-	static unsigned cnt = 0;
-	if (cnt++ < 1) return -EPROBE_DEFER;
-
 	lx_emul_trace(__func__);
 	return 0;
 }
+
+
+#include <linux/regulator/consumer.h>
+#include <linux/regulator/driver.h>
+#include <../drivers/regulator/internal.h>
+
+struct regulator * devm_regulator_get(struct device * dev,const char * id)
+{
+	static struct regulator dummy = { };
+
+	/*
+	 * Artificially defer the probing of the touchscreen driver once
+	 * to prevent the driver from using the i2c bus before the i2c driver
+	 * is initialized.
+	 */
+	{
+		static bool deferred_once = false;
+		if (!deferred_once) {
+			deferred_once = true;
+			return ERR_PTR(-EPROBE_DEFER);
+		}
+	}
+
+	return &dummy;
+}
+
+
+#include <linux/regulator/consumer.h>
+
+int regulator_enable(struct regulator * regulator)
+{
+	lx_emul_trace(__func__);
+	return 0;
+}
+
+

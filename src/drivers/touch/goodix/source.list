@@ -66,13 +66,6 @@ drivers/pinctrl/pinconf-generic.c
 drivers/pinctrl/pinconf.c
 drivers/pinctrl/pinctrl-utils.c
 drivers/pinctrl/pinmux.c
-drivers/regulator/axp20x-regulator.c
-drivers/regulator/core.c
-drivers/regulator/devres.c
-drivers/regulator/dummy.c
-drivers/regulator/fixed-helper.c
-drivers/regulator/helpers.c
-drivers/regulator/of_regulator.c
 drivers/soc/sunxi/sunxi_sram.c
 kernel/irq/chip.c
 kernel/irq/devres.c
