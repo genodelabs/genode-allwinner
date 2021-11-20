@@ -9,6 +9,7 @@ SRC_C   += lx_emul/a64/pio.c
 SRC_C   += lx_emul/a64/reset.cc
 SRC_C   += lx_emul/a64/reset_core.c
 SRC_C   += lx_emul/a64/pmic.c
+SRC_C   += lx_emul/a64/r_intc.c
 SRC_C   += lx_emul/shadow/drivers/clk/clk.c
 SRC_C   += lx_emul/shadow/drivers/clk/clkdev.c
 SRC_C   += lx_emul/shadow/mm/page_alloc.c
@@ -17,6 +18,7 @@ vpath lx_emul/a64/pio.c        $(REP_DIR)/src/lib
 vpath lx_emul/a64/pmic.c       $(REP_DIR)/src/lib
 vpath lx_emul/a64/reset.cc     $(REP_DIR)/src/lib
 vpath lx_emul/a64/reset_core.c $(REP_DIR)/src/lib
+vpath lx_emul/a64/r_intc.c     $(REP_DIR)/src/lib
 
 SRC_CC  += genode_c_api/event.cc
 GENODE_C_API_SRC_DIR := $(call select_from_repositories,src/lib/genode_c_api)

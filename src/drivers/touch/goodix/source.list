@@ -44,7 +44,6 @@ drivers/i2c/algos/i2c-algo-bit.c
 drivers/i2c/i2c-boardinfo.c
 drivers/input/touchscreen/goodix.c
 drivers/input/touchscreen.c
-drivers/irqchip/irq-sun6i-r.c
 drivers/irqchip/irqchip.c
 drivers/mfd/axp20x.c
 drivers/mfd/mfd-core.c
