@@ -202,7 +202,6 @@ drivers/gpu/drm/sun4i/sun8i_ui_layer.c
 drivers/gpu/drm/sun4i/sun8i_ui_scaler.c
 drivers/gpu/drm/sun4i/sun8i_vi_layer.c
 drivers/gpu/drm/sun4i/sun8i_vi_scaler.c
-drivers/irqchip/irq-sun6i-r.c
 drivers/irqchip/irqchip.c
 drivers/mfd/axp20x-rsb.c
 drivers/mfd/axp20x.c

@@ -67,10 +67,6 @@ install_config {
 			<device name="r_ccu" type="allwinner,sun50i-a64-r-ccu">
 				<io_mem address="0x01f01400" size="0x100"/>
 			</device>
-			<device name="r_intc" type="allwinner,sun6i-a31-r-intc">
-				<io_mem address="0x01f00c00" size="0x400"/>
-				<irq number="64"/>
-			</device>
 			<device name="r_pwm" type="allwinner,sun5i-a13-pwm">
 				<io_mem address="0x01f03800" size="0x400"/>
 			</device>
@@ -95,7 +91,6 @@ install_config {
 				<device name="syscon"/>
 				<device name="de2_bus"/>
 				<device name="r_ccu"/>
-				<device name="r_intc"/>
 				<device name="r_pwm"/>
 				<device name="tcon0"/>
 				<device name="tcon1"/>
