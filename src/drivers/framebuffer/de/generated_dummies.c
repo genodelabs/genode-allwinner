@@ -1,7 +1,7 @@
 /*
  * \brief  Dummy definitions of Linux Kernel functions
  * \author Automatically generated file - do no edit
- * \date   2021-09-14
+ * \date   2021-11-20
  */
 
 #include <lx_emul.h>
@@ -1026,6 +1026,30 @@ void queued_write_lock_slowpath(struct qrwlock * lock)
 enum reboot_mode reboot_mode;
 
 
+#include <linux/regulator/consumer.h>
+
+void regulator_bulk_unregister_supply_alias(struct device * dev,const char * const * id,int num_id)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/regulator/consumer.h>
+
+int regulator_disable(struct regulator * regulator)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/regulator/consumer.h>
+
+void regulator_put(struct regulator * regulator)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
 #include <linux/ioport.h>
 
 int release_resource(struct resource * old)
@@ -1221,3 +1245,4 @@ void wake_q_add_safe(struct wake_q_head * head,struct task_struct * task)
 {
 	lx_emul_trace_and_stop(__func__);
 }
+

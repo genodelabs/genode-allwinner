@@ -134,3 +134,42 @@ void wake_q_add(struct wake_q_head * head,struct task_struct * task)
 	lx_emul_trace(__func__);
 	wake_up_process(task);
 }
+
+
+#include <linux/regulator/consumer.h>
+#include <linux/regulator/driver.h>
+#include <../drivers/regulator/internal.h>
+
+struct regulator * devm_regulator_get(struct device * dev,const char * id)
+{
+	static struct regulator dummy = { };
+
+	printk("devm_regulator_get called for regulator %s\n", id);
+
+	return &dummy;
+}
+
+
+struct regulator * regulator_get_optional(struct device * dev,const char * id)
+{
+	static struct regulator dummy = { };
+
+	printk("regulator_get_optional called, id=%s\n", id);
+
+	return &dummy;
+}
+
+
+int regulator_enable(struct regulator * regulator)
+{
+	lx_emul_trace(__func__);
+	return 0;
+}
+
+
+#include <linux/regulator/consumer.h>
+
+int regulator_is_enabled(struct regulator * regulator)
+{
+	return 0;
+}

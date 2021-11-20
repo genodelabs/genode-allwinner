@@ -5,7 +5,7 @@ import_from_depot [depot_user]/src/[base_src] \
                   [depot_user]/src/init
 
 build {
-	drivers/platform
+	drivers/platform/a64
 	drivers/framebuffer/de
 	drivers/pin/a64
 	test/framebuffer
@@ -34,6 +34,7 @@ install_config {
 
 	<start name="platform_drv" caps="150">
 		<resource name="RAM" quantum="1M"/>
+		<binary name="a64_platform_drv"/>
 		<provides> <service name="Platform"/> </provides>
 		<config>
 
@@ -54,10 +55,6 @@ install_config {
 			<device name="dsi" type="allwinner,sun50i-a64-mipi-dsi">
 				<io_mem address="0x01ca0000" size="0x1000"/>
 			</device>
-			<device name="r_rsb" type="allwinner,sun8i-a23-rsb">
-				<io_mem address="0x01f03400" size="0x400"/>
-				<irq number="71"/>
-			</device>
 			<device name="syscon" type="allwinner,sun50i-a64-system-control">
 				<io_mem address="0x01c00000" size="0x1000"/>
 			</device>
@@ -73,6 +70,7 @@ install_config {
 			<device name="tcon0" type="allwinner,sun8i-a83t-tcon-lcd">
 				<io_mem address="0x01c0c000" size="0x1000"/>
 				<irq number="118"/>
+				<power-domain name="pmic-gpio0"/>
 			</device>
 			<device name="tcon1" type="allwinner,sun8i-a83t-tcon-tv">
 				<io_mem address="0x01c0d000" size="0x1000"/>
@@ -87,7 +85,6 @@ install_config {
 				<device name="dphy"/>
 				<device name="ccu"/>
 				<device name="dsi"/>
-				<device name="r_rsb"/>
 				<device name="syscon"/>
 				<device name="de2_bus"/>
 				<device name="r_ccu"/>
@@ -151,7 +148,7 @@ install_config {
 
 build_boot_image {
 	test-framebuffer
-	platform_drv
+	a64_platform_drv
 	a64_pio_drv
 	de_fb_drv
 	de-pinephone.dtb

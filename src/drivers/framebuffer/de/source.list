@@ -28,7 +28,6 @@ drivers/base/regmap/regmap-mmio.c
 drivers/base/regmap/regmap-spi.c
 drivers/base/regmap/regmap.c
 drivers/bus/sun50i-de2.c
-drivers/bus/sunxi-rsb.c
 drivers/clk/clk-bulk.c
 drivers/clk/clk-composite.c
 drivers/clk/clk-conf.c
@@ -203,7 +202,6 @@ drivers/gpu/drm/sun4i/sun8i_ui_scaler.c
 drivers/gpu/drm/sun4i/sun8i_vi_layer.c
 drivers/gpu/drm/sun4i/sun8i_vi_scaler.c
 drivers/irqchip/irqchip.c
-drivers/mfd/axp20x-rsb.c
 drivers/mfd/axp20x.c
 drivers/mfd/mfd-core.c
 drivers/mfd/sun6i-prcm.c
@@ -230,13 +228,6 @@ drivers/pinctrl/pinmux.c
 drivers/pwm/core.c
 drivers/pwm/pwm-sun4i.c
 drivers/pwm/sysfs.c
-drivers/regulator/axp20x-regulator.c
-drivers/regulator/core.c
-drivers/regulator/devres.c
-drivers/regulator/dummy.c
-drivers/regulator/fixed-helper.c
-drivers/regulator/helpers.c
-drivers/regulator/of_regulator.c
 drivers/reset/core.c
 drivers/reset/reset-simple.c
 drivers/reset/reset-sunxi.c

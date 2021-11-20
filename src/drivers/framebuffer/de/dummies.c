@@ -542,3 +542,13 @@ void wake_up_q(struct wake_q_head * head)
 {
 	lx_emul_trace(__func__);
 }
+
+
+#include <linux/regulator/consumer.h>
+
+int regulator_bulk_register_supply_alias(struct device * dev,const char * const * id,
+                                         struct device * alias_dev,const char * const * alias_id,int num_id)
+{
+	lx_emul_trace(__func__);
+	return 0;
+}
