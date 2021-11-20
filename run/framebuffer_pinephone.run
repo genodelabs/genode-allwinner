@@ -7,6 +7,7 @@ import_from_depot [depot_user]/src/[base_src] \
 build {
 	drivers/platform
 	drivers/framebuffer/de
+	drivers/pin/a64
 	test/framebuffer
 }
 
@@ -40,14 +41,12 @@ install_config {
 				<io_mem address="0x01ca1000" size="0x1000"/>
 			</device>
 			<device name="pio" type="allwinner,sun50i-a64-pinctrl">
-				<io_mem address="0x01c20800" size="0x400"/>
+				<io_mem address="0x1c20800" size="0x400"/> <!-- Ports A-H -->
+				<io_mem address="0x1f02c00" size="0x400"/> <!-- Port L -->
 				<irq number="43"/> <!-- Port B -->
 				<irq number="49"/> <!-- Port G -->
 				<irq number="53"/> <!-- Port H -->
-			</device>
-			<device name="r_pio" type="allwinner,sun50i-a64-r-pinctrl">
-				<io_mem address="0x01f02c00" size="0x400"/>
-				<irq number="77"/>
+				<irq number="77"/> <!-- Port L -->
 			</device>
 			<device name="ccu" type="allwinner,sun50i-a64-ccu">
 				<io_mem address="0x01c20000" size="0x400"/>
@@ -84,10 +83,12 @@ install_config {
 				<irq number="119"/>
 			</device>
 
+			<policy label="a64_pio_drv -> ">
+				<device name="pio"/>
+			</policy>
+
 			<policy label="fb_drv -> " info="yes">
 				<device name="dphy"/>
-				<device name="pio"/>
-				<device name="r_pio"/>
 				<device name="ccu"/>
 				<device name="dsi"/>
 				<device name="r_rsb"/>
@@ -104,19 +105,44 @@ install_config {
 		<route> <any-service> <parent/> </any-service> </route>
 	</start>
 
+	<start name="a64_pio_drv">
+		<resource name="RAM" quantum="1M"/>
+		<provides>
+			<service name="Pin_state"/>
+			<service name="Pin_control"/>
+			<service name="IRQ"/>
+		</provides>
+		<route>
+			<service name="ROM"> <parent/> </service>
+			<service name="CPU"> <parent/> </service>
+			<service name="PD">  <parent/> </service>
+			<service name="LOG"> <parent/> </service>
+			<service name="Platform"> <child name="platform_drv"/> </service>
+		</route>
+		<config>
+			<select name="lcd-pwm"   bank="L" index="10" function="2"/>
+			<out    name="backlight" bank="H" index="10"/>
+			<out    name="lcd-reset" bank="D" index="23"/>
+
+			<policy label="fb_drv -> PH10" pin="backlight"/>
+			<policy label="fb_drv -> PD23" pin="lcd-reset"/>
+		</config>
+	</start>
+
 	<start name="fb_drv" caps="250">
 		<binary name="de_fb_drv"/>
 		<resource name="RAM" quantum="40M"/>
 		<route>
 			<service name="ROM" label="dtb"> <parent label="de-pinephone.dtb"/> </service>
-			<service name="RM">       <parent/> </service>
-			<service name="ROM">      <parent/> </service>
-			<service name="PD">       <parent/> </service>
-			<service name="CPU">      <parent/> </service>
-			<service name="LOG">      <parent/> </service>
-			<service name="Timer">    <child name="timer"/>            </service>
-			<service name="Platform"> <child name="platform_drv"/>     </service>
-			<service name="Capture">  <child name="test-framebuffer"/> </service>
+			<service name="RM">          <parent/> </service>
+			<service name="ROM">         <parent/> </service>
+			<service name="PD">          <parent/> </service>
+			<service name="CPU">         <parent/> </service>
+			<service name="LOG">         <parent/> </service>
+			<service name="Timer">       <child name="timer"/>            </service>
+			<service name="Platform">    <child name="platform_drv"/>     </service>
+			<service name="Capture">     <child name="test-framebuffer"/> </service>
+			<service name="Pin_control"> <child name="a64_pio_drv"/>      </service>
 		</route>
 	</start>
 
@@ -131,6 +157,7 @@ install_config {
 build_boot_image {
 	test-framebuffer
 	platform_drv
+	a64_pio_drv
 	de_fb_drv
 	de-pinephone.dtb
 }
