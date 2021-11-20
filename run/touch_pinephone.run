@@ -43,15 +43,7 @@ install_config {
 		<resource name="RAM" quantum="1M"/>
 		<provides> <service name="Platform"/> </provides>
 		<config>
-			<device name="r_intc" type="allwinner,sun6i-a31-r-intc">
-				<io_mem address="0x01f00c00" size="0x400"/>
-				<irq number="64"/>
-			</device>
-			<device name="r_rsb" type="allwinner,sun8i-a23-rsb">
-				<io_mem address="0x01f03400" size="0x400"/>
-				<irq number="71"/>
-				<clock name="r_twi" driver_name=""/>
-			</device>
+
 			<device name="pio" type="allwinner,sun50i-a64-pinctrl">
 				<io_mem address="0x01c20800" size="0x400"/>
 				<irq number="43"/> <!-- Port B -->
@@ -64,6 +56,7 @@ install_config {
 				<clock name="bus-i2s0" driver_name=""/>
 				<clock name="bus-twi0" driver_name=""/>
 				<reset-domain name="twi0"/>
+				<power-domain name="pmic-gpio0"/>
 			</device>
 
 			<policy label="a64_pio_drv -> ">
@@ -71,8 +64,6 @@ install_config {
 			</policy>
 
 			<policy label="goodix_touch_drv -> " info="yes">
-				<device name="r_rsb"/>
-				<device name="r_intc"/>
 				<device name="i2c0"/>
 			</policy>
 
