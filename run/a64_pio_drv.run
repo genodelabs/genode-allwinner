@@ -28,10 +28,12 @@ install_config {
 			<route> <any-service> <parent/> </any-service> </route>
 			<config>
 				<device name="pio">
-					<io_mem address="0x1c20800" size="0x400"/>
+					<io_mem address="0x1c20800" size="0x400"/> <!-- Ports A-H -->
+					<io_mem address="0x1f02c00" size="0x400"/> <!-- Port L -->
 					<irq number="43"/> <!-- Port B -->
 					<irq number="49"/> <!-- Port G -->
 					<irq number="53"/> <!-- Port H -->
+					<irq number="77"/> <!-- Port L -->
 				</device>
 				<policy label="a64_pio_drv -> ">
 					<device name="pio"/>

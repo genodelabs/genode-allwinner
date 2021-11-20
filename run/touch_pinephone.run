@@ -44,12 +44,15 @@ install_config {
 		<provides> <service name="Platform"/> </provides>
 		<config>
 
-			<device name="pio" type="allwinner,sun50i-a64-pinctrl">
-				<io_mem address="0x01c20800" size="0x400"/>
+			<device name="pio">
+				<io_mem address="0x1c20800" size="0x400"/> <!-- Ports A-H -->
+				<io_mem address="0x1f02c00" size="0x400"/> <!-- Port L -->
 				<irq number="43"/> <!-- Port B -->
 				<irq number="49"/> <!-- Port G -->
 				<irq number="53"/> <!-- Port H -->
+				<irq number="77"/> <!-- Port L -->
 			</device>
+
 			<device name="i2c0" type="allwinner,sun6i-a31-i2c">
 				<io_mem address="0x01c2ac00" size="0x400"/>
 				<irq number="38"/>

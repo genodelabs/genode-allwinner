@@ -43,7 +43,7 @@ struct Pio_driver::Name
 
 struct Pio_driver::Bank
 {
-	enum Value { B = 1, C, D, E, F, G, H, NUM } value;
+	enum Value { B = 1, C, D, E, F, G, H, L, NUM } value;
 
 	class Invalid : Exception { };
 
@@ -59,6 +59,7 @@ struct Pio_driver::Bank
 		if (name == "F") return { F };
 		if (name == "G") return { G };
 		if (name == "H") return { H };
+		if (name == "L") return { L };
 
 		warning("unknown PIO bank name '", name, "'");
 		throw Invalid();

@@ -152,6 +152,7 @@ struct Pio_driver::Main : Pin::Driver<Pin_id>, Irq_handler::Fn
 	Irq_handler _irq_port_b { _env, _device, Irq::Index { 0 }, *this };
 	Irq_handler _irq_port_g { _env, _device, Irq::Index { 1 }, *this };
 	Irq_handler _irq_port_h { _env, _device, Irq::Index { 2 }, *this };
+	Irq_handler _irq_port_l { _env, _device, Irq::Index { 3 }, *this };
 
 	/**
 	 * Irq_handler::Fn interface
