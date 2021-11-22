@@ -11,18 +11,6 @@
  * version 2.
  */
 
-#include <linux/sched.h>
-
-int __cond_resched(void)
-{
-	if (should_resched(0)) {
-		schedule();
-		return 1;
-	}
-	return 0;
-}
-
-
 #include <linux/fs.h>
 
 int alloc_chrdev_region(dev_t * dev,unsigned baseminor,unsigned count,const char * name)

@@ -71,18 +71,6 @@ bool is_vmalloc_addr(const void * x)
 }
 
 
-#include <linux/sched.h>
-
-int __cond_resched(void)
-{
-	if (should_resched(0)) {
-		schedule();
-		return 1;
-	}
-	return 0;
-}
-
-
 #include <linux/dma-mapping.h>
 
 dma_addr_t dma_map_page_attrs(struct device * dev, struct page * page,size_t offset,
