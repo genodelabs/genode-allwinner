@@ -1,0 +1,7 @@
+a64_linux
+event_session
+pin_control_session
+platform_session
+base
+os
+genode_c_api

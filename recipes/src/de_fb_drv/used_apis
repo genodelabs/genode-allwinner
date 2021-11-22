@@ -1,0 +1,8 @@
+a64_linux
+capture_session
+pin_control_session
+platform_session
+base
+blit
+os
+genode_c_api

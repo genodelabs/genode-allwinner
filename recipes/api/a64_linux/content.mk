@@ -22,7 +22,9 @@ MIRRORED_FROM_REP_DIR := lib/mk/spec/arm_v8/a64_linux_generated.mk \
                          src/a64_linux/target.inc \
                          lib/import/import-a64_lx_emul.mk \
                          lib/mk/a64_lx_emul.mk \
-                         src/include/lx_emul/initcall_order.h
+                         src/include/lx_emul/initcall_order.h \
+                         src/include/lx_emul/reset.h \
+                         src/lib/lx_emul/a64
 
 content: $(MIRRORED_FROM_REP_DIR)
 $(MIRRORED_FROM_REP_DIR):
