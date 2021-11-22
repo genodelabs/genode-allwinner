@@ -1,0 +1,79 @@
+assert_spec arm_v8a
+
+create_boot_directory
+import_from_depot [depot_user]/src/[base_src] \
+                  [depot_user]/src/init
+
+build {
+	drivers/platform/a64
+	drivers/framebuffer/de
+	drivers/pin/a64
+	drivers/touch/goodix
+	server/event_dump
+	server/event_filter
+	test/framebuffer
+}
+
+install_config {
+<config>
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="IRQ"/>
+		<service name="IO_MEM"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="CPU"/>
+		<service name="LOG"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+	<default caps="100"/>
+
+	<start name="timer">
+		<resource name="RAM" quantum="1M"/>
+		<provides><service name="Timer"/></provides>
+	</start>
+
+	<start name="drivers" caps="1500" managing_system="yes">
+		<resource name="RAM" quantum="64M"/>
+		<binary name="init"/>
+		<route>
+			<service name="ROM" label="config"> <parent label="drivers.config"/> </service>
+			<service name="Timer">   <child name="timer"/> </service>
+			<service name="Capture"> <child name="test-framebuffer"/> </service>
+			<service name="Event">   <child name="event_dump"/> </service>
+			<any-service> <parent/> </any-service>
+		</route>
+	</start>
+
+	<start name="test-framebuffer">
+		<resource name="RAM" quantum="10M"/>
+		<provides> <service name="Capture"/> </provides>
+		<config/>
+	</start>
+
+	<start name="event_dump">
+		<resource name="RAM" quantum="1M"/>
+		<provides> <service name="Event"/> </provides>
+		<config/>
+	</start>
+
+</config>}
+
+foreach file [glob "[genode_dir]/repos/allwinner/recipes/raw/drivers_interactive-pinephone/*.config"] {
+	copy_file $file [run_dir]/genode/ }
+
+build_boot_image {
+	a64_platform_drv
+	a64_pio_drv
+	de_fb_drv
+	de-pinephone.dtb
+	goodix_touch_drv
+	goodix-pinephone.dtb
+	event_filter
+	event_dump
+	test-framebuffer
+}
+
+run_genode_until forever

@@ -1,0 +1,6 @@
+_/raw/drivers_interactive-pinephone
+_/src/a64_platform_drv
+_/src/a64_pio_drv
+_/src/goodix_touch_drv
+_/src/de_fb_drv
+_/src/event_filter
