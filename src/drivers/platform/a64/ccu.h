@@ -106,7 +106,32 @@ struct Driver::Ccu : private Attached_mmio
 	:
 		Attached_mmio(env, 0x1c20000, 0x400),
 		_env(env), _clocks(clocks), _resets(resets), _osc_24m_clk(osc_24m_clk)
-	{ }
+	{
+		log("Apply CCU register trace...");
+
+		struct Pll_de_ctrl : Register<0x48, 32> { };
+		write<Pll_de_ctrl>(0x83006207);
+
+		struct De_clk : Register<0x104, 32> { };
+		write<De_clk>(0x81000000);
+
+		struct Tcon0_clk : Register<0x118, 32> { };
+		write<Tcon0_clk>(0x80000000);
+
+		struct Bus_clk_gating1 : Register<0x64, 32> { };
+		write<Bus_clk_gating1>(0x1819);
+
+		struct Pll_mipi : Register<0x40, 32> { };
+		write<Pll_mipi>(0x90c0042f);
+
+		struct Bus_clk_gating0 : Register<0x60, 32> { };
+		write<Bus_clk_gating0>(0x804742);
+
+		struct Mipi_dsi_clk : Register<0x168, 32> { };
+		write<Mipi_dsi_clk>(0x8203);
+
+		log("CCU register trace finished.");
+	}
 };
 
 #endif /* _SRC__DRIVERS__PLATFORM__A64__CCU_H_ */
