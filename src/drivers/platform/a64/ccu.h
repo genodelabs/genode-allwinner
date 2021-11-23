@@ -51,7 +51,7 @@ struct Driver::Ccu : private Attached_mmio
 	 * Bus clocks
 	 */
 
-	struct Bus_clk_gate : Gate, private Mmio
+	struct Gating_bit : Gate, private Mmio
 	{
 		unsigned const _bit;
 
@@ -59,12 +59,12 @@ struct Driver::Ccu : private Attached_mmio
 
 		struct Bus_clk_gating_reg : Register_array<0, 32, 32, 1> { };
 
-		Bus_clk_gate(Clocks     &clocks,
-		             Name const &name,
-		             Clock      &parent,
-		             void       *ccu_regs,
-		             unsigned    reg_offset,
-		             unsigned    bit)
+		Gating_bit(Clocks     &clocks,
+		           Name const &name,
+		           Clock      &parent,
+		           void       *ccu_regs,
+		           unsigned    reg_offset,
+		           unsigned    bit)
 		:
 			Gate(clocks, name, parent), Mmio((addr_t)ccu_regs + reg_offset),
 			_bit(bit)
@@ -74,15 +74,94 @@ struct Driver::Ccu : private Attached_mmio
 		void _disable() override { write<Bus_clk_gating_reg>(MASK, _bit); }
 	};
 
-	Bus_clk_gate _i2s0_clk_gate { _clocks, "bus-i2s0", _osc_24m_clk, _regs(), 0x68, 12 };
-	Bus_clk_gate _twi0_clk_gate { _clocks, "bus-twi0", _osc_24m_clk, _regs(), 0x6c, 0 };
+	Gating_bit _bus_mipi_dsi { _clocks, "bus-mipi-dsi", _osc_24m_clk, _regs(),  0x60,  1 };
+	Gating_bit _bus_tcon0    { _clocks, "bus-tcon0",    _osc_24m_clk, _regs(),  0x64,  3 };
+	Gating_bit _bus_tcon1    { _clocks, "bus-tcon1",    _osc_24m_clk, _regs(),  0x64,  4 };
+	Gating_bit _bus_de       { _clocks, "bus-de",       _osc_24m_clk, _regs(),  0x64, 12 };
+	Gating_bit _bus_i2s0     { _clocks, "bus-i2s0",     _osc_24m_clk, _regs(),  0x68, 12 };
+	Gating_bit _bus_twi0     { _clocks, "bus-twi0",     _osc_24m_clk, _regs(),  0x6c,  0 };
+	Gating_bit _tcon0_gate   { _clocks, "tcon0",        _osc_24m_clk, _regs(), 0x118, 31 };
+	Gating_bit _tcon1_gate   { _clocks, "tcon1",        _osc_24m_clk, _regs(), 0x11c, 31 };
+
+	struct De_clk : Clock, private Mmio
+	{
+		struct Reg : Register<0x104, 32>
+		{
+			struct Sclk_gating : Bitfield<31, 1> { enum { MASK = 0, PASS = 1 }; };
+			struct Src_sel     : Bitfield<24, 3> { enum { DE = 1, INITIAL = 0 }; };
+		};
+
+		De_clk(Clocks &clocks, void *ccu_regs)
+		:
+			Clock(clocks, "de-sclk"), Mmio((addr_t)ccu_regs)
+		{ }
+
+		void _enable()  override
+		{
+			write<Reg::Src_sel>(Reg::Src_sel::DE);
+			write<Reg::Sclk_gating>(Reg::Sclk_gating::PASS);
+		}
+
+		void _disable() override
+		{
+			write<Reg::Sclk_gating>(Reg::Sclk_gating::MASK);
+			write<Reg::Src_sel>(Reg::Src_sel::INITIAL);
+		}
+	} _de_clk { _clocks, _regs() };
+
+	struct Mipi_dsi_clk : Clock, private Mmio
+	{
+		struct Reg : Register<0x168, 32>
+		{
+			struct Dphy_gating  : Bitfield<15, 1> { enum { MASK = 0, PASS = 1 }; };
+			struct Dphy_src_sel : Bitfield<8,  2> { enum { PERIPH0 = 2, INITIAL = 0 }; };
+			struct Clk_div_m    : Bitfield<0,  4> { };
+		};
+
+		Mipi_dsi_clk(Clocks &clocks, void *ccu_regs)
+		:
+			Clock(clocks, "dsi-dphy"), Mmio((addr_t)ccu_regs)
+		{ }
+
+		void _enable()  override
+		{
+			write<Reg::Clk_div_m>(3);
+			write<Reg::Dphy_src_sel>(Reg::Dphy_src_sel::PERIPH0);
+			write<Reg::Dphy_gating>(Reg::Dphy_gating::PASS);
+		}
+
+		void _disable() override
+		{
+			write<Reg::Dphy_gating>(Reg::Dphy_gating::MASK);
+			write<Reg::Clk_div_m>(Reg::Dphy_src_sel::INITIAL);
+			write<Reg::Dphy_src_sel>(0);
+		}
+	} _mipi_dsi_clk { _clocks, _regs() };
+
+	struct Pll : Clock, private Mmio
+	{
+		struct Reg : Register<0x0, 32> { };
+
+		uint32_t _value = 0;
+
+		Pll(Clocks &clocks, Name name, uint32_t value, void *ccu_regs, addr_t reg_offset)
+		:
+			Clock(clocks, name), Mmio((addr_t)ccu_regs + reg_offset), _value(value)
+		{ }
+
+		void _enable()  override { write<Reg>(_value); }
+		void _disable() override { write<Reg>(0); }
+	};
+
+	Pll _pll_mipi { _clocks, "pll-mipi", 0x90c0042f, _regs(), 0x40 };
+	Pll _pll_de   { _clocks, "pll-de",   0x83006207, _regs(), 0x48 };
 
 
 	/*
 	 * Reset domains
 	 */
 
-	struct Bus_soft_rst : Reset, private Mmio
+	struct Reset_bit : Reset, private Mmio
 	{
 		unsigned const _bit;
 
@@ -90,8 +169,8 @@ struct Driver::Ccu : private Attached_mmio
 
 		struct Bus_soft_rst_reg : Register_array<0, 32, 32, 1> { };
 
-		Bus_soft_rst(Resets &resets, Name const &name,
-		             void *ccu_regs, unsigned reg_offset, unsigned bit)
+		Reset_bit(Resets &resets, Name const &name,
+		          void *ccu_regs, unsigned reg_offset, unsigned bit)
 		:
 			Reset(resets, name), Mmio((addr_t)ccu_regs + reg_offset), _bit(bit)
 		{ }
@@ -100,38 +179,18 @@ struct Driver::Ccu : private Attached_mmio
 		void _assert()   override { write<Bus_soft_rst_reg>(ASSERT,   _bit); }
 	};
 
-	Bus_soft_rst _i2c0_soft_rst { _resets, "twi0", _regs(), 0x2d8, 0 };
+	Reset_bit _mipi_dsi_rst  { _resets, "mipi-dsi", _regs(), 0x2c0,  1 };
+	Reset_bit _tcon0_rst     { _resets, "tcon0",    _regs(), 0x2c4,  3 };
+	Reset_bit _tcon1_rst     { _resets, "tcon1",    _regs(), 0x2c4,  4 };
+	Reset_bit _de_rst        { _resets, "de",       _regs(), 0x2c4, 12 };
+	Reset_bit _lvds_rst      { _resets, "lvds",     _regs(), 0x2c8,  0 };
+	Reset_bit _i2c0_soft_rst { _resets, "twi0",     _regs(), 0x2d8,  0 };
 
 	Ccu(Genode::Env &env, Clocks &clocks, Resets &resets, Clock &osc_24m_clk)
 	:
 		Attached_mmio(env, 0x1c20000, 0x400),
 		_env(env), _clocks(clocks), _resets(resets), _osc_24m_clk(osc_24m_clk)
-	{
-		log("Apply CCU register trace...");
-
-		struct Pll_de_ctrl : Register<0x48, 32> { };
-		write<Pll_de_ctrl>(0x83006207);
-
-		struct De_clk : Register<0x104, 32> { };
-		write<De_clk>(0x81000000);
-
-		struct Tcon0_clk : Register<0x118, 32> { };
-		write<Tcon0_clk>(0x80000000);
-
-		struct Bus_clk_gating1 : Register<0x64, 32> { };
-		write<Bus_clk_gating1>(0x1819);
-
-		struct Pll_mipi : Register<0x40, 32> { };
-		write<Pll_mipi>(0x90c0042f);
-
-		struct Bus_clk_gating0 : Register<0x60, 32> { };
-		write<Bus_clk_gating0>(0x804742);
-
-		struct Mipi_dsi_clk : Register<0x168, 32> { };
-		write<Mipi_dsi_clk>(0x8203);
-
-		log("CCU register trace finished.");
-	}
+	{ }
 };
 
 #endif /* _SRC__DRIVERS__PLATFORM__A64__CCU_H_ */
