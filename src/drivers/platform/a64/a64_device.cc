@@ -56,10 +56,10 @@ bool Driver::A64_device::acquire(Driver::Session_component & sc)
 		sc.env().clocks.apply(c.name, [&] (Driver::Clock &clock) {
 
 			if (c.parent.valid())
-				clock.set_parent(c.parent);
+				clock.parent(c.parent);
 
 			if (c.rate)
-				clock.set_rate(c.rate);
+				clock.rate(Driver::Clock::Rate { c.rate });
 
 			clock.enable();
 			ok = true;
@@ -89,7 +89,7 @@ void Driver::A64_device::_report_platform_specifics(Xml_generator     &xml,
 	_clock_list.for_each([&] (Clock &c) {
 		sc.env().clocks.apply(c.name, [&] (Driver::Clock &clock) {
 			xml.node("clock", [&] () {
-				xml.attribute("rate", clock.get_rate());
+				xml.attribute("rate", clock.rate().value);
 				xml.attribute("name", c.driver_name); }); }); });
 
 	_reset_domain_list.for_each([&] (Reset_domain &r) {

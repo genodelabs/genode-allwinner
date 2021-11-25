@@ -39,11 +39,8 @@ struct Driver::Ccu : private Attached_mmio
 			Clock(clocks, name), _parent(parent)
 		{ }
 
-		void set_rate(unsigned long rate) override { _parent.set_rate(rate); }
-
-		unsigned long get_rate() const override { return _parent.get_rate(); }
-
-		void set_parent(Name) override { }
+		void rate(Rate rate) override { _parent.rate(rate); }
+		Rate rate() const    override { return _parent.rate(); }
 	};
 
 

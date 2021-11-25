@@ -52,9 +52,11 @@ class Driver::Clock : Clocks::Element, Interface
 		using Clocks::Element::name;
 		using Clocks::Element::Element;
 
-		virtual void          set_rate(unsigned long) { }
-		virtual unsigned long get_rate() const        { return 0; }
-		virtual void          set_parent(Name)        { }
+		struct Rate { unsigned long value; };
+
+		virtual void rate(Rate) { }
+		virtual Rate rate() const { return Rate { }; }
+		virtual void parent(Name) { }
 
 		void enable()  { _switch.use();   }
 		void disable() { _switch.unuse(); }
@@ -65,16 +67,16 @@ class Driver::Fixed_clock : public Driver::Clock
 {
 	private:
 
-		unsigned long _rate;
+		Rate const _rate;
 
 	public:
 
-		Fixed_clock(Clocks &clocks, Name const &name, unsigned long rate)
+		Fixed_clock(Clocks &clocks, Name const &name, Rate rate)
 		:
 			Clock(clocks, name), _rate(rate)
 		{ }
 
-		unsigned long get_rate() const override { return _rate; }
+		Rate rate() const override { return _rate; }
 };
 
 
@@ -96,9 +98,9 @@ class Driver::Fixed_divider : public Driver::Clock
 			Clock(clocks, name), _parent(parent), _divider(divider)
 		{ }
 
-		unsigned long get_rate() const override
+		Rate rate() const override
 		{
-			return _parent.get_rate() / _divider;
+			return Rate { _parent.rate().value / _divider };
 		}
 };
 
