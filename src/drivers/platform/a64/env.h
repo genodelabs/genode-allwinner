@@ -45,6 +45,7 @@ struct Driver::Env
 	Powers                 powers      { };
 
 	Fixed_clock _osc_24m_clk { clocks, "osc24M", 24*1000*1000 };
+	Fixed_clock _dummy_clk   { clocks, "dummy", 1000 };
 
 	R_prcm r_prcm { env, clocks, _osc_24m_clk };
 	Ccu    ccu    { env, clocks, resets, _osc_24m_clk };
