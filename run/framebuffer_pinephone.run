@@ -38,9 +38,6 @@ install_config {
 		<provides> <service name="Platform"/> </provides>
 		<config>
 
-			<device name="dphy" type="allwinner,sun50i-a64-mipi-dphy">
-				<io_mem address="0x01ca1000" size="0x1000"/>
-			</device>
 			<device name="pio" type="allwinner,sun50i-a64-pinctrl">
 				<io_mem address="0x1c20800" size="0x400"/> <!-- Ports A-H -->
 				<io_mem address="0x1f02c00" size="0x400"/> <!-- Port L -->
@@ -49,32 +46,54 @@ install_config {
 				<irq number="53"/> <!-- Port H -->
 				<irq number="77"/> <!-- Port L -->
 			</device>
-			<device name="ccu" type="allwinner,sun50i-a64-ccu">
-				<io_mem address="0x01c20000" size="0x400"/>
+			<device name="dphy" type="allwinner,sun50i-a64-mipi-dphy">
+				<io_mem address="0x01ca1000" size="0x1000"/>
+				<clock name="bus-mipi-dsi" driver_name="bus"/>
+				<clock name="dsi-dphy"     driver_name="mod"/>
+				<reset-domain name="mipi-dsi"/>
 			</device>
 			<device name="dsi" type="allwinner,sun50i-a64-mipi-dsi">
 				<io_mem address="0x01ca0000" size="0x1000"/>
+				<reset-domain name="mipi-dsi"/>
+				<clock name="bus-mipi-dsi"/>
+				<clock name="pll-mipi"/>
 			</device>
 			<device name="syscon" type="allwinner,sun50i-a64-system-control">
 				<io_mem address="0x01c00000" size="0x1000"/>
 			</device>
 			<device name="de2_bus" type="allwinner,sun50i-a64-de2">
 				<io_mem address="0x1000000" size="0x400000"/>
-			</device>
-			<device name="r_ccu" type="allwinner,sun50i-a64-r-ccu">
-				<io_mem address="0x01f01400" size="0x100"/>
+				<reset-domain name="de"/>
+				<clock name="bus-de"  driver_name="bus"/>
+				<clock name="de-sclk" driver_name="mod"/>
+				<clock name="dummy"   driver_name="bus-mixer0"/>
+				<clock name="dummy"   driver_name="mixer0"/>
+				<clock name="dummy"   driver_name="bus-mixer1"/>
+				<clock name="dummy"   driver_name="mixer1"/>
+				<clock name="pll-de"/>
+				<clock name="pll-video0"/>
 			</device>
 			<device name="r_pwm" type="allwinner,sun5i-a13-pwm">
 				<io_mem address="0x01f03800" size="0x400"/>
+				<clock name="osc24M" driver_name="mod"/>
+				<clock name="osc24M" driver_name="bus"/>
 			</device>
 			<device name="tcon0" type="allwinner,sun8i-a83t-tcon-lcd">
 				<io_mem address="0x01c0c000" size="0x1000"/>
 				<irq number="118"/>
+				<reset-domain name="tcon0"/>
+				<reset-domain name="lvds"/>
 				<power-domain name="pmic-gpio0"/>
+				<clock name="bus-tcon0" driver_name="ahb"/>
+				<clock name="tcon0"     driver_name="tcon-ch0"/>
+				<clock name="dummy"     driver_name="tcon-pixel-clock"/>
 			</device>
 			<device name="tcon1" type="allwinner,sun8i-a83t-tcon-tv">
 				<io_mem address="0x01c0d000" size="0x1000"/>
 				<irq number="119"/>
+				<reset-domain name="tcon1"/>
+				<clock name="bus-tcon1" driver_name="ahb"/>
+				<clock name="tcon1"     driver_name="tcon-ch1"/>
 			</device>
 
 			<policy label="a64_pio_drv -> ">
@@ -83,11 +102,9 @@ install_config {
 
 			<policy label="fb_drv -> " info="yes">
 				<device name="dphy"/>
-				<device name="ccu"/>
 				<device name="dsi"/>
 				<device name="syscon"/>
 				<device name="de2_bus"/>
-				<device name="r_ccu"/>
 				<device name="r_pwm"/>
 				<device name="tcon0"/>
 				<device name="tcon1"/>

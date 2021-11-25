@@ -74,6 +74,7 @@ struct Driver::Ccu : private Attached_mmio
 	Gating_bit _bus_mipi_dsi { _clocks, "bus-mipi-dsi", _osc_24m_clk, _regs(),  0x60,  1 };
 	Gating_bit _bus_tcon0    { _clocks, "bus-tcon0",    _osc_24m_clk, _regs(),  0x64,  3 };
 	Gating_bit _bus_tcon1    { _clocks, "bus-tcon1",    _osc_24m_clk, _regs(),  0x64,  4 };
+	Gating_bit _bus_hdmi     { _clocks, "bus-hdmi",     _osc_24m_clk, _regs(),  0x64, 11 };
 	Gating_bit _bus_de       { _clocks, "bus-de",       _osc_24m_clk, _regs(),  0x64, 12 };
 	Gating_bit _bus_i2s0     { _clocks, "bus-i2s0",     _osc_24m_clk, _regs(),  0x68, 12 };
 	Gating_bit _bus_twi0     { _clocks, "bus-twi0",     _osc_24m_clk, _regs(),  0x6c,  0 };
@@ -150,8 +151,9 @@ struct Driver::Ccu : private Attached_mmio
 		void _disable() override { write<Reg>(0); }
 	};
 
-	Pll _pll_mipi { _clocks, "pll-mipi", 0x90c0042f, _regs(), 0x40 };
-	Pll _pll_de   { _clocks, "pll-de",   0x83006207, _regs(), 0x48 };
+	Pll _pll_video0 { _clocks, "pll-video0", 0x91003003, _regs(), 0x10 };
+	Pll _pll_mipi   { _clocks, "pll-mipi",   0x90c0042f, _regs(), 0x40 };
+	Pll _pll_de     { _clocks, "pll-de",     0x83006207, _regs(), 0x48 };
 
 
 	/*

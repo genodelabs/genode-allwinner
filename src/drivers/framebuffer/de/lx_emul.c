@@ -13,6 +13,11 @@
 
 #include <linux/fs.h>
 
+
+/* support for arch/arm64/lib/delay.c, libnormally defined in init/main.c */
+unsigned long loops_per_jiffy = (1<<12);
+
+
 int alloc_chrdev_region(dev_t * dev,unsigned baseminor,unsigned count,const char * name)
 {
 	static dev_t counter = 0;
@@ -131,9 +136,6 @@ void wake_q_add(struct wake_q_head * head,struct task_struct * task)
 struct regulator * devm_regulator_get(struct device * dev,const char * id)
 {
 	static struct regulator dummy = { };
-
-	printk("devm_regulator_get called for regulator %s\n", id);
-
 	return &dummy;
 }
 
@@ -141,9 +143,6 @@ struct regulator * devm_regulator_get(struct device * dev,const char * id)
 struct regulator * regulator_get_optional(struct device * dev,const char * id)
 {
 	static struct regulator dummy = { };
-
-	printk("regulator_get_optional called, id=%s\n", id);
-
 	return &dummy;
 }
 

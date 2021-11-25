@@ -1,7 +1,7 @@
 /*
  * \brief  Dummy definitions of Linux Kernel functions
  * \author Automatically generated file - do no edit
- * \date   2021-11-20
+ * \date   2021-11-24
  */
 
 #include <lx_emul.h>
@@ -15,9 +15,9 @@ int ___ratelimit(struct ratelimit_state * rs,const char * func)
 }
 
 
-#include <asm-generic/delay.h>
+#include <linux/clk-provider.h>
 
-void __delay(unsigned long cycles)
+struct clk_hw * __clk_hw_register_gate(struct device * dev,struct device_node * np,const char * name,const char * parent_name,const struct clk_hw * parent_hw,const struct clk_parent_data * parent_data,unsigned long flags,void __iomem * reg,u8 bit_idx,u8 clk_gate_flags,spinlock_t * lock)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -82,6 +82,14 @@ void __memcpy_fromio(void * to,const volatile void __iomem * from,size_t count)
 
 extern void __memcpy_toio(volatile void __iomem * to,const void * from,size_t count);
 void __memcpy_toio(volatile void __iomem * to,const void * from,size_t count)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/reset.h>
+
+struct reset_control * __of_reset_control_get(struct device_node * node,const char * id,int index,bool shared,bool optional,bool acquired)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -225,6 +233,91 @@ void bust_spinlocks(int yes)
 }
 
 
+#include <linux/clk-provider.h>
+
+const struct clk_ops clk_fixed_factor_ops;
+
+
+#include <linux/clk-provider.h>
+
+unsigned long clk_hw_get_flags(const struct clk_hw * hw)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/clk-provider.h>
+
+unsigned int clk_hw_get_num_parents(const struct clk_hw * hw)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/clk-provider.h>
+
+struct clk_hw * clk_hw_get_parent(const struct clk_hw * hw)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/clk-provider.h>
+
+struct clk_hw * clk_hw_get_parent_by_index(const struct clk_hw * hw,unsigned int index)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/clk-provider.h>
+
+unsigned long clk_hw_get_rate(const struct clk_hw * hw)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/clk-provider.h>
+
+unsigned long clk_hw_round_rate(struct clk_hw * hw,unsigned long rate)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/clk-provider.h>
+
+void clk_hw_unregister(struct clk_hw * hw)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/clk-provider.h>
+
+void clk_hw_unregister_gate(struct clk_hw * hw)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/clk.h>
+
+void clk_rate_exclusive_put(struct clk * clk)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/clk.h>
+
+long clk_round_rate(struct clk * clk,unsigned long rate)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
 #include <linux/console.h>
 
 void console_flush_on_panic(enum con_flush_mode mode)
@@ -281,6 +374,46 @@ int device_add_software_node(struct device * dev,const struct software_node * no
 #include <linux/property.h>
 
 void device_remove_software_node(struct device * dev)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/clk-provider.h>
+
+struct clk * devm_clk_register(struct device * dev,struct clk_hw * hw)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/reset-controller.h>
+
+int devm_reset_controller_register(struct device * dev,struct reset_controller_dev * rcdev)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/clk-provider.h>
+
+int divider_get_val(unsigned long rate,unsigned long parent_rate,const struct clk_div_table * table,u8 width,unsigned long flags)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/clk-provider.h>
+
+unsigned long divider_recalc_rate(struct clk_hw * hw,unsigned long parent_rate,unsigned int val,const struct clk_div_table * table,unsigned long flags,unsigned long width)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/clk-provider.h>
+
+long divider_round_rate_parent(struct clk_hw * hw,struct clk_hw * parent,unsigned long rate,unsigned long * prate,const struct clk_div_table * table,u8 width,unsigned long flags)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -919,6 +1052,38 @@ void note_interrupt(struct irq_desc * desc,irqreturn_t action_ret)
 }
 
 
+#include <linux/clk-provider.h>
+
+void of_clk_del_provider(struct device_node * np)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/clk.h>
+
+struct clk * of_clk_get_by_name(struct device_node * np,const char * name)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/of_clk.h>
+
+const char * of_clk_get_parent_name(const struct device_node * np,int index)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/clk-provider.h>
+
+struct clk_hw * of_clk_hw_onecell_get(struct of_phandle_args * clkspec,void * data)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
 #include <linux/i2c.h>
 
 struct i2c_adapter * of_get_i2c_adapter_by_node(struct device_node * node)
@@ -958,11 +1123,6 @@ unsigned long phys_initrd_size;
 #include <linux/initrd.h>
 
 phys_addr_t phys_initrd_start;
-
-
-#include <linux/pm.h>
-
-void (*pm_power_off)(void);
 
 
 #include <linux/printk.h>
@@ -1053,6 +1213,22 @@ void regulator_put(struct regulator * regulator)
 #include <linux/ioport.h>
 
 int release_resource(struct resource * old)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/reset.h>
+
+int reset_control_assert(struct reset_control * rstc)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/reset.h>
+
+void reset_control_put(struct reset_control * rstc)
 {
 	lx_emul_trace_and_stop(__func__);
 }

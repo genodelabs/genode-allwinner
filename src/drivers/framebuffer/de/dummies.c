@@ -158,20 +158,6 @@ void dma_resv_init(struct dma_resv * obj)
 }
 
 
-#include <asm-generic/delay.h>
-
-void __udelay(unsigned long usecs)
-{
-	lx_emul_trace(__func__);
-}
-
-
-void __const_udelay(unsigned long xloops)
-{
-	lx_emul_trace(__func__);
-}
-
-
 #include <linux/fb.h>
 
 void fb_set_suspend(struct fb_info *info, int state)
@@ -252,6 +238,15 @@ void wake_up_q(struct wake_q_head * head)
 
 int regulator_bulk_register_supply_alias(struct device * dev,const char * const * id,
                                          struct device * alias_dev,const char * const * alias_id,int num_id)
+{
+	lx_emul_trace(__func__);
+	return 0;
+}
+
+
+#include <linux/clk/clk-conf.h>
+
+int of_clk_set_defaults(struct device_node * node,bool clk_supplier)
 {
 	lx_emul_trace(__func__);
 	return 0;
