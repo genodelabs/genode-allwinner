@@ -113,7 +113,7 @@ struct Pio_driver::Pin_id
 
 	void print(Output &out) const
 	{
-		Genode::print(out, "P", Char('A' + (unsigned)bank.value), index.value);
+		Genode::print(out, "P", Char('A' + (char)bank.value), index.value);
 	}
 };
 

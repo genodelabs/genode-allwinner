@@ -120,7 +120,7 @@ struct Driver::Rsb : private Attached_mmio
 			write<Ctrl::Start_trans>(1);
 			_poll_and_clear_status();
 
-			return read<Data0>();
+			return read<Data0>() & 0xff;
 		}
 
 		void write_byte(Reg reg, uint8_t value)
