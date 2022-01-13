@@ -1,0 +1,209 @@
+<config>
+	<parent-provides>
+		<service name="IRQ"/>
+		<service name="IO_MEM"/>
+		<service name="ROM"/>
+		<service name="PD"/>
+		<service name="CPU"/>
+		<service name="LOG"/>
+		<service name="Timer"/>
+		<service name="Capture"/>
+		<service name="Event"/>
+	</parent-provides>
+
+	<default caps="100"/>
+
+	<start name="platform_drv" caps="150" managing_system="yes">
+		<resource name="RAM" quantum="1M"/>
+		<binary name="a64_platform_drv"/>
+		<provides> <service name="Platform"/> </provides>
+		<config>
+
+			<device name="pio" type="allwinner,sun50i-a64-pinctrl">
+				<io_mem address="0x1c20800" size="0x400"/> <!-- Ports A-H -->
+				<io_mem address="0x1f02c00" size="0x400"/> <!-- Port L -->
+				<irq number="43"/> <!-- Port B -->
+				<irq number="49"/> <!-- Port G -->
+				<irq number="53"/> <!-- Port H -->
+				<irq number="77"/> <!-- Port L -->
+			</device>
+			<device name="dphy" type="allwinner,sun50i-a64-mipi-dphy">
+				<io_mem address="0x01ca1000" size="0x1000"/>
+				<clock name="bus-mipi-dsi" driver_name="bus"/>
+				<clock name="dsi-dphy"     driver_name="mod"/>
+				<reset-domain name="mipi-dsi"/>
+			</device>
+			<device name="dsi" type="allwinner,sun50i-a64-mipi-dsi">
+				<io_mem address="0x01ca0000" size="0x1000"/>
+				<reset-domain name="mipi-dsi"/>
+				<clock name="bus-mipi-dsi"/>
+				<clock name="pll-mipi"/>
+			</device>
+			<device name="syscon" type="allwinner,sun50i-a64-system-control">
+				<io_mem address="0x01c00000" size="0x1000"/>
+			</device>
+			<device name="de2_bus" type="allwinner,sun50i-a64-de2">
+				<io_mem address="0x1000000" size="0x400000"/>
+				<reset-domain name="de"/>
+				<clock name="bus-de"  driver_name="bus"/>
+				<clock name="de-sclk" driver_name="mod"/>
+				<clock name="dummy"   driver_name="bus-mixer0"/>
+				<clock name="dummy"   driver_name="mixer0"/>
+				<clock name="dummy"   driver_name="bus-mixer1"/>
+				<clock name="dummy"   driver_name="mixer1"/>
+				<clock name="pll-de"/>
+				<clock name="pll-video0"/>
+			</device>
+			<device name="r_pwm" type="allwinner,sun5i-a13-pwm">
+				<io_mem address="0x01f03800" size="0x400"/>
+				<clock name="osc24M" driver_name="mod"/>
+				<clock name="osc24M" driver_name="bus"/>
+			</device>
+			<device name="tcon0" type="allwinner,sun8i-a83t-tcon-lcd">
+				<io_mem address="0x01c0c000" size="0x1000"/>
+				<irq number="118"/>
+				<reset-domain name="tcon0"/>
+				<reset-domain name="lvds"/>
+				<power-domain name="pmic-gpio0"/>
+				<clock name="bus-tcon0" driver_name="ahb"/>
+				<clock name="tcon0"     driver_name="tcon-ch0"/>
+				<clock name="dummy"     driver_name="tcon-pixel-clock"/>
+			</device>
+			<device name="tcon1" type="allwinner,sun8i-a83t-tcon-tv">
+				<io_mem address="0x01c0d000" size="0x1000"/>
+				<irq number="119"/>
+				<reset-domain name="tcon1"/>
+				<clock name="bus-tcon1" driver_name="ahb"/>
+				<clock name="tcon1"     driver_name="tcon-ch1"/>
+			</device>
+			<device name="i2c0" type="allwinner,sun6i-a31-i2c">
+				<io_mem address="0x01c2ac00" size="0x400"/>
+				<irq number="38"/>
+				<clock name="bus-i2s0" driver_name=""/>
+				<clock name="bus-twi0" driver_name=""/>
+				<reset-domain name="twi0"/>
+				<power-domain name="pmic-gpio0"/>
+			</device>
+
+			<policy label="a64_pio_drv -> ">
+				<device name="pio"/>
+			</policy>
+
+			<policy label="fb_drv -> " info="yes">
+				<device name="dphy"/>
+				<device name="dsi"/>
+				<device name="syscon"/>
+				<device name="de2_bus"/>
+				<device name="r_pwm"/>
+				<device name="tcon0"/>
+				<device name="tcon1"/>
+			</policy>
+
+			<policy label="goodix_touch_drv -> " info="yes">
+				<device name="i2c0"/>
+			</policy>
+
+		</config>
+		<route> <any-service> <parent/> </any-service> </route>
+	</start>
+
+	<start name="a64_pio_drv">
+		<resource name="RAM" quantum="1M"/>
+		<provides>
+			<service name="Pin_state"/>
+			<service name="Pin_control"/>
+			<service name="IRQ"/>
+		</provides>
+		<route>
+			<service name="ROM"> <parent/> </service>
+			<service name="CPU"> <parent/> </service>
+			<service name="PD">  <parent/> </service>
+			<service name="LOG"> <parent/> </service>
+			<service name="Platform"> <child name="platform_drv"/> </service>
+		</route>
+		<config>
+			<select name="touchscreen-i2c-sck"  bank="H" index="0" function="2"/>
+			<select name="touchscreen-i2c-sda"  bank="H" index="1" function="2"/>
+			<out    name="touchscreen-int"      bank="H" index="4"/>
+			<in     name="touchscreen-int"      bank="H" index="4" irq="falling"/>
+			<out    name="touchscreen-reset"    bank="H" index="11"/>
+
+			<policy label="goodix_touch_drv -> PH11" pin="touchscreen-reset"/>
+			<policy label="goodix_touch_drv -> PH4"  pin="touchscreen-int"/>
+
+			<select name="lcd-pwm"   bank="L" index="10" function="2"/>
+			<out    name="backlight" bank="H" index="10" default="0"/>
+			<out    name="lcd-reset" bank="D" index="23" default="0"/>
+
+			<policy label="fb_drv -> PH10" pin="backlight"/>
+			<policy label="fb_drv -> PD23" pin="lcd-reset"/>
+		</config>
+	</start>
+
+	<start name="fb_drv" caps="250">
+		<binary name="de_fb_drv"/>
+		<resource name="RAM" quantum="20M"/>
+		<resource name="CPU" quantum="90"/>
+		<route>
+			<service name="ROM" label="dtb"> <parent label="de-pinephone.dtb"/> </service>
+			<service name="RM">          <parent/> </service>
+			<service name="ROM">         <parent/> </service>
+			<service name="PD">          <parent/> </service>
+			<service name="CPU">         <parent/> </service>
+			<service name="LOG">         <parent/> </service>
+			<service name="Timer">       <parent/> </service>
+			<service name="Capture">     <parent/> </service>
+			<service name="Platform">    <child name="platform_drv"/> </service>
+			<service name="Pin_control"> <child name="a64_pio_drv"/>  </service>
+		</route>
+	</start>
+
+	<start name="goodix_touch_drv" caps="250">
+		<resource name="RAM" quantum="10M"/>
+		<resource name="CPU" quantum="10"/>
+		<route>
+			<service name="ROM" label="dtb"> <parent label="goodix-pinephone.dtb"/> </service>
+			<service name="RM">          <parent/> </service>
+			<service name="ROM">         <parent/> </service>
+			<service name="PD">          <parent/> </service>
+			<service name="CPU">         <parent/> </service>
+			<service name="LOG">         <parent/> </service>
+			<service name="Timer">       <parent/> </service>
+			<service name="Platform">    <child name="platform_drv"/> </service>
+			<service name="Pin_control"> <child name="a64_pio_drv"/>  </service>
+			<service name="IRQ">
+				<child name="a64_pio_drv" label="goodix_touch_drv -> PH4"/> </service>
+			<service name="Event">
+				<child name="event_filter" label="touch"/> </service>
+		</route>
+	</start>
+
+	<!-- toggle key mappings depending on the numlock state -->
+	<start name="numlock_remap_rom" caps="100">
+		<binary name="rom_filter"/>
+		<resource name="RAM" quantum="1M"/>
+		<provides> <service name="ROM"/> </provides>
+		<route>
+			<service name="ROM" label="config">  <parent label="numlock_remap.config"/> </service>
+			<service name="ROM" label="numlock"> <parent label="numlock"/> </service>
+			<any-service> <parent/> </any-service>
+		</route>
+	</start>
+
+	<start name="event_filter" caps="120">
+		<resource name="RAM" quantum="2M"/>
+		<provides> <service name="Event"/> </provides>
+		<route>
+			<service name="ROM" label="config">        <parent label="event_filter.config"/> </service>
+			<service name="ROM" label="numlock.remap"> <child name="numlock_remap_rom"/> </service>
+			<service name="ROM" label="capslock">      <parent label="capslock"/> </service>
+			<service name="ROM">   <parent/> </service>
+			<service name="PD">    <parent/> </service>
+			<service name="CPU">   <parent/> </service>
+			<service name="LOG">   <parent/> </service>
+			<service name="Timer"> <parent/> </service>
+			<service name="Event"> <parent/> </service>
+		</route>
+	</start>
+
+</config>

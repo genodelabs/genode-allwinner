@@ -1,0 +1,13 @@
+# configuration decisions
+drivers:      pinephone
+deploy:       example
+ram_fs:       depot
+event_filter: phone
+
+# selection of launcher-menu entries
+launcher: sticks_blue_backdrop system_shell touch_keyboard nano3d
+
+# supplemental depot content added to the system image
+import: pkg/drivers_interactive-pinephone
+
+build: server/event_filter app/sculpt_manager
