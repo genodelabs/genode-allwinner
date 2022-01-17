@@ -138,7 +138,7 @@ src/linux/arch/arm64/kernel/vdso/Makefile:
 	echo "arch/arm64/kernel/vdso/vdso.so:" >> $@
 
 # add content listed in the repository's source.list or dep.list files
-LX_FILE_LISTS := $(shell find $(REP_DIR) -name dep.list -or -name source.list)
+LX_FILE_LISTS := $(shell find -H $(REP_DIR) -name dep.list -or -name source.list)
 LX_FILES += $(shell cat $(LX_FILE_LISTS))
 LX_FILES := $(sort $(LX_FILES))
 MIRRORED_FROM_PORT_DIR += $(addprefix $(LX_REL_DIR)/,$(LX_FILES))
