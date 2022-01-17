@@ -123,6 +123,9 @@ CC_C_OPT += -Wno-restrict -Wno-maybe-uninitialized -Werror=date-time
 CC_C_OPT += -Werror=incompatible-pointer-types -Werror=designated-init
 CC_C_OPT += -Wno-packed-not-aligned
 
+# avoid link errors whenever the build config's CC_OLEVEL is set to -O0
+override CC_OLEVEL := -O2
+
 LX_SRC   = $(shell grep ".*\.c" $(PRG_DIR)/source.list)
 SRC_S   += $(shell grep ".*\.S" $(PRG_DIR)/source.list)
 SRC_C   += $(LX_SRC)
