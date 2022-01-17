@@ -109,14 +109,14 @@ void Pin_pulse::Main::_handle_timer()
 		}
 
 		/* schedule falling edge */
-		_timer.trigger_once(1000.0*_pcm_period_ms*_low_high_ratio);
+		_timer.trigger_once(uint64_t(1000.0*_pcm_period_ms*_low_high_ratio));
 	}
 
 	/* falling edge */
 	else {
 
 		/* schedule falling edge */
-		_timer.trigger_once(1000.0*_pcm_period_ms*(1.0 - _low_high_ratio));
+		_timer.trigger_once(uint64_t(1000.0*_pcm_period_ms*(1.0 - _low_high_ratio)));
 	}
 
 	_curr_signal = !_curr_signal;
