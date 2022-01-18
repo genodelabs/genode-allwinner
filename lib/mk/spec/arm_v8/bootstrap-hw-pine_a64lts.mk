@@ -1,3 +1,5 @@
+REQUIRES = hw
+
 REP_INC_DIR += src/bootstrap/board/pine_a64lts
 
 SRC_CC  += bootstrap/board/pine_a64lts/platform.cc

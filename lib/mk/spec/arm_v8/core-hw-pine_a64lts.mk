@@ -1,3 +1,5 @@
+REQUIRES = hw
+
 REP_INC_DIR += src/core/board/pine_a64lts
 REP_INC_DIR += src/core/spec/arm/virtualization
 
