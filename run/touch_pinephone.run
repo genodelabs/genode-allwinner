@@ -38,7 +38,7 @@ install_config {
 		<config/>
 	</start>
 
-	<start name="platform_drv" caps="150">
+	<start name="platform_drv" caps="150" managing_system="yes">
 		<binary name="a64_platform_drv"/>
 		<resource name="RAM" quantum="1M"/>
 		<provides> <service name="Platform"/> </provides>

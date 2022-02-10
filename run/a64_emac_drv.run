@@ -21,7 +21,7 @@ install_config {
 			<provides> <service name="Timer"/> </provides>
 		</start>
 
-		<start name="platform_drv" caps="200">
+		<start name="platform_drv" caps="150" managing_system="yes">
 			<resource name="RAM" quantum="1M"/>
 			<provides> <service name="Platform"/> </provides>
 			<route> <any-service> <parent/> </any-service> </route>
