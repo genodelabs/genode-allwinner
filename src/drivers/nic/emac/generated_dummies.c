@@ -1280,23 +1280,7 @@ void * vmalloc(unsigned long size)
 
 #include <linux/sched/wake_q.h>
 
-void wake_q_add(struct wake_q_head * head,struct task_struct * task)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/sched/wake_q.h>
-
 void wake_q_add_safe(struct wake_q_head * head,struct task_struct * task)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/sched/wake_q.h>
-
-void wake_up_q(struct wake_q_head * head)
 {
 	lx_emul_trace_and_stop(__func__);
 }

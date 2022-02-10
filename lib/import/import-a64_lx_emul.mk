@@ -12,11 +12,6 @@ INC_DIR += $(REP_DIR)/src/include
 LD_OPT += --defsym=jiffies=jiffies_64
 
 #
-# Quirk needed as task->state has been renamed to task->__state in Linux 5.14
-#
-CC_OPT += -D__state=state
-
-#
 # Lx_emul + Lx_kit definitions
 #
 
@@ -58,6 +53,7 @@ SRC_C   += lx_emul/shadow/mm/memblock.c
 SRC_C   += lx_emul/shadow/mm/percpu.c
 SRC_C   += lx_emul/shadow/mm/slab_common.c
 SRC_C   += lx_emul/shadow/mm/slub.c
+SRC_C   += lx_emul/spec/arm/start.c
 SRC_C   += lx_emul/virt_to_page.c
 
 SRC_CC  += lx_kit/console.cc
@@ -77,6 +73,7 @@ SHADOW_INC_DIR := $(addsuffix /lx_emul/shadow, $(DDE_LINUX_SRC_INC_DIR))
 
 INC_DIR += $(DDE_LINUX_SRC_INC_DIR)
 INC_DIR += $(DDE_LINUX_SRC_INC_DIR)/spec/arm_64
+INC_DIR += $(DDE_LINUX_SRC_INC_DIR)/spec/arm_64/lx_emul/shadow
 INC_DIR += $(SHADOW_INC_DIR)
 INC_DIR += $(REP_DIR)/src/include/lx_generated
 

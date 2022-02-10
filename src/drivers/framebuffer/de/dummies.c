@@ -226,14 +226,6 @@ void fb_deferred_io_init(struct fb_info *info)
 }
 
 
-#include <linux/sched/wake_q.h>
-
-void wake_up_q(struct wake_q_head * head)
-{
-	lx_emul_trace(__func__);
-}
-
-
 #include <linux/regulator/consumer.h>
 
 int regulator_bulk_register_supply_alias(struct device * dev,const char * const * id,

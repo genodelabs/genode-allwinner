@@ -7,6 +7,7 @@ MIRRORED_FROM_DDE_LINUX := src/lib/lx_emul \
                            src/include/lx_emul \
                            src/include/lx_user \
                            src/include/spec/arm_64/lx_kit \
+                           src/include/spec/arm_64/lx_emul \
                            src/include/lx_kit
 
 content: $(MIRRORED_FROM_DDE_LINUX)
