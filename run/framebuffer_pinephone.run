@@ -131,8 +131,8 @@ install_config {
 		</route>
 		<config>
 			<select name="lcd-pwm"   bank="L" index="10" function="2"/>
-			<out    name="backlight" bank="H" index="10"/>
-			<out    name="lcd-reset" bank="D" index="23"/>
+			<out    name="backlight" bank="H" index="10" default="0"/>
+			<out    name="lcd-reset" bank="D" index="23" default="0"/>
 
 			<policy label="fb_drv -> PH10" pin="backlight"/>
 			<policy label="fb_drv -> PD23" pin="lcd-reset"/>
