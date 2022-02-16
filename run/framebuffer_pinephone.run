@@ -2,7 +2,8 @@ assert_spec arm_v8a
 
 create_boot_directory
 import_from_depot [depot_user]/src/[base_src] \
-                  [depot_user]/src/init
+                  [depot_user]/src/init \
+                  [depot_user]/src/dynamic_rom
 
 build {
 	drivers/platform/a64
@@ -138,20 +139,69 @@ install_config {
 		</config>
 	</start>
 
-	<start name="fb_drv" caps="250">
-		<binary name="de_fb_drv"/>
-		<resource name="RAM" quantum="40M"/>
+	<start name="dynamic_rom">
+		<resource name="RAM" quantum="4M"/>
+		<provides><service name="ROM"/></provides>
+		<config verbose="yes">
+			<rom name="config">
+				<inline description="fb present">
+					<config>
+						<parent-provides>
+							<service name="ROM"/>
+							<service name="PD"/>
+							<service name="CPU"/>
+							<service name="LOG"/>
+							<service name="Platform"/>
+							<service name="Timer"/>
+							<service name="Capture"/>
+							<service name="Pin_control"/>
+						</parent-provides>
+						<start name="fb_drv" caps="250">
+							<binary name="de_fb_drv"/>
+							<resource name="RAM" quantum="40M"/>
+							<route>
+								<any-service> <parent/> </any-service>
+							</route>
+						</start>
+					</config>
+				</inline>
+				<sleep milliseconds="10000" />
+				<inline description="fb absent">
+					<config>
+						<parent-provides>
+							<service name="ROM"/>
+							<service name="PD"/>
+							<service name="CPU"/>
+							<service name="LOG"/>
+							<service name="Platform"/>
+							<service name="Timer"/>
+							<service name="Capture"/>
+							<service name="Pin_control"/>
+						</parent-provides>
+					</config>
+				</inline>
+				<sleep milliseconds="10000" />
+			</rom>
+		</config>
+	</start>
+
+	<start name="dynamic_init" caps="300">
+		<binary name="init"/>
+		<resource name="RAM" quantum="45M"/>
 		<route>
-			<service name="ROM" label="dtb"> <parent label="de-pinephone.dtb"/> </service>
-			<service name="RM">          <parent/> </service>
-			<service name="ROM">         <parent/> </service>
-			<service name="PD">          <parent/> </service>
-			<service name="CPU">         <parent/> </service>
-			<service name="LOG">         <parent/> </service>
+			<service name="ROM" label="config">
+				<child name="dynamic_rom"/> </service>
+			<service name="ROM" label_last="dtb">
+				<parent label="de-pinephone.dtb"/> </service>
+			<service name="Platform">
+				<child name="platform_drv" label="fb_drv -> "/> </service>
+			<service name="Pin_control" label_last="PH10">
+				<child name="a64_pio_drv" label="fb_drv -> PH10"/> </service>
+			<service name="Pin_control" label_last="PD23">
+				<child name="a64_pio_drv" label="fb_drv -> PD23"/> </service>
 			<service name="Timer">       <child name="timer"/>            </service>
-			<service name="Platform">    <child name="platform_drv"/>     </service>
 			<service name="Capture">     <child name="test-framebuffer"/> </service>
-			<service name="Pin_control"> <child name="a64_pio_drv"/>      </service>
+			<any-service> <parent/> </any-service>
 		</route>
 	</start>
 
