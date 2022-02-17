@@ -1,0 +1,152 @@
+build { core init timer
+        drivers/uart/ns16550 drivers/platform/a64 drivers/pin/a64
+        drivers/modem/pinephone
+        server/terminal_crosslink }
+
+create_boot_directory
+
+install_config {
+	<config verbose="yes">
+		<parent-provides>
+			<service name="LOG"/>
+			<service name="PD"/>
+			<service name="CPU"/>
+			<service name="ROM"/>
+			<service name="IO_MEM"/>
+			<service name="IRQ"/>
+		</parent-provides>
+
+		<default caps="100"/>
+		<default-route>
+			<any-service> <parent/> <any-child/> </any-service>
+		</default-route>
+
+		<start name="timer">
+			<resource name="RAM" quantum="1M"/>
+			<route> <any-service> <parent/> </any-service> </route>
+			<provides> <service name="Timer"/> </provides>
+		</start>
+
+		<start name="platform_drv" caps="150">
+			<resource name="RAM" quantum="1M"/>
+			<binary name="a64_platform_drv"/>
+			<provides> <service name="Platform"/> </provides>
+			<config>
+				<device name="uart0" type="snps,dw-apb-uart">
+					<io_mem address="0x01c28000" size="0x400"/>
+					<irq number="32"/>
+				</device>
+				<device name="uart3" type="snps,dw-apb-uart">
+					<io_mem address="0x01c28c00" size="0x400"/>
+					<irq number="35"/>
+					<clock name="bus-uart3"/>
+					<reset-domain name="uart3"/>
+				</device>
+				<device name="pio" type="allwinner,sun50i-a64-pinctrl">
+					<io_mem address="0x1c20800" size="0x400"/> <!-- Ports A-H -->
+					<io_mem address="0x1f02c00" size="0x400"/> <!-- Port L -->
+					<irq number="43"/> <!-- Port B -->
+					<irq number="49"/> <!-- Port G -->
+					<irq number="53"/> <!-- Port H -->
+					<irq number="77"/> <!-- Port L -->
+				</device>
+
+				<policy label="uart_log -> ">
+					<device name="uart0"/>
+				</policy>
+				<policy label="uart_phone -> ">
+					<device name="uart3"/>
+				</policy>
+				<policy label="a64_pio_drv -> ">
+					<device name="pio"/>
+				</policy>
+			</config>
+			<route> <any-service> <parent/> </any-service> </route>
+		</start>
+
+		<start name="a64_pio_drv">
+			<resource name="RAM" quantum="1M"/>
+			<provides>
+				<service name="Pin_state"/>
+				<service name="Pin_control"/>
+				<service name="IRQ"/>
+			</provides>
+			<route>
+				<service name="ROM"> <parent/> </service>
+				<service name="CPU"> <parent/> </service>
+				<service name="PD">  <parent/> </service>
+				<service name="LOG"> <parent/> </service>
+				<service name="Platform"> <child name="platform_drv"/> </service>
+			</route>
+			<config>
+				<out name="4g-pwr-bat" bank="L" index="7" />
+				<out name="dtr"        bank="B" index="2" />
+				<out name="enable"     bank="H" index="8" />
+				<out name="host-ready" bank="H" index="7" />
+				<out name="pwrkey"     bank="B" index="3" />
+				<out name="reset"      bank="C" index="4" />
+
+				<in name="status"  bank="H" index="9" pull="up"/>
+				<in name="ri"      bank="L" index="6"/>
+
+				<!-- select uart3 -->
+				<select name="modem-uart_tx"  bank="D" index="0" function="3"/>
+				<select name="modem-uart_rx"  bank="D" index="1" function="3"/>
+
+				<policy label="modem -> battery"    pin="4g-pwr-bat"/>
+				<policy label="modem -> dtr"        pin="dtr"/>
+				<policy label="modem -> enable"     pin="enable"/>
+				<policy label="modem -> host-ready" pin="host-ready"/>
+				<policy label="modem -> pwrkey"     pin="pwrkey"/>
+				<policy label="modem -> reset"      pin="reset"/>
+				<policy label="modem -> ri"         pin="ri"/>
+				<policy label="modem -> status"     pin="status"/>
+			</config>
+		</start>
+
+		<start name="modem">
+			<binary name="pinephone_modem"/>
+			<resource name="RAM" quantum="1M"/>
+			<config power_down="false"/>
+			<route>
+				<service name="Timer"> <child name="timer"/> </service>
+				<service name="Pin_control"> <child name="a64_pio_drv"/> </service>
+				<service name="Pin_state"> <child name="a64_pio_drv"/> </service>
+				<any-service> <parent/> </any-service>
+			</route>
+		</start>
+
+		<start name="terminal_crosslink">
+			<resource name="RAM" quantum="1M"/>
+			<provides> <service name="Terminal"/> </provides>
+		</start>
+
+		<start name="uart_log">
+			<binary name="ns16550_uart"/>
+			<resource name="RAM" quantum="2M"/>
+			<config carriage_return="true"/>
+			<route>
+				<service name="Terminal"> <child name="terminal_crosslink"/> </service>
+				<service name="Platform"> <child name="platform_drv"/> </service>
+				<any-service> <parent/> </any-service>
+			</route>
+		</start>
+
+		<start name="uart_phone">
+			<binary name="ns16550_uart"/>
+			<resource name="RAM" quantum="2M"/>
+			<route>
+				<service name="Terminal"> <child name="terminal_crosslink"/> </service>
+				<service name="Platform"> <child name="platform_drv"/> </service>
+				<any-service> <parent/> </any-service>
+			</route>
+		</start>
+	</config>
+}
+
+build_boot_image { core ld.lib.so init timer
+                   a64_platform_drv a64_pio_drv ns16550_uart
+                   pinephone_modem
+                   terminal_crosslink  }
+
+run_genode_until forever
