@@ -78,6 +78,7 @@ struct Driver::Ccu : private Attached_mmio
 	Gating_bit _bus_de       { _clocks, "bus-de",       _osc_24m_clk, _regs(),  0x64, 12 };
 	Gating_bit _bus_i2s0     { _clocks, "bus-i2s0",     _osc_24m_clk, _regs(),  0x68, 12 };
 	Gating_bit _bus_twi0     { _clocks, "bus-twi0",     _osc_24m_clk, _regs(),  0x6c,  0 };
+	Gating_bit _bus_uart3    { _clocks, "bus-uart3",    _osc_24m_clk, _regs(),  0x6c, 19 };
 	Gating_bit _tcon0_gate   { _clocks, "tcon0",        _osc_24m_clk, _regs(), 0x118, 31 };
 	Gating_bit _tcon1_gate   { _clocks, "tcon1",        _osc_24m_clk, _regs(), 0x11c, 31 };
 
@@ -184,6 +185,7 @@ struct Driver::Ccu : private Attached_mmio
 	Reset_bit _de_rst        { _resets, "de",       _regs(), 0x2c4, 12 };
 	Reset_bit _lvds_rst      { _resets, "lvds",     _regs(), 0x2c8,  0 };
 	Reset_bit _i2c0_soft_rst { _resets, "twi0",     _regs(), 0x2d8,  0 };
+	Reset_bit _uart3_rst     { _resets, "uart3",    _regs(), 0x2d8, 19 };
 
 	Ccu(Genode::Env &env, Clocks &clocks, Resets &resets, Clock &osc_24m_clk)
 	:
