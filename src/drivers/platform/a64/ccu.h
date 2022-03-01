@@ -76,11 +76,14 @@ struct Driver::Ccu : private Attached_mmio
 	Gating_bit _bus_tcon1    { _clocks, "bus-tcon1",    _osc_24m_clk, _regs(),  0x64,  4 };
 	Gating_bit _bus_hdmi     { _clocks, "bus-hdmi",     _osc_24m_clk, _regs(),  0x64, 11 };
 	Gating_bit _bus_de       { _clocks, "bus-de",       _osc_24m_clk, _regs(),  0x64, 12 };
+	Gating_bit _bus_ac       { _clocks, "bus-ac",       _osc_24m_clk, _regs(),  0x68,  0  };
 	Gating_bit _bus_i2s0     { _clocks, "bus-i2s0",     _osc_24m_clk, _regs(),  0x68, 12 };
+	Gating_bit _bus_i2s2     { _clocks, "bus-i2s2",     _osc_24m_clk, _regs(),  0x68, 14 };
 	Gating_bit _bus_twi0     { _clocks, "bus-twi0",     _osc_24m_clk, _regs(),  0x6c,  0 };
 	Gating_bit _bus_uart3    { _clocks, "bus-uart3",    _osc_24m_clk, _regs(),  0x6c, 19 };
 	Gating_bit _tcon0_gate   { _clocks, "tcon0",        _osc_24m_clk, _regs(), 0x118, 31 };
 	Gating_bit _tcon1_gate   { _clocks, "tcon1",        _osc_24m_clk, _regs(), 0x11c, 31 };
+	Gating_bit _ac           { _clocks, "ac",           _osc_24m_clk, _regs(), 0x140, 31 };
 
 	struct De_clk : Clock, private Mmio
 	{
@@ -152,6 +155,10 @@ struct Driver::Ccu : private Attached_mmio
 		void _disable() override { write<Reg>(0); }
 	};
 
+	Pll _pll_audio         { _clocks, "pll-audio",         0x91020e04, _regs(), 0x08  };
+	Pll _pll_audio_bias    { _clocks, "pll-audio-bias",    0x10040000, _regs(), 0x224 };
+	Pll _pll_audio_pattern { _clocks, "pll-audio-pattern", 0xc000b852, _regs(), 0x284 };
+
 	Pll _pll_video0 { _clocks, "pll-video0", 0x91003003, _regs(), 0x10 };
 	Pll _pll_mipi   { _clocks, "pll-mipi",   0x90c0042f, _regs(), 0x40 };
 	Pll _pll_de     { _clocks, "pll-de",     0x83006207, _regs(), 0x48 };
@@ -184,6 +191,8 @@ struct Driver::Ccu : private Attached_mmio
 	Reset_bit _tcon1_rst     { _resets, "tcon1",    _regs(), 0x2c4,  4 };
 	Reset_bit _de_rst        { _resets, "de",       _regs(), 0x2c4, 12 };
 	Reset_bit _lvds_rst      { _resets, "lvds",     _regs(), 0x2c8,  0 };
+	Reset_bit _ac_rst        { _resets, "ac",       _regs(), 0x2d0,  0 };
+	Reset_bit _pcm2_rst      { _resets, "i2s_pcm2", _regs(), 0x2d0, 14 };
 	Reset_bit _i2c0_soft_rst { _resets, "twi0",     _regs(), 0x2d8,  0 };
 	Reset_bit _uart3_rst     { _resets, "uart3",    _regs(), 0x2d8, 19 };
 
