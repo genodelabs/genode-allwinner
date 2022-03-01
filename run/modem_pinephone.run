@@ -1,3 +1,28 @@
+#
+# Script to test modem on the PinePhone
+#
+# 1. Start and wait until modem becomes ready
+# > [init -> modem] Power up modem ...
+# > [init -> modem] 0s: status: off
+# > [init -> modem] 1s: status: off
+# > [init -> modem] 2s: status: off
+# > [init -> modem] 3s: status: on
+# >
+# > RDY
+#
+# 2. Enter PIN
+# ! AT+CPIN=1234
+# > OK
+#
+# 3. Call someone
+# ! ATD0351123445
+#
+# 4. Take call
+# ! ATA
+#
+# 5. End call
+# ! ATH
+
 build { core init timer
         drivers/uart/ns16550 drivers/platform/a64 drivers/pin/a64
         drivers/modem/pinephone
@@ -32,16 +57,19 @@ install_config {
 			<binary name="a64_platform_drv"/>
 			<provides> <service name="Platform"/> </provides>
 			<config>
+
 				<device name="uart0" type="snps,dw-apb-uart">
 					<io_mem address="0x01c28000" size="0x400"/>
 					<irq number="32"/>
 				</device>
+
 				<device name="uart3" type="snps,dw-apb-uart">
 					<io_mem address="0x01c28c00" size="0x400"/>
 					<irq number="35"/>
 					<clock name="bus-uart3"/>
 					<reset-domain name="uart3"/>
 				</device>
+
 				<device name="pio" type="allwinner,sun50i-a64-pinctrl">
 					<io_mem address="0x1c20800" size="0x400"/> <!-- Ports A-H -->
 					<io_mem address="0x1f02c00" size="0x400"/> <!-- Port L -->
@@ -49,6 +77,21 @@ install_config {
 					<irq number="49"/> <!-- Port G -->
 					<irq number="53"/> <!-- Port H -->
 					<irq number="77"/> <!-- Port L -->
+				</device>
+
+				<device name="audio_codec" type="allwinner,sun50i-a64-codec">
+					<io_mem address="0x01c22c00" size="0x800"/>
+					<irq number="61"/>
+					<clock name="pll-audio"/>
+					<clock name="pll-audio-bias"/>
+					<clock name="pll-audio-pattern"/>
+					<clock name="bus-ac"/>
+					<clock name="ac"/>
+					<reset-domain name="ac"/>
+				</device>
+
+				<device name="audio_analog" type="allwinner,sun50i-a64-codec-analog">
+					<io_mem address="0x01f015c0" size="0x4"/>
 				</device>
 
 				<policy label="uart_log -> ">
@@ -59,6 +102,10 @@ install_config {
 				</policy>
 				<policy label="a64_pio_drv -> ">
 					<device name="pio"/>
+				</policy>
+				<policy label="modem -> ">
+					<device name="audio_codec"/>
+					<device name="audio_analog"/>
 				</policy>
 			</config>
 			<route> <any-service> <parent/> </any-service> </route>
@@ -79,6 +126,8 @@ install_config {
 				<service name="Platform"> <child name="platform_drv"/> </service>
 			</route>
 			<config>
+
+				<!-- modem -->
 				<out name="4g-pwr-bat" bank="L" index="7" />
 				<out name="dtr"        bank="B" index="2" />
 				<out name="enable"     bank="H" index="8" />
@@ -89,10 +138,6 @@ install_config {
 				<in name="status"  bank="H" index="9" pull="up"/>
 				<in name="ri"      bank="L" index="6"/>
 
-				<!-- select uart3 -->
-				<select name="modem-uart_tx"  bank="D" index="0" function="3"/>
-				<select name="modem-uart_rx"  bank="D" index="1" function="3"/>
-
 				<policy label="modem -> battery"    pin="4g-pwr-bat"/>
 				<policy label="modem -> dtr"        pin="dtr"/>
 				<policy label="modem -> enable"     pin="enable"/>
@@ -101,6 +146,19 @@ install_config {
 				<policy label="modem -> reset"      pin="reset"/>
 				<policy label="modem -> ri"         pin="ri"/>
 				<policy label="modem -> status"     pin="status"/>
+
+				<!-- select uart3 -->
+				<select name="modem-uart_tx"  bank="D" index="0" function="3"/>
+				<select name="modem-uart_rx"  bank="D" index="1" function="3"/>
+
+				<!-- AIF2 pins -->
+				<select name="aif2-sync" bank="B" index="4" function="2"/>
+				<select name="aif2-blk"  bank="B" index="5" function="2"/>
+				<select name="aif2-dout" bank="B" index="6" function="2"/>
+				<select name="aif2-din"  bank="B" index="7" function="2"/>
+
+				<!-- speaker -->
+				<out name="speaker-amp" bank="C" index="7" default="on"/>
 			</config>
 		</start>
 
@@ -112,6 +170,7 @@ install_config {
 				<service name="Timer"> <child name="timer"/> </service>
 				<service name="Pin_control"> <child name="a64_pio_drv"/> </service>
 				<service name="Pin_state"> <child name="a64_pio_drv"/> </service>
+				<service name="Platform"> <child name="platform_drv"/> </service>
 				<any-service> <parent/> </any-service>
 			</route>
 		</start>

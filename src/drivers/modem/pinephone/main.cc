@@ -19,6 +19,8 @@
 #include <pin_state_session/connection.h>
 #include <timer_session/connection.h>
 
+#include "audio_codec.h"
+
 namespace Modem {
 
 	using namespace Genode;
@@ -46,6 +48,8 @@ struct Modem::Main
 
 	Pin_state::Connection _pin_status  { _env, "status" };
 	Pin_state::Connection _pin_ri      { _env, "ri" };
+
+	Constructible<Audio::Device> _audio { };
 
 	bool power_up()
 	{
@@ -109,6 +113,8 @@ struct Modem::Main
 			_pin_battery.state(false);
 			return;
 		}
+
+		_audio.construct(_env);
 
 		if (!_power_down) return;
 
