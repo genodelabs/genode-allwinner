@@ -157,7 +157,7 @@ CC_OPT_drivers/gpu/drm/sun4i/sun4i_frontend += -DPHYS_OFFSET=0
 crc32table.h: gen_crc32table
 	./gen_crc32table > $@
 
-lib/crc32.c: crc32table.h
+lib/crc32.o: crc32table.h
 
 gen_crc32table: $(LX_SRC_DIR)/lib/gen_crc32table.c
 	$(HOST_CC) -I$(LX_GEN_DIR)/include $< -o $@
