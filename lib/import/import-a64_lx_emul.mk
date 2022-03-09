@@ -23,6 +23,10 @@ INC_DIR += $(LX_SRC_DIR)/scripts/dtc/libfdt
 # Additional Lx_emul + Lx_kit definitions
 #
 
+SRC_CC  += lx_emul/clock.cc
+SRC_CC  += lx_emul/io_mem.cc
+SRC_CC  += lx_emul/io_port.cc
+SRC_CC  += lx_emul/irq.cc
 SRC_C   += lx_emul/shadow/arch/arm64/kernel/smp.c
 SRC_C   += lx_emul/shadow/arch/arm64/mm/ioremap.c
 SRC_C   += lx_emul/shadow/kernel/dma/mapping.c
@@ -35,6 +39,7 @@ SRC_C   += lx_emul/shadow/lib/devres.c
 SRC_C   += lx_emul/shadow/lib/smp_processor_id.c
 SRC_C   += lx_emul/shadow/mm/memblock.c
 SRC_CC  += lx_kit/device.cc
+SRC_CC  += lx_kit/memory_dma.cc
 
 
 # Turn off some warnings
