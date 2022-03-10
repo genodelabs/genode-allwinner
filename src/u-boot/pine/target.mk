@@ -21,6 +21,7 @@ UBOOT_DISABLE_COMMON      += ENV_IS_IN_FAT
 
 unexport BOARD
 unexport MAKEFLAGS
+unexport .SHELLFLAGS
 
 
 #
