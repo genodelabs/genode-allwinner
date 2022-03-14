@@ -19,8 +19,9 @@
 namespace Audio {
 	using namespace Genode;
 	class Codec;
-	class Analog_domain;
-	class Analog;
+	class Analog_plain_access;
+	class Analog_mmio;
+	struct Analog;
 	class Device;
 }
 
@@ -228,228 +229,208 @@ class Audio::Codec : Platform::Device::Mmio
 };
 
 
-class Audio::Analog_domain : Platform::Device::Mmio
+class Audio::Analog_plain_access
 {
+	friend Genode::Register_set_plain_access;
+
 	private:
 
-		struct Ac_pr : Register<0x0, 32>
+		class Analog_domain : Platform::Device::Mmio
 		{
-			struct Out  : Bitfield<0, 8>  { };
-			struct In   : Bitfield<8, 8>  { };
-			struct Addr : Bitfield<16, 5> { };
-			struct Rw   : Bitfield<24, 1> { };
-			struct Rst  : Bitfield<28, 1> { };
+			private:
+
+				struct Ac_pr : Register<0x0, 32>
+				{
+					struct Out  : Bitfield<0, 8>  { };
+					struct In   : Bitfield<8, 8>  { };
+					struct Addr : Bitfield<16, 5> { };
+					struct Rw   : Bitfield<24, 1> { };
+					struct Rst  : Bitfield<28, 1> { };
+				};
+
+			public:
+
+				Analog_domain(Platform::Device &device)
+				: Mmio(device)
+				{ }
+
+				void write(uint8_t const opcode, uint8_t const data)
+				{
+					using Mmio = Platform::Device::Mmio;
+					Mmio::write<Ac_pr::Rst>(1);
+					Mmio::write<Ac_pr::Addr>(opcode);
+					Mmio::write<Ac_pr::In>(data);
+					Mmio::write<Ac_pr::Rw>(1);
+					Mmio::write<Ac_pr::Rw>(0);
+				}
+
+				uint8_t read(uint8_t const opcode)
+				{
+					using Mmio = Platform::Device::Mmio;
+					Mmio::write<Ac_pr::Rst>(1);
+					Mmio::write<Ac_pr::Rw>(0);
+					Mmio::write<Ac_pr::Addr>(opcode);
+					return uint8_t(Mmio::read<Ac_pr::Out>());
+				}
 		};
-
-	public:
-
-		Analog_domain(Platform::Device &device)
-		: Mmio(device)
-		{ }
-
-		void write(uint8_t opcode, uint8_t data)
-		{
-			using Mmio = Platform::Device::Mmio;
-			Mmio::write<Ac_pr::Rst>(1);
-			Mmio::write<Ac_pr::Addr>(opcode);
-			Mmio::write<Ac_pr::In>(data);
-			Mmio::write<Ac_pr::Rw>(1);
-			Mmio::write<Ac_pr::Rw>(0);
-		}
-
-		uint8_t read(uint8_t opcode)
-		{
-			using Mmio = Platform::Device::Mmio;
-			Mmio::write<Ac_pr::Rst>(1);
-			Mmio::write<Ac_pr::Rw>(0);
-			Mmio::write<Ac_pr::Addr>(opcode);
-			return Mmio::read<Ac_pr::Out>();
-		}
-};
-
-
-class Audio::Analog
-{
-	private:
 
 		Analog_domain _analog;
 
-		template <uint8_t _OPCODE>
-		struct Command : Genode::Register<8>
+		/**
+		 * Write '_ACCESS_T' typed 'value' Ac_pr
+		 */
+		template <typename ACCESS_T>
+		inline void _write(off_t const offset, ACCESS_T const value)
 		{
-			enum { OPCODE = _OPCODE };
-		};
-
-		template <class COMMAND>
-		void write(uint8_t data)
-		{
-			_analog.write(COMMAND::OPCODE, data);
+			_analog.write(uint8_t(offset), value);
 		}
 
-		template <class COMMAND>
-		uint8_t read()
+		/**
+		 * Read '_ACCESS_T' typed from  Ac_pr
+		 */
+		template <typename ACCESS_T>
+		inline ACCESS_T _read(off_t const offset)
 		{
-			return _analog.read(COMMAND::OPCODE);
+			return _analog.read(uint8_t(offset));
 		}
 
-		/**************
-		 ** Commands **
-		 **************/
+	public:
 
-		struct Output_mixer_left : Command<0x1>
+		Analog_plain_access(Platform::Device &device)
+		: _analog(device) { }
+};
+
+
+struct Audio::Analog_mmio : Analog_plain_access, Register_set<Analog_plain_access>
+{
+	Analog_mmio(Platform::Device &device)
+	:
+		Analog_plain_access(device),
+		Register_set(*static_cast<Analog_plain_access *>(this)) { }
+};
+
+
+class Audio::Analog : public Analog_mmio
+{
+	private:
+
+		struct Output_mixer_left : Register<0x1, 8>
 		{
 			struct Dac_mute_left : Bitfield<1, 1> { };
 		};
 
-		Output_mixer_left::access_t _out_mixer_left { 0 };
-
-		struct Output_mixer_right : Command<0x2>
+		struct Output_mixer_right : Register<0x2, 8>
 		{
 			struct Dac_mute_right : Bitfield<1, 1> { };
 		};
 
-		Output_mixer_right::access_t _out_mixer_right { 0 };
-
-		struct Earpiece_control0 : Command<0x3>
+		struct Earpiece_control0 : Register<0x3, 8>
 		{
 			struct Input_src : Bitfield<0, 2> { enum { DACL = 1 }; };
 		};
 
-		Earpiece_control0::access_t _earpiece0 { 0 };
-
-		struct Earpiece_control1 : Command<0x4>
+		struct Earpiece_control1 : Register<0x4, 8>
 		{
 			struct Enable_pa : Bitfield<7, 1> { };
 			struct Mute_off  : Bitfield<6, 1> { };
 			struct Volume    : Bitfield<0, 5> { }; /* mute: 0 and 1 */
 		};
 
-		Earpiece_control1::access_t _earpiece1 { 0 };
-
-		struct Lineout_control0 : Command<0x5>
+		struct Lineout_control0 : Register<0x5, 8>
 		{
 			struct Right_src : Bitfield<4, 1> { enum { MONO_DIFF = 1  }; };
 			struct Left_src  : Bitfield<5, 1> { enum { LEFT_RIGHT = 1 }; };
 			struct Enable    : Bitfield<6, 2> { enum { LEFT_RIGHT = 3 }; };
 		};
 
-		Lineout_control0::access_t _lineout0 { 0 };
-
-		struct Lineout_control1 : Command<0x6>
+		struct Lineout_control1 : Register<0x6, 8>
 		{
 			struct Volume : Bitfield<0, 5> { }; /* mute: 0 and 1 */
 		};
 
-		Lineout_control1::access_t _lineout1 { 0 };
-
-		struct Mic1_control : Command<0x7>
+		struct Mic1_control : Register<0x7, 8>
 		{
 			struct Boost            : Bitfield<0, 3> { };
 			struct Boost_amp_enable : Bitfield<3, 1> { };
 			struct Gain             : Bitfield<4, 3> { };
 		};
 
-		Mic1_control::access_t _mic1 { 0x34 };
-
-		struct Dac_mixer : Command<0xa>
+		struct Dac_mixer : Register<0xa, 8>
 		{
 			enum { LEFT_RIGHT = 0x3 };
 			struct Dac_enable   : Bitfield<6, 2> { };
 			struct Mixer_enable : Bitfield<4, 2> { };
 		};
 
-		Dac_mixer::access_t _dac_mixer { 0 };
-
-		struct Adc_mixer_left : Command<0xb>
+		struct Adc_mixer_left : Register<0xb, 8>
 		{
 			struct Mic1 : Bitfield<6, 1> { };
 		};
 
-		Adc_mixer_left::access_t _adc_left { 0 };
-
-		struct Adc_mixer_right : Command<0xc>
+		struct Adc_mixer_right : Register<0xc, 8>
 		{
 			struct Mic1 : Bitfield<6, 1> { };
 		};
 
-		Adc_mixer_left::access_t _adc_right { 0 };
-
-		struct Adc : Command<0xd>
+		struct Adc : Register<0xd, 8>
 		{
 			struct Input_gain    : Bitfield<0, 3> { };
 			struct Left_enable   : Bitfield<6, 1> { };
 			struct Right_enable  : Bitfield<7, 1> { };
 		};
 
-		Adc::access_t _adc = { 0x3 };
-
-		struct Hs_mbias_control : Command<0xe>
+		struct Hs_mbias_control : Register<0xe, 8>
 		{
 			struct Master_mic_enable : Bitfield<7, 1> { };
 		};
-
-		Hs_mbias_control::access_t _hs_mbias { 0x21 };
 
 	public:
 
 		void enable_mic1()
 		{
-			Mic1_control::Boost_amp_enable::set(_mic1, 1);
-			write<Mic1_control>(_mic1);
+			write<Mic1_control::Boost_amp_enable>(1);
 
-			Adc_mixer_left::Mic1::set(_adc_left, 1);
-			write<Adc_mixer_left>(_adc_left);
+			write<Adc_mixer_left::Mic1>(1);
+			write<Adc_mixer_right::Mic1>(1);
 
-			Adc_mixer_right::Mic1::set(_adc_right, 1);
-			write<Adc_mixer_right>(_adc_right);
+			write<Adc::Left_enable>(1);
+			write<Adc::Right_enable>(1);
 
-			Adc::Left_enable::set(_adc, 1);
-			Adc::Right_enable::set(_adc, 1);
-			write<Adc>(_adc);
-
-			Hs_mbias_control::Master_mic_enable::set(_hs_mbias, 1);
-			write<Hs_mbias_control>(_hs_mbias);
+			write<Hs_mbias_control::Master_mic_enable>(1);
 		}
 
 		void enable_earpiece()
 		{
 			using E0 = Earpiece_control0;
-			E0::Input_src::set(_earpiece0, E0::Input_src::DACL);
-			write<E0>(_earpiece0);
+			write<E0::Input_src>(E0::Input_src::DACL);
 
-			Earpiece_control1::Enable_pa::set(_earpiece1, 1);
-			Earpiece_control1::Mute_off::set(_earpiece1,  1);
-			Earpiece_control1::Volume::set(_earpiece1, 0x1f); /* maximum volume */
-			write<Earpiece_control1>(_earpiece1);
+			write<Earpiece_control1::Enable_pa>(1);
+			write<Earpiece_control1::Mute_off>(1);
+			write<Earpiece_control1::Volume>(0x1f); /* maximum volume */
 
-			Dac_mixer::Dac_enable::set(_dac_mixer, Dac_mixer::LEFT_RIGHT);
-			Dac_mixer::Mixer_enable::set(_dac_mixer, Dac_mixer::LEFT_RIGHT);
-			write<Dac_mixer>(_dac_mixer);
+			write<Dac_mixer::Dac_enable>(Dac_mixer::LEFT_RIGHT);
+			write<Dac_mixer::Mixer_enable>(Dac_mixer::LEFT_RIGHT);
 		}
 
 		void enable_speaker()
 		{
-			Lineout_control1::Volume::set(_lineout1, 0x1f); /* maximum volume */
-			write<Lineout_control1>(_lineout1);
+			write<Lineout_control1::Volume>(0x1f); /* maximum volume */
 
 			using L0 = Lineout_control0;
-			L0::Right_src::set(_lineout0, L0::Right_src::MONO_DIFF);
-			L0::Left_src::set(_lineout0, L0::Left_src::LEFT_RIGHT);
-			L0::Enable::set(_lineout0, L0::Enable::LEFT_RIGHT);
-			write<L0>(_lineout0);
+			write<L0::Right_src>(L0::Right_src::MONO_DIFF);
+			write<L0::Left_src>(L0::Left_src::LEFT_RIGHT);
+			write<L0::Enable>(L0::Enable::LEFT_RIGHT);
 
-			Output_mixer_left::Dac_mute_left::set(_out_mixer_left, 1);
-			Output_mixer_right::Dac_mute_right::set(_out_mixer_right, 1);
-			write<Output_mixer_left>(_out_mixer_left);
-			write<Output_mixer_right>(_out_mixer_right);
+			write<Output_mixer_left::Dac_mute_left>(1);
+			write<Output_mixer_right::Dac_mute_right>(1);
 
-			Dac_mixer::Dac_enable::set(_dac_mixer, Dac_mixer::LEFT_RIGHT);
-			Dac_mixer::Mixer_enable::set(_dac_mixer, Dac_mixer::LEFT_RIGHT);
-			write<Dac_mixer>(_dac_mixer);
+			write<Dac_mixer::Dac_enable>(Dac_mixer::LEFT_RIGHT);
+			write<Dac_mixer::Mixer_enable>(Dac_mixer::LEFT_RIGHT);
 		}
 
 		Analog(Platform::Device &device)
-		: _analog(device)
+		:
+		  Analog_mmio(device)
 		{
 			enable_mic1();
 			enable_earpiece();

@@ -14,14 +14,17 @@
 # ! AT+CPIN=1234
 # > OK
 #
-# 3. Call someone
+# 3.1. Call someone (ATD<number>)
 # ! ATD0351123445
 #
-# 4. Take call
+# 3.2. Take call
 # ! ATA
 #
-# 5. End call
+# 4. End call
 # ! ATH
+#
+# 5. Shutdown modem before reset/poweroff
+# ! AT+QPOWD
 
 build { core init timer
         drivers/uart/ns16550 drivers/platform/a64 drivers/pin/a64
