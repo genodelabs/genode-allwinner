@@ -389,6 +389,8 @@ class Audio::Analog : public Analog_mmio
 		void enable_mic1()
 		{
 			write<Mic1_control::Boost_amp_enable>(1);
+			write<Mic1_control::Boost>(0);
+			write<Mic1_control::Gain>(0x5);
 
 			write<Adc_mixer_left::Mic1>(1);
 			write<Adc_mixer_right::Mic1>(1);
