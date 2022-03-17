@@ -22,43 +22,43 @@ namespace Driver { struct Main; };
 
 struct Driver::Main
 {
-	void update_config();
+	Env                  & _env;
+	Heap                   _heap        { _env.ram(), _env.rm() };
+	Sliced_heap            _sliced_heap { _env.ram(), _env.rm() };
+	Attached_rom_dataspace _config      { _env, "config" };
+	Device_model           _devices     { _heap };
 
-	Env                  & env;
-	Heap                   heap           { env.ram(), env.rm() };
-	Sliced_heap            sliced_heap    { env.ram(), env.rm() };
-	Attached_rom_dataspace config         { env, "config"       };
-	Device_model           devices        { heap                };
+	Fixed_clock _osc_24m_clk { _devices.clocks(), "osc24M",
+	                           Clock::Rate { 24*1000*1000 } };
+	Fixed_clock _dummy_clk   { _devices.clocks(), "dummy",
+	                           Clock::Rate { 1000 } };
 
-	Fixed_clock osc_24m_clk { devices.clocks(), "osc24M",
-	                          Clock::Rate { 24*1000*1000 } };
-	Fixed_clock dummy_clk   { devices.clocks(), "dummy",
-	                          Clock::Rate { 1000 } };
+	R_prcm _r_prcm { _env, _devices.clocks(), _osc_24m_clk };
+	Ccu    _ccu    { _env, _devices.clocks(), _devices.resets(), _osc_24m_clk };
+	Pmic   _pmic   { _env, _devices.powers() };
 
-	R_prcm r_prcm { env, devices.clocks(), osc_24m_clk };
-	Ccu    ccu    { env, devices.clocks(), devices.resets(), osc_24m_clk };
-	Pmic   pmic   { env, devices.powers() };
+	void _handle_config();
 
-	Signal_handler<Main>   config_handler { env.ep(), *this,
-	                                      &Main::update_config };
-	Driver::Root           root           { env, sliced_heap, config, devices };
+	Signal_handler<Main> _config_handler { _env.ep(), *this,
+	                                       &Main::_handle_config };
 
-	Main(Genode::Env & e)
-	: env(e)
+	Driver::Root _root { _env, _sliced_heap, _config, _devices };
+
+	Main(Genode::Env &env) : _env(env)
 	{
-		devices.update(config.xml());
-		config.sigh(config_handler);
-		env.parent().announce(env.ep().manage(root));
+		_devices.update(_config.xml());
+		_config.sigh(_config_handler);
+		_env.parent().announce(_env.ep().manage(_root));
 	}
 };
 
 
-void Driver::Main::update_config()
+void Driver::Main::_handle_config()
 {
-	config.update();
-	devices.update(config.xml());
-	root.update_policy();
+	_config.update();
+	_devices.update(_config.xml());
+	_root.update_policy();
 }
 
-void Component::construct(Genode::Env &env) {
-	static Driver::Main main(env); }
+
+void Component::construct(Genode::Env &env) { static Driver::Main main(env); }
