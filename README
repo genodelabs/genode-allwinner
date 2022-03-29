@@ -22,6 +22,18 @@ definitions so that the _allwinner_ repository is prioritized over the others.
 ! REPOSITORIES += $(GENODE_DIR)/repos/allwinner
 
 
+Allwinner-specific tool dependencies
+------------------------------------
+
+The Allwinner A64 SoC features a dedicated system-control processor (SCP) in
+addition the the ARM application processor. This repository contains a custom
+firmware for the SCP (at _src/scp/a64/_), which is incorporated into the
+U-Boot boot loader (_src/u-boot/pine/). As the SCP (aka AR100) is based on the
+OpenRISC instruction-set architecture, the build process of the SCP firmware
+requires the installation of binutils for this architecture. Please refer
+to _src/scp/a64/README_ for further instructions.
+
+
 License
 -------
 

@@ -1,0 +1,93 @@
+
+
+          Firmware for the AR100 system control processor (SCP)
+
+
+This directory contains an experimental custom firmware for the SCP of the
+Allwinner A64 SoC.
+
+
+Building
+--------
+
+The AR100 SCP is based on the OpenRISC (or1k) instruction set architecture [1].
+To build the firmware, the "or1k" flavor of GNU binutils must be installed.
+On Debian, the corresponding package is 'binutils-or1k-elf'. For building this
+flavor of binutils from source, the 'configure' script must be called with the
+argument '--target or1k-elf'.
+
+[1] https://openrisc.io/
+
+The 'Makefile' of this directory expects the following binutils accessible via
+the 'PATH' variable: or1k-elf-as (assembler), or1k-elf-ld (linker),
+or1k-elf-objcopy (object converter).
+
+
+Testing on Qemu
+---------------
+
+Qemu officially supports the or1k platform. On Debian, it is available as part
+of the 'qemu-system-misc' package. The binary is named qemu-system-or1k.
+
+With binutils and Qemu for the or1k architecture installed, the kernel of
+the firmware can be built and executed via 'make qemu'. You are dropped
+right into the interactive console of the firmware, which is a minimalistic
+Forth interpreter. E.g., the 'words' command prints the available commands,
+or the sequence '1 2 + .' prints the number '3'. To exit Qemu, press
+'control-a' followed by 'x'.
+
+
+Targeting the AR100 SCP
+-----------------------
+
+A firmware binary loadable by the ARM Trusted Firmware and U-Boot can be
+created by issuing 'make scp-ar100.bin'. The path of the resulting binary can
+be supplied as 'SCP' argument when building U-Boot. This will prompt U-Boot -
+in tandem with the ARM Trusted Firmware - to load the SCP binary into the
+appropriate memory location and bootstrap the AR100 processor. The U-Boot
+target at _src/u-boot/pine/_ automatically builds the SCP firmware via the
+pseudo library _lib/mk/scp-<BOARD>.mk_ and integrates the resulting binary.
+
+
+Customization
+-------------
+
+The firmware's textual interface uses the same UART as U-Boot's interactive
+prompt, which naturally causes both drivers to interfere. To avoid trampling
+on each other's toes, the following options may be considered:
+
+* Removing U-Boot's interactive interface by configuring boot commands at
+  build time.
+* Removing the textual input from the SCP firmware.
+* Letting the SCP firmware wait for an external event before going
+  interactive.
+
+The latter two options can easily be accomplished by customizing the 'app.f'
+file with custom Forth code. This code is executed directly on startup. E.g.,
+the example at examples/pinephone/pogopin.f illustrates a crude hack that
+let's SCP spin until two POGO pins of the Pinephone are connected. This way,
+the Pinephone can be used as usual - using any OS - while making the SCP
+command prompt appear when told so by a paperclip.
+
+
+Related information
+-------------------
+
+:Details and known limitations of the AR100:
+
+  [https://linux-sunxi.org/AR100]
+
+:Interplay of the AR100 with the ARM CPU on the A64 SoC:
+
+  [https://linux-sunxi.org/AR100/HardwareSharing]
+
+:The Crust open-source AR100 firmware:
+
+  [https://github.com/crust-firmware/crust]
+
+:eForth and Zen:
+
+  The primary inspiration for the implementation of the Forth interpreter.
+
+  [https://forth.org/OffeteStore/OffeteStore.html]
+

@@ -41,6 +41,15 @@ $(BL31_BIN_FILE):
 
 
 #
+# Firmware for system-control processor (SCP)
+#
+# The binary is built by lib/mk/scp-$(BOARD).mk
+#
+
+SCP_BIN_FILE := $(addsuffix /scp.bin,$(addprefix $(LIB_CACHE_DIR)/scp-,$(BOARD)))
+
+
+#
 # U-Boot
 #
 
@@ -53,9 +62,9 @@ UBOOT_MAKE_ARGS = $(VERBOSE_DIR) -C $(UBOOT_DIR) \
                   CROSS_COMPILE=$(CROSS_DEV_PREFIX) \
                   O=$(UBOOT_BUILD_DIR) \
                   BL31=$(BL31_BIN_FILE) \
-                  SCP=/dev/null
+                  SCP=$(SCP_BIN_FILE)
 
-$(UBOOT_CONFIG_FILE): $(BL31_BIN_FILE)
+$(UBOOT_CONFIG_FILE): $(BL31_BIN_FILE) $(SCP_BIN_FILE)
 	$(VERBOSE) mkdir -p $(BOARD)
 	$(VERBOSE) cp $(UBOOT_DIR)/configs/${UBOOT_DEFCONFIG(${BOARD})} $(BOARD)/.config
 	$(VERBOSE) ( \
@@ -110,6 +119,7 @@ $(SD_CARD_IMAGE_FILE):
 
 # trigger build only for supported boards
 ifneq ($(filter $(SUPPORTED_BOARDS), $(BOARD)),)
+LIBS += scp-$(BOARD)
 $(TARGET) : $(SD_CARD_IMAGE_FILE)
 endif
 
