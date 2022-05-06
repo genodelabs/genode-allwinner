@@ -37,6 +37,7 @@ struct Touchscreen_driver::Main
 		log("--- touchscreen driver started ---");
 
 		Lx_kit::initialize(_env);
+		_env.exec_static_constructors();
 
 		genode_event_init(genode_env_ptr(env),
 		                  genode_allocator_ptr(Lx_kit::env().heap));

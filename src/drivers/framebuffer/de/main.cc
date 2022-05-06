@@ -79,6 +79,7 @@ struct Framebuffer::Driver
 	Driver(Env & env) : env(env)
 	{
 		Lx_kit::initialize(env);
+		env.exec_static_constructors();
 	}
 
 	void start()
