@@ -16,49 +16,46 @@
 #include <r_prcm.h>
 #include <ccu.h>
 #include <pmic.h>
-#include <root.h>
+#include <common.h>
 
 namespace Driver { struct Main; };
 
 struct Driver::Main
 {
 	Env                  & _env;
-	Heap                   _heap        { _env.ram(), _env.rm() };
-	Sliced_heap            _sliced_heap { _env.ram(), _env.rm() };
-	Attached_rom_dataspace _config      { _env, "config" };
-	Device_model           _devices     { _heap };
-
-	Fixed_clock _osc_24m_clk { _devices.clocks(), "osc24M",
-	                           Clock::Rate { 24*1000*1000 } };
-	Fixed_clock _dummy_clk   { _devices.clocks(), "dummy",
-	                           Clock::Rate { 1000 } };
-
-	R_prcm _r_prcm { _env, _devices.clocks(), _osc_24m_clk };
-	Ccu    _ccu    { _env, _devices.clocks(), _devices.resets(), _osc_24m_clk };
-	Pmic   _pmic   { _env, _devices.powers() };
+	Attached_rom_dataspace _config_rom     { _env, "config"        };
+	Common                 _common         { _env, _config_rom     };
+	Signal_handler<Main>   _config_handler { _env.ep(), *this,
+	                                         &Main::_handle_config };
 
 	void _handle_config();
 
-	Signal_handler<Main> _config_handler { _env.ep(), *this,
-	                                       &Main::_handle_config };
+	Fixed_clock _osc_24m_clk { _common.devices().clocks(), "osc24M",
+	                           Clock::Rate { 24*1000*1000 } };
+	Fixed_clock _dummy_clk   { _common.devices().clocks(), "dummy",
+	                           Clock::Rate { 1000 } };
 
-	Driver::Root _root { _env, _sliced_heap, _config, _devices };
+	R_prcm _r_prcm { _env, _common.devices().clocks(), _osc_24m_clk };
+	Ccu    _ccu    { _env, _common.devices().clocks(),
+	                 _common.devices().resets(), _osc_24m_clk };
+	Pmic   _pmic   { _env, _common.devices().powers() };
 
-	Main(Genode::Env &env) : _env(env)
+	Main(Genode::Env & env)
+	: _env(env)
 	{
-		_devices.update(_config.xml());
-		_config.sigh(_config_handler);
-		_env.parent().announce(_env.ep().manage(_root));
+		_config_rom.sigh(_config_handler);
+		_handle_config();
+		_common.announce_service();
 	}
 };
 
 
 void Driver::Main::_handle_config()
 {
-	_config.update();
-	_devices.update(_config.xml());
-	_root.update_policy();
+	_config_rom.update();
+	_common.handle_config(_config_rom.xml());
 }
 
 
-void Component::construct(Genode::Env &env) { static Driver::Main main(env); }
+void Component::construct(Genode::Env &env) {
+	static Driver::Main main(env); }

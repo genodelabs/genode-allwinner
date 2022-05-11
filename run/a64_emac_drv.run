@@ -25,7 +25,7 @@ install_config {
 			<resource name="RAM" quantum="1M"/>
 			<provides> <service name="Platform"/> </provides>
 			<route> <any-service> <parent/> </any-service> </route>
-			<config>
+			<config devices_rom="config">
 				<device name="syscon" type="allwinner,sun50i-a64-system-control">
 					<io_mem address="0x1c00000" size="0x1000"/>
 				</device>

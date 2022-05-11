@@ -37,7 +37,7 @@ install_config {
 		<resource name="RAM" quantum="1M"/>
 		<binary name="a64_platform_drv"/>
 		<provides> <service name="Platform"/> </provides>
-		<config>
+		<config devices_rom="config">
 
 			<device name="pio" type="allwinner,sun50i-a64-pinctrl">
 				<io_mem address="0x1c20800" size="0x400"/> <!-- Ports A-H -->

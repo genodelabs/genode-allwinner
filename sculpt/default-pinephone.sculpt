@@ -9,5 +9,6 @@ launcher: sticks_blue_backdrop system_shell touch_keyboard nano3d
 
 # supplemental depot content added to the system image
 import: pkg/drivers_interactive-pinephone
+import: raw/pinephone-devices
 
 build: server/event_filter app/sculpt_manager
