@@ -76,7 +76,8 @@ struct Driver::Ccu : private Attached_mmio
 	Gating_bit _bus_tcon1    { _clocks, "bus-tcon1",    _osc_24m_clk, _regs(),  0x64,  4 };
 	Gating_bit _bus_hdmi     { _clocks, "bus-hdmi",     _osc_24m_clk, _regs(),  0x64, 11 };
 	Gating_bit _bus_de       { _clocks, "bus-de",       _osc_24m_clk, _regs(),  0x64, 12 };
-	Gating_bit _bus_ac       { _clocks, "bus-ac",       _osc_24m_clk, _regs(),  0x68,  0  };
+	Gating_bit _mbox_gate    { _clocks, "bus-mbox",     _osc_24m_clk, _regs(),  0x64, 21 };
+	Gating_bit _bus_ac       { _clocks, "bus-ac",       _osc_24m_clk, _regs(),  0x68,  0 };
 	Gating_bit _bus_i2s0     { _clocks, "bus-i2s0",     _osc_24m_clk, _regs(),  0x68, 12 };
 	Gating_bit _bus_i2s2     { _clocks, "bus-i2s2",     _osc_24m_clk, _regs(),  0x68, 14 };
 	Gating_bit _bus_twi0     { _clocks, "bus-twi0",     _osc_24m_clk, _regs(),  0x6c,  0 };
@@ -190,6 +191,7 @@ struct Driver::Ccu : private Attached_mmio
 	Reset_bit _tcon0_rst     { _resets, "tcon0",    _regs(), 0x2c4,  3 };
 	Reset_bit _tcon1_rst     { _resets, "tcon1",    _regs(), 0x2c4,  4 };
 	Reset_bit _de_rst        { _resets, "de",       _regs(), 0x2c4, 12 };
+	Reset_bit _mbox_rst      { _resets, "mbox",     _regs(), 0x2c4, 21 };
 	Reset_bit _lvds_rst      { _resets, "lvds",     _regs(), 0x2c8,  0 };
 	Reset_bit _ac_rst        { _resets, "ac",       _regs(), 0x2d0,  0 };
 	Reset_bit _pcm2_rst      { _resets, "i2s_pcm2", _regs(), 0x2d0, 14 };

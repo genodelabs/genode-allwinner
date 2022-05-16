@@ -22,4 +22,30 @@ pl_cfg1 @ ffff and pl_cfg1 !
 
 \ activate command line not before pogo pin INT gets connected to GND
 : do_pogo  pl_data @ 1000 and 0 = IF output_uart reset_tib THEN ;
-' do_pogo 'mainloop !
+
+\ mbox input buffer, 32-bit length value followed by characters
+: mib 13c00 ;
+: eval_mib mib 4 + mib @ evaluate ;
+
+\ mbox output buffer, 32-bit length value followed by up to 1000 characters
+: mob  13800 ;
+
+\ ( c -- ) emit character to mbox output buffer
+: emit_mob  mob @ 1000 < IF dup  mob @ mob + 4 + c!  mob +!  THEN drop ;
+
+\ direct output to mbox output buffer
+: output_mob  0 mob !  xtalit emit_mob 'emit ! ;
+
+\ mbox request sequence number
+variable seq
+
+\ a request is submitted as sequence number in mbox channel 0, whereas
+\ the completion is confirmed by returning the number via channel 1
+: mbox 1c17000 ;
+: pending  mbox 140 + @ ;
+: req      mbox 180 + @ seq ! ;
+: ack      seq @ mbox 184 + ! ;
+: do_mib   pending IF req output_mob eval_mib ack THEN ;
+
+: mainloop  do_pogo do_mib ;
+' mainloop 'mainloop !
