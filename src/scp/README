@@ -65,8 +65,8 @@ on each other's toes, the following options may be considered:
 The latter two options can easily be accomplished by customizing the 'app.f'
 file with custom Forth code. This code is executed directly on startup. E.g.,
 the example at examples/pinephone/pogopin.f illustrates a crude hack that
-let's SCP spin until two POGO pins of the Pinephone are connected. This way,
-the Pinephone can be used as usual - using any OS - while making the SCP
+let's SCP spin until two POGO pins of the PinePhone are connected. This way,
+the PinePhone can be used as usual - using any OS - while making the SCP
 command prompt appear when told so by a paperclip.
 
 

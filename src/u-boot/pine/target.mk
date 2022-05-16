@@ -6,7 +6,7 @@ SUPPORTED_BOARDS := pine_a64lts pinephone
 UBOOT_DEFCONFIG(pine_a64lts) := pine64-lts_defconfig
 UBOOT_DEFCONFIG(pinephone)   := pinephone_defconfig
 
-# enable fastboot on the Pinephone
+# enable fastboot on the PinePhone
 UBOOT_ENABLE(pinephone) := USB_MUSB_GADGET USB_HOST USB_EHCI_HCD
 UBOOT_OPTION(pinephone) := USBNET_DEVADDR="02:ba:fe:7b:59:37" \
                            USBNET_HOST_ADDR="02:ba:fe:7b:59:36"

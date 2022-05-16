@@ -1,5 +1,5 @@
 /*
- * \brief  Pinephone audio codec routing
+ * \brief  PinePhone audio codec routing
  * \author Sebastian Sumpf
  * \date   2022-03-11
  */
