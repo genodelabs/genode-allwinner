@@ -1,0 +1,14 @@
+Increase maximum boot-image size, needed for loading Sculpt OS
+
+index 9e37e996..5168b309 100644
+--- uboot/include/configs/sunxi-common.h
++++ uboot/include/configs/sunxi-common.h
+@@ -32,7 +32,7 @@
+ #endif
+ 
+ #ifdef CONFIG_ARM64
+-#define CONFIG_SYS_BOOTM_LEN		(32 << 20)
++#define CONFIG_SYS_BOOTM_LEN		(64 << 20)
+ #endif
+ 
+ /* Serial & console */
