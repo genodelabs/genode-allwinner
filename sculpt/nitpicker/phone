@@ -1,0 +1,13 @@
+<config focus="rom">
+	<capture/> <event/>
+	<report hover="yes" focus="yes" clicked="yes" keystate="no"/>
+	<background color="#000000"/>
+
+	<domain name="invisible" layer="6" xpos="10000" />
+	<domain name="default"   layer="6" label="no" hover="always" focus="click" />
+
+	<policy label_prefix="pointer -> " domain="invisible"/>
+	<default-policy domain="default"/>
+
+	<global-key name="KEY_DASHBOARD" label="global_keys_handler -> input" />
+</config>

@@ -1,0 +1,8 @@
+drivers:      pinephone
+leitzentrale: phone
+nitpicker:    phone
+fonts:        phone-720px
+build:        app/phone_manager server/nitpicker app/menu_view server/wm
+build:        drivers/modem/pinephone drivers/uart/ns16550 server/terminal_crosslink
+import:       pkg/drivers_interactive-pinephone
+import:       raw/pinephone-devices
