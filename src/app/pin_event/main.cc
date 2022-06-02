@@ -1,7 +1,7 @@
 /*
  * \brief  Component for translating pin-state changes to input events
  * \author Norman Feske
- * \date   2021-04-23>
+ * \date   2021-04-23
  */
 
 /* Genode includes */
