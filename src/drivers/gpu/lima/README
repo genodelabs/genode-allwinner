@@ -1,0 +1,31 @@
+This directory contains a port of the Linux DRM driver 'lima' for
+Mali 400 series GPUs (Utgard).
+
+Limitations
+~~~~~~~~~~~
+
+There is no policy management implemented and therefore each connecting
+client is allowed to use the service. For the time being only one client
+at a time is possible. Furthermore the 'Gpu' session does not make use of
+accounting mechanisms, the driver has to provide all the resources the
+client may need.
+
+
+Usage
+~~~~~
+
+The driver will announce the 'Gpu' service after it successfully initialized
+the GPU.
+
+To start the driver the following configuration snippet can be used:
+
+!<start name="lima_gpu_drv" caps="500">
+!  <resource name="RAM" quantum="128M">
+!  <provides> <service name="Gpu"/> </provides>
+!  </config/>
+!</start>
+
+Additionally there exists the 'dtb' attribute in the '<config> node
+that may be used to specify the name of the DTB ROM module, e.g.:
+
+! <config dtb="lima-pinephone.dtb"/>
