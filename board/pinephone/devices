@@ -103,4 +103,18 @@
 		<reset-domain name="ehci1"/>
 		<reset-domain name="ohci1"/>
 	</device>
+	<device name="gpu" type="allwinner,sun50i-a64-mali">
+		<io_mem address="0x01c40000" size="0x10000"/>
+		<irq number="129"/>
+		<irq number="130"/>
+		<irq number="131"/>
+		<irq number="132"/>
+		<irq number="133"/>
+		<irq number="134"/>
+		<irq number="135"/>
+		<clock name="bus-gpu" driver_name="bus"/>
+		<clock name="gpu-clk" driver_name="core"/>
+		<clock name="pll-gpu"/>
+		<reset-domain name="gpu"/>
+	</device>
 </devices>
