@@ -78,6 +78,7 @@ struct Driver::Ccu : private Attached_mmio
 	Gating_bit _bus_tcon1    { _clocks, "bus-tcon1",    _osc_24m_clk, _regs(),  0x64,  4 };
 	Gating_bit _bus_hdmi     { _clocks, "bus-hdmi",     _osc_24m_clk, _regs(),  0x64, 11 };
 	Gating_bit _bus_de       { _clocks, "bus-de",       _osc_24m_clk, _regs(),  0x64, 12 };
+	Gating_bit _bus_gpu      { _clocks, "bus-gpu",      _osc_24m_clk, _regs(),  0x64, 20 };
 	Gating_bit _mbox_gate    { _clocks, "bus-mbox",     _osc_24m_clk, _regs(),  0x64, 21 };
 	Gating_bit _bus_ac       { _clocks, "bus-ac",       _osc_24m_clk, _regs(),  0x68,  0 };
 	Gating_bit _bus_i2s0     { _clocks, "bus-i2s0",     _osc_24m_clk, _regs(),  0x68, 12 };
@@ -116,6 +117,29 @@ struct Driver::Ccu : private Attached_mmio
 			write<Reg::Src_sel>(Reg::Src_sel::INITIAL);
 		}
 	} _de_clk { _clocks, _regs() };
+
+	struct Gpu_clk : Clock, private Mmio
+	{
+		struct Reg : Register<0x1a0, 32>
+		{
+			struct Sclk_gating : Bitfield<31, 1> { enum { MASK = 0, PASS = 1 }; };
+		};
+
+		Gpu_clk(Clocks &clocks, void *ccu_regs)
+		:
+			Clock(clocks, "gpu-clk"), Mmio((addr_t)ccu_regs)
+		{ }
+
+		void _enable()  override
+		{
+			write<Reg::Sclk_gating>(Reg::Sclk_gating::PASS);
+		}
+
+		void _disable() override
+		{
+			write<Reg::Sclk_gating>(Reg::Sclk_gating::MASK);
+		}
+	} _gpu_clk { _clocks, _regs() };
 
 	struct Mipi_dsi_clk : Clock, private Mmio
 	{
@@ -165,6 +189,8 @@ struct Driver::Ccu : private Attached_mmio
 	Pll _pll_audio_bias    { _clocks, "pll-audio-bias",    0x10040000, _regs(), 0x224 };
 	Pll _pll_audio_pattern { _clocks, "pll-audio-pattern", 0xc000b852, _regs(), 0x284 };
 
+	Pll _pll_gpu           { _clocks, "pll-gpu",           0x83006207, _regs(), 0x38  };
+
 	Pll _pll_video0 { _clocks, "pll-video0", 0x91003003, _regs(), 0x10 };
 	Pll _pll_mipi   { _clocks, "pll-mipi",   0x90c0042f, _regs(), 0x40 };
 	Pll _pll_de     { _clocks, "pll-de",     0x83006207, _regs(), 0x48 };
@@ -200,6 +226,7 @@ struct Driver::Ccu : private Attached_mmio
 	Reset_bit _tcon0_rst     { _resets, "tcon0",    _regs(), 0x2c4,  3 };
 	Reset_bit _tcon1_rst     { _resets, "tcon1",    _regs(), 0x2c4,  4 };
 	Reset_bit _de_rst        { _resets, "de",       _regs(), 0x2c4, 12 };
+	Reset_bit _gpu_rst       { _resets, "gpu",      _regs(), 0x2c4, 20 };
 	Reset_bit _mbox_rst      { _resets, "mbox",     _regs(), 0x2c4, 21 };
 	Reset_bit _lvds_rst      { _resets, "lvds",     _regs(), 0x2c8,  0 };
 	Reset_bit _ac_rst        { _resets, "ac",       _regs(), 0x2d0,  0 };
