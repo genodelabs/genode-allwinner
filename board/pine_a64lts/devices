@@ -3,7 +3,7 @@
 		<io_mem address="0x01c00000" size="0x1000"/>
 	</device>
 	<device name="emac" type="allwinner,sun50i-a64-emac">
-		<io_mem address="0x1c30000" size="0x10000"/>;
+		<io_mem address="0x1c30000" size="0x10000"/>
 		<irq number="114"/>
 	</device>
 </devices>
