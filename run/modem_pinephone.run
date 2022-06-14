@@ -56,7 +56,7 @@ install_config {
 		</start>
 
 		<start name="platform_drv" caps="150">
-			<resource name="RAM" quantum="1M"/>
+			<resource name="RAM" quantum="2M"/>
 			<binary name="a64_platform_drv"/>
 			<provides> <service name="Platform"/> </provides>
 			<config devices_rom="config">
