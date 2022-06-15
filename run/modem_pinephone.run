@@ -30,7 +30,7 @@ build { core init timer
         drivers/uart/ns16550 drivers/platform/a64 drivers/pin/a64
         drivers/modem/pinephone
         drivers/usb_host/a64
-        server/terminal_crosslink
+        server/terminal_crosslink server/report_rom
         drivers/usb_net
         server/nic_router
         app/ping
@@ -62,7 +62,13 @@ install_config {
 			<provides> <service name="Timer"/> </provides>
 		</start>
 
-		<start name="platform_drv" caps="150" managing_system="yes">
+		<start name="report_rom">
+			<resource name="RAM" quantum="1M"/>
+			<provides> <service name="Report"/> <service name="ROM"/> </provides>
+			<config verbose="yes"/>
+		</start>
+
+		<start name="platform_drv" caps="200" managing_system="yes">
 			<resource name="RAM" quantum="2M"/>
 			<binary name="a64_platform_drv"/>
 			<provides> <service name="Platform"/> </provides>
@@ -197,12 +203,13 @@ install_config {
 		<start name="modem">
 			<binary name="pinephone_modem"/>
 			<resource name="RAM" quantum="1M"/>
-			<config/>
+			<config power="on" at_protocol="no"/>
 			<route>
-				<service name="Timer"> <child name="timer"/> </service>
-				<service name="Pin_control"> <child name="a64_pio_drv"/> </service>
-				<service name="Pin_state"> <child name="a64_pio_drv"/> </service>
-				<service name="Platform"> <child name="platform_drv"/> </service>
+				<service name="Timer">       <child name="timer"/>        </service>
+				<service name="Report">      <child name="report_rom"/>   </service>
+				<service name="Pin_control"> <child name="a64_pio_drv"/>  </service>
+				<service name="Pin_state">   <child name="a64_pio_drv"/>  </service>
+				<service name="Platform">    <child name="platform_drv"/> </service>
 				<any-service> <parent/> </any-service>
 			</route>
 		</start>
@@ -307,7 +314,7 @@ install_config {
 build_boot_image { core ld.lib.so init timer
                    a64_platform_drv a64_pio_drv ns16550_uart
                    a64_usb_host_drv pinephone_modem
-                   terminal_crosslink usb-pinephone.dtb
+                   terminal_crosslink report_rom usb-pinephone.dtb
                    usb_net_drv nic_router ping }
 
 run_genode_until forever

@@ -1,6 +1,7 @@
 /*
  * \brief  LTE-modem manager
  * \author Sebastian Sumpf
+ * \author Norman Feske
  * \date   2022-02-17
  *
  */
@@ -14,122 +15,101 @@
 
 #include <base/attached_rom_dataspace.h>
 #include <base/component.h>
-#include <base/log.h>
-#include <pin_control_session/connection.h>
-#include <pin_state_session/connection.h>
 #include <timer_session/connection.h>
+#include <os/reporter.h>
 
-#include "audio_codec.h"
+/* local includes */
+#include <audio_codec.h>
+#include <power.h>
 
-namespace Modem {
-
-	using namespace Genode;
-	struct Main;
-}
+namespace Modem { struct Main; }
 
 
-struct Modem::Main
+struct Modem::Main : private Delayer
 {
 	Env &_env;
 
 	Attached_rom_dataspace _config { _env, "config" };
-	/* debugging, automatic power down after 60s */
-	bool _power_down {
-		_config.xml().attribute_value("power_down", false) };
+
+	Expanding_reporter _reporter { _env, "modem", "state" };
 
 	Timer::Connection _timer { _env };
 
-	Pin_control::Connection _pin_battery    { _env, "battery" };
-	Pin_control::Connection _pin_dtr        { _env, "dtr" };
-	Pin_control::Connection _pin_enable     { _env, "enable" };
-	Pin_control::Connection _pin_host_ready { _env, "host-ready" };
-	Pin_control::Connection _pin_pwrkey     { _env, "pwrkey" };
-	Pin_control::Connection _pin_reset      { _env, "reset" };
+	Power _power { _env, *this };
 
-	Pin_state::Connection _pin_status  { _env, "status" };
-	Pin_state::Connection _pin_ri      { _env, "ri" };
+	Signal_handler<Main> _config_handler {
+		_env.ep(), *this, &Main::_handle_config };
 
-	Constructible<Audio::Device> _audio { };
+	Signal_handler<Main> _timer_handler {
+		_env.ep(), *this, &Main::_handle_timer };
 
-	bool power_up()
+	bool _timer_scheduled = false;
+
+	void _trigger_timer_in_one_second()
 	{
-		_pin_battery.state(true);
-
-		/* wait for power supply before pwrkey */
-		_timer.msleep(30);
-
-		/* modem already on try reboot */
-		if (_pin_status.state() == 0  && power_down() == false)
-			return false;
-
-		_pin_reset.state(false);
-		_pin_host_ready.state(false);
-		_pin_enable.state(false); /* enable RF */
-		_pin_dtr.state(false); /* no supsend */
-		_timer.msleep(30);
-
-		/* issue power key pulse >= 500ms */
-		log("Power up modem ...");
-		_pin_pwrkey.state(true);
-		_timer.msleep(1000);
-		_pin_pwrkey.state(false);
-
-		/* wait for max 60s */
-		for (unsigned i = 0; i < 60; i++) {
-			log(i, "s: status: ", _pin_status.state() ? "off" : "on");
-			if (_pin_status.state() == 0) return true;
-			_timer.msleep(1000);
-		}
-
-		error("Power up modem: failed");
-		return false;
+		_timer.trigger_once(1000*1000UL);
+		_timer_scheduled = true;
 	}
 
-	bool power_down()
+	void _update_state_report()
 	{
-		if (_pin_status.state()) return true;
-
-		_pin_reset.state(true);
-		_pin_enable.state(true);
-
-		log ("Power down modem ...");
-		_pin_pwrkey.state(true);
-		_timer.msleep(1000);
-		_pin_pwrkey.state(false);
-
-		for (unsigned i = 0; i < 60; i++) {
-			log(i, "s: status: ", _pin_status.state() ? "off" : "on");
-			if (_pin_status.state() == 1) return true;
-			_timer.msleep(1000);
-		}
-
-		error("Power down modem: failed");
-		return false;
+		_reporter.generate([&] (Xml_generator &xml) {
+			_generate_report(xml); });
 	}
+
+	void _generate_report(Xml_generator &xml) const
+	{
+		_power.generate_report(xml);
+	}
+
+	void _drive_state_transitions()
+	{
+		_power.drive_state_transitions();
+
+		if (_power.needs_update_each_second() && !_timer_scheduled)
+			_trigger_timer_in_one_second();
+
+		_update_state_report();
+	}
+
+	void _handle_config()
+	{
+		_config.update();
+
+		Xml_node const config = _config.xml();
+
+		_power.apply_config(config);
+
+		_drive_state_transitions();
+	}
+
+	void _handle_timer()
+	{
+		_timer_scheduled = false;
+		_drive_state_transitions();
+	}
+
+	/**
+	 * Delayer interface
+	 */
+	void msleep(unsigned long ms) override { _timer.msleep(ms); }
+
+	struct Audio_driver
+	{
+		Platform::Connection _platform;
+		Audio::Device device { _platform };
+		Audio_driver(Env &env) : _platform(env) { }
+	};
+
+	Constructible<Audio_driver> _audio { };
 
 	Main(Env &env) : _env(env)
 	{
-		if (!power_up()) {
-			_pin_battery.state(false);
-			return;
-		}
+		_config.sigh(_config_handler);
+		_timer.sigh(_timer_handler);
+		_handle_config();
 
 		_audio.construct(_env);
-
-		if (!_power_down) return;
-
-		unsigned wait = 60;
-		log("Power up modem: succeeded waiting ", wait, " s ...");
-		_timer.msleep(wait * 1000);
-
-		if (power_down() == false) {
-			return;
-		}
-
-		log("Power down modem: succeeded");
-
-		/* disable power supply */
-		_pin_battery.state(false);
 	}
 };
 

@@ -14,16 +14,20 @@
 #ifndef _AUDIO_CODEC_H_
 #define _AUDIO_CODEC_H_
 
+/* Genode includes */
 #include <platform_session/device.h>
 
 namespace Audio {
+
 	using namespace Genode;
-	class Codec;
-	class Analog_plain_access;
-	class Analog_mmio;
+
+	class  Codec;
+	class  Analog_plain_access;
+	class  Analog_mmio;
 	struct Analog;
-	class Device;
+	class  Device;
 }
+
 
 class Audio::Codec : Platform::Device::Mmio
 {
@@ -306,7 +310,8 @@ struct Audio::Analog_mmio : Analog_plain_access, Register_set<Analog_plain_acces
 	Analog_mmio(Platform::Device &device)
 	:
 		Analog_plain_access(device),
-		Register_set(*static_cast<Analog_plain_access *>(this)) { }
+		Register_set(*static_cast<Analog_plain_access *>(this))
+	{ }
 };
 
 
@@ -432,11 +437,11 @@ class Audio::Analog : public Analog_mmio
 
 		Analog(Platform::Device &device)
 		:
-		  Analog_mmio(device)
+			Analog_mmio(device)
 		{
 			enable_mic1();
 			enable_earpiece();
-			//enable_speaker();
+			enable_speaker();
 		}
 };
 
@@ -445,18 +450,17 @@ class Audio::Device
 {
 	private:
 
-		Env &_env;
+		Platform::Connection &_platform;
 
-		Platform::Connection _platform { _env };
-		Platform::Device     _device_codec  { _platform, "audio_codec" };
-		Platform::Device     _device_analog { _platform, "audio_analog" };
-		Codec                _codec { _device_codec };
-		Analog               _analog { _device_analog };
+		Platform::Device _device_codec  { _platform, "audio_codec" };
+		Platform::Device _device_analog { _platform, "audio_analog" };
+
+		Codec  _codec  { _device_codec };
+		Analog _analog { _device_analog };
 
 	public:
 
-		Device(Env &env)
-		: _env(env)
+		Device(Platform::Connection &platform) : _platform(platform)
 		{ }
 };
 
