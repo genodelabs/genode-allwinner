@@ -10,6 +10,7 @@ SRC_C   += lx_emul/a64/pmic.c
 SRC_C   += lx_emul/a64/r_intc.c
 SRC_C   += lx_emul/a64/sched.c
 SRC_C   += lx_emul/a64/common_dummies.c
+SRC_C   += lx_emul/shadow/kernel/softirq.c
 
 vpath lx_emul/a64/pio.c            $(REP_DIR)/src/lib
 vpath lx_emul/a64/pmic.c           $(REP_DIR)/src/lib

@@ -1,0 +1,7 @@
+a64_linux
+platform_session
+report_session
+usb_session
+base
+os
+genode_c_api

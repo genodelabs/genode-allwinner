@@ -1,7 +1,7 @@
 /*
  * \brief  Array defining order of Linux Kernel initcalls
  * \author Automatically generated file - do no edit
- * \date   2021-09-07
+ * \date   2022-06-24
  */
 
 #pragma once
@@ -78,10 +78,13 @@ static const char * lx_emul_initcall_order[] = {
 	"__initcall_init_admin_reserve4",
 	"__initcall_init_reserve_notifier4",
 	"__initcall_pwm_sysfs_init4",
+	"__initcall_fbmem_init4",
 	"__initcall_misc_init4",
 	"__initcall_register_cpu_capacity_sysctl4",
 	"__initcall_dma_buf_init4",
 	"__initcall_phy_init4",
+	"__initcall_usb_common_init4",
+	"__initcall_usb_init4",
 	"__initcall_serio_init4",
 	"__initcall_input_init4",
 	"__initcall_power_supply_class_init4",
@@ -143,6 +146,7 @@ static const char * lx_emul_initcall_order[] = {
 	"__initcall_sun50i_de2_bus_driver_init6",
 	"__initcall_sunxi_rsb_init6",
 	"__initcall_phy_core_init6",
+	"__initcall_sun4i_usb_phy_driver_init6",
 	"__initcall_sun6i_dphy_platform_driver_init6",
 	"__initcall_a64_pinctrl_driver_init6",
 	"__initcall_sun50i_a64_r_pinctrl_driver_init6",
@@ -204,6 +208,8 @@ static const char * lx_emul_initcall_order[] = {
 	"__initcall_sun7i_dwmac_driver_init6",
 	"__initcall_sun8i_dwmac_driver_init6",
 	"__initcall_dwmac_generic_driver_init6",
+	"__initcall_ehci_hcd_init6",
+	"__initcall_ehci_platform_init6",
 	"__initcall_serport_init6",
 	"__initcall_atkbd_init6",
 	"__initcall_psmouse_init6",
@@ -211,6 +217,7 @@ static const char * lx_emul_initcall_order[] = {
 	"__initcall_mv64xxx_i2c_driver_init6",
 	"__initcall_hid_init6",
 	"__initcall_hid_generic_init6",
+	"__initcall_extcon_class_init6",
 	"__initcall_sock_diag_init6",
 	"__initcall_gre_offload_init6",
 	"__initcall_sysctl_ipv4_init6",
@@ -220,6 +227,7 @@ static const char * lx_emul_initcall_order[] = {
 	"__initcall_cubictcp_register6",
 	"__initcall_inet6_init6",
 	"__initcall_sit_init6",
+	"__initcall_usbnet_init6",
 	"__initcall_init_oops_id7",
 	"__initcall_reboot_ksysfs_init7",
 	"__initcall_sched_init_debug7",
@@ -232,6 +240,7 @@ static const char * lx_emul_initcall_order[] = {
 	"__initcall_of_fdt_raw_init7",
 	"__initcall_tcp_congestion_default7",
 	"__initcall_ip_auto_config7",
+	"__initcall_fb_logo_late_init7s",
 	"__initcall_clk_disable_unused7s",
 	"__initcall_regulator_init_complete7s",
 	"__initcall_of_platform_sync_state_init7s",

@@ -14,6 +14,7 @@ SRC_C   += lx_emul/a64/sched.c
 SRC_C   += lx_emul/a64/common_dummies.c
 SRC_C   += lx_emul/shadow/drivers/clk/clk.c
 SRC_C   += lx_emul/shadow/drivers/clk/clkdev.c
+SRC_C   += lx_emul/shadow/kernel/softirq.c
 SRC_C   += lx_emul/shadow/mm/page_alloc.c
 
 vpath lx_emul/a64/pio.c            $(REP_DIR)/src/lib
