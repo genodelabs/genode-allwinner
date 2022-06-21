@@ -14,8 +14,6 @@
 #ifndef _TYPES_H_
 #define _TYPES_H_
 
-#include <util/xml_generator.h>
-
 namespace Modem {
 
 	using namespace Genode;
