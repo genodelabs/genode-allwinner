@@ -36,9 +36,6 @@ struct Modem::Power
 
 	State _state = State::UNKNOWN;
 
-	unsigned _startup_seconds  = 0;
-	unsigned _shutdown_seconds = 0;
-
 	Env &_env;
 
 	Delayer &_delayer;
@@ -52,32 +49,28 @@ struct Modem::Power
 	                        _pin_pwrkey     { _env, "pwrkey"     },
 	                        _pin_reset      { _env, "reset"      };
 
-	void _update_state_from_pin_status()
+	void _press_pwrkey()
 	{
-		_state = _pin_status.state() ? State::OFF : State::ON;
+		/* issue power key pulse >= 500ms */
+		_pin_pwrkey.state(true);
+		_delayer.msleep(600);
+		_pin_pwrkey.state(false);
 	}
 
 	void _drive_power_up()
 	{
-		if (_state == State::UNKNOWN)
-			_update_state_from_pin_status();
-
 		switch (_state) {
 
 		case State::OFF:
 
-			/* issue power key pulse >= 500ms */
-			log("Powering up modem ...");
-			_pin_pwrkey.state(true);
-			_delayer.msleep(1000);
-			_pin_pwrkey.state(false);
+			_pin_enable.state(false);   /* enable RF */
 
-			_startup_seconds = 0;
+			log("Powering up modem ...");
+			_press_pwrkey();
 			_state = State::STARTING_UP;
 			break;
 
 		case State::STARTING_UP:
-			_startup_seconds++;
 			if (_pin_status.state() == 0)
 				_state = State::ON;
 			break;
@@ -91,9 +84,6 @@ struct Modem::Power
 
 	void _drive_power_down()
 	{
-		if (_state == State::UNKNOWN)
-			_update_state_from_pin_status();
-
 		switch (_state) {
 
 		case State::UNKNOWN:
@@ -102,19 +92,16 @@ struct Modem::Power
 
 		case State::STARTING_UP:
 		case State::ON:
-			_pin_reset.state(true);
+
 			_pin_enable.state(true);
 
-			log("Powering down modem ...");
-			_pin_pwrkey.state(true);
-			_delayer.msleep(1000);
-			_pin_pwrkey.state(false);
+			log("Powering down modem via power-key signal ...");
+			_press_pwrkey();
 
-			shutdown_triggered();
+			_state = State::SHUTTING_DOWN;
 			break;
 
 		case State::SHUTTING_DOWN:
-			_shutdown_seconds++;
 			if (_pin_status.state() == 1)
 				_state = State::OFF;
 			break;
@@ -138,41 +125,22 @@ struct Modem::Power
 		_pin_reset.state(false);
 		_pin_host_ready.state(false);
 		_pin_dtr.state(false);      /* no suspend */
-		_pin_enable.state(false);   /* enable RF */
 
 		_delayer.msleep(30);
 	}
 
-	void shutdown_triggered()
+	struct Condition
 	{
-		_shutdown_seconds = 0;
-		_state = State::SHUTTING_DOWN;
-	}
+		bool safe_to_power_off;
+	};
 
-	void apply_config(Xml_node const &config)
+	void power_enabled(bool enabled)
 	{
-		if (!config.has_attribute("power")) {
-			_requested = Requested::DONT_CARE;
-			return;
-		}
+		_requested = enabled ? Requested::ON : Requested::OFF;
 
-		if (config.attribute_value("power", false))
-			_requested = Requested::ON;
+		if (_state == State::UNKNOWN)
+			_state = _pin_status.state() ? State::OFF : State::ON;
 
-		/*
-		 * Power down the modem via 'pwrkey' only if the AT protocol is
-		 * disabled.
-		 */
-		bool const power_down_without_at_protocol =
-			!config.attribute_value("power", false) &&
-			!config.attribute_value("at_protocol", true);
-
-		if (power_down_without_at_protocol)
-			_requested = Requested::OFF;
-	}
-
-	void drive_state_transitions()
-	{
 		for (;;) {
 			State const orig_state = _state;
 
@@ -192,28 +160,10 @@ struct Modem::Power
 		return (_state == State::STARTING_UP) || (_state == State::SHUTTING_DOWN);
 	}
 
-	void generate_report(Xml_generator &xml) const
-	{
-		auto power_value = [] (State state)
-		{
-			switch (state) {
-			case State::UNKNOWN:       return "unknown";
-			case State::OFF:           return "off";
-			case State::STARTING_UP:   return "starting up";
-			case State::ON:            return "on";
-			case State::SHUTTING_DOWN: return "shutting down";
-			}
-			return "";
-		};
-
-		xml.attribute("power", power_value(_state));
-
-		if (_state == State::STARTING_UP)
-			xml.attribute("startup_seconds", _startup_seconds);
-
-		if (_state == State::SHUTTING_DOWN)
-			xml.attribute("shutdown_seconds", _shutdown_seconds);
-	}
+	bool starting_up()   const { return _state == State::STARTING_UP; }
+	bool shutting_down() const { return _state == State::SHUTTING_DOWN; }
+	bool off()           const { return _state == State::OFF; }
+	bool on()            const { return _state == State::ON; }
 };
 
 #endif /* _POWER_H_ */
