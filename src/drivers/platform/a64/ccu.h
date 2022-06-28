@@ -72,6 +72,8 @@ struct Driver::Ccu : private Attached_mmio
 	};
 
 	Gating_bit _bus_mipi_dsi { _clocks, "bus-mipi-dsi", _osc_24m_clk, _regs(),  0x60,  1 };
+	Gating_bit _bus_bus_ehci1{ _clocks, "bus-ehci1",    _osc_24m_clk, _regs(),  0x60,  25 };
+	Gating_bit _bus_bus_ohci1{ _clocks, "bus-ohci1",    _osc_24m_clk, _regs(),  0x60,  29 };
 	Gating_bit _bus_tcon0    { _clocks, "bus-tcon0",    _osc_24m_clk, _regs(),  0x64,  3 };
 	Gating_bit _bus_tcon1    { _clocks, "bus-tcon1",    _osc_24m_clk, _regs(),  0x64,  4 };
 	Gating_bit _bus_hdmi     { _clocks, "bus-hdmi",     _osc_24m_clk, _regs(),  0x64, 11 };
@@ -82,6 +84,9 @@ struct Driver::Ccu : private Attached_mmio
 	Gating_bit _bus_i2s2     { _clocks, "bus-i2s2",     _osc_24m_clk, _regs(),  0x68, 14 };
 	Gating_bit _bus_twi0     { _clocks, "bus-twi0",     _osc_24m_clk, _regs(),  0x6c,  0 };
 	Gating_bit _bus_uart3    { _clocks, "bus-uart3",    _osc_24m_clk, _regs(),  0x6c, 19 };
+	Gating_bit _usb_phy0_gate{ _clocks, "usb-phy0",     _osc_24m_clk, _regs(),  0xcc,  8 };
+	Gating_bit _usb_phy1_gate{ _clocks, "usb-phy1",     _osc_24m_clk, _regs(),  0xcc,  9 };
+	Gating_bit _ohci1_gate   { _clocks, "ohci1",        _osc_24m_clk, _regs(),  0xcc, 17 };
 	Gating_bit _tcon0_gate   { _clocks, "tcon0",        _osc_24m_clk, _regs(), 0x118, 31 };
 	Gating_bit _tcon1_gate   { _clocks, "tcon1",        _osc_24m_clk, _regs(), 0x11c, 31 };
 	Gating_bit _ac           { _clocks, "ac",           _osc_24m_clk, _regs(), 0x140, 31 };
@@ -187,7 +192,11 @@ struct Driver::Ccu : private Attached_mmio
 		void _assert()   override { write<Bus_soft_rst_reg>(ASSERT,   _bit); }
 	};
 
+	Reset_bit _usb_phy0_rst  { _resets, "usb-phy0", _regs(),  0xcc,  0 };
+	Reset_bit _usb_phy1_rst  { _resets, "usb-phy1", _regs(),  0xcc,  1 };
 	Reset_bit _mipi_dsi_rst  { _resets, "mipi-dsi", _regs(), 0x2c0,  1 };
+	Reset_bit _ehci1_rst     { _resets, "ehci1",    _regs(), 0x2c0,  25 };
+	Reset_bit _ohci1_rst     { _resets, "ohci1",    _regs(), 0x2c0,  29 };
 	Reset_bit _tcon0_rst     { _resets, "tcon0",    _regs(), 0x2c4,  3 };
 	Reset_bit _tcon1_rst     { _resets, "tcon1",    _regs(), 0x2c4,  4 };
 	Reset_bit _de_rst        { _resets, "de",       _regs(), 0x2c4, 12 };
