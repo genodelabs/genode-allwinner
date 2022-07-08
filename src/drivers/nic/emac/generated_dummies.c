@@ -1332,3 +1332,19 @@ void wake_up_var(void * var)
 {
 	lx_emul_trace_and_stop(__func__);
 }
+
+
+#include <linux/rcutree.h>
+
+void rcu_irq_enter_irqson(void)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/rcutree.h>
+
+void rcu_irq_exit_irqson(void)
+{
+	lx_emul_trace_and_stop(__func__);
+}

@@ -849,3 +849,19 @@ void wake_q_add_safe(struct wake_q_head * head,struct task_struct * task)
 {
 	lx_emul_trace_and_stop(__func__);
 }
+
+
+#include <linux/rcutree.h>
+
+void rcu_irq_enter_irqson(void)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/rcutree.h>
+
+void rcu_irq_exit_irqson(void)
+{
+	lx_emul_trace_and_stop(__func__);
+}
