@@ -77,6 +77,8 @@ struct Emac_driver::Main : private Entrypoint::Io_progress_handler
 	{
 		Lx_kit::initialize(env);
 
+		env.exec_static_constructors();
+
 		genode_uplink_init(genode_env_ptr(env),
 		                   genode_allocator_ptr(Lx_kit::env().heap),
 		                   genode_signal_handler_ptr(_signal_handler));
