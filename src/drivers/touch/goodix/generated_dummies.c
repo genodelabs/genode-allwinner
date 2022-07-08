@@ -86,14 +86,6 @@ void __release_region(struct resource * parent,resource_size_t start,resource_si
 }
 
 
-#include <linux/interrupt.h>
-
-void __tasklet_schedule(struct tasklet_struct * t)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
 #include <linux/random.h>
 
 void add_bootloader_randomness(const void * buf,unsigned int size)
@@ -832,3 +824,10 @@ void wake_q_add_safe(struct wake_q_head * head,struct task_struct * task)
 	lx_emul_trace_and_stop(__func__);
 }
 
+
+#include <linux/wait_bit.h>
+
+void wake_up_var(void * var)
+{
+	lx_emul_trace_and_stop(__func__);
+}

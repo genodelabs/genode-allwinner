@@ -162,3 +162,19 @@ int reset_control_reset(struct reset_control * rstc)
 }
 
 
+void rcu_irq_enter(void)
+{
+	lx_emul_trace(__func__);
+}
+
+
+void rcu_irq_exit(void)
+{
+	lx_emul_trace(__func__);
+}
+
+
+void rcu_softirq_qs(void)
+{
+	lx_emul_trace(__func__);
+}

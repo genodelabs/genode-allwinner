@@ -139,14 +139,6 @@ void __skb_get_hash(struct sk_buff * skb)
 }
 
 
-#include <linux/interrupt.h>
-
-void __tasklet_schedule(struct tasklet_struct * t)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
 #include <asm-generic/delay.h>
 
 void __udelay(unsigned long usecs)
@@ -277,14 +269,6 @@ bool dma_default_coherent;
 #include <linux/dma-mapping.h>
 
 int dma_supported(struct device * dev,u64 mask)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/interrupt.h>
-
-asmlinkage __visible void do_softirq(void)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -1341,3 +1325,10 @@ void xpcs_validate(struct dw_xpcs * xpcs,unsigned long * supported,struct phylin
 	lx_emul_trace_and_stop(__func__);
 }
 
+
+#include <linux/wait_bit.h>
+
+void wake_up_var(void * var)
+{
+	lx_emul_trace_and_stop(__func__);
+}

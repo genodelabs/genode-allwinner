@@ -243,3 +243,21 @@ int of_clk_set_defaults(struct device_node * node,bool clk_supplier)
 	lx_emul_trace(__func__);
 	return 0;
 }
+
+
+void rcu_irq_enter(void)
+{
+	lx_emul_trace(__func__);
+}
+
+
+void rcu_irq_exit(void)
+{
+	lx_emul_trace(__func__);
+}
+
+
+void rcu_softirq_qs(void)
+{
+	lx_emul_trace(__func__);
+}

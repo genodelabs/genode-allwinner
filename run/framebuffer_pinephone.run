@@ -33,8 +33,8 @@ install_config {
 		<provides><service name="Timer"/></provides>
 	</start>
 
-	<start name="platform_drv" caps="150" managing_system="yes">
-		<resource name="RAM" quantum="1M"/>
+	<start name="platform_drv" caps="200" managing_system="yes">
+		<resource name="RAM" quantum="2M"/>
 		<binary name="a64_platform_drv"/>
 		<provides> <service name="Platform"/> </provides>
 		<config devices_rom="config">

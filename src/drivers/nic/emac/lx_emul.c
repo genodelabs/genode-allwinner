@@ -97,14 +97,6 @@ void dma_unmap_page_attrs(struct device * dev, dma_addr_t addr, size_t size,
 }
 
 
-#include <linux/interrupt.h>
-
-void __raise_softirq_irqoff(unsigned int nr)
-{
-	raise_softirq(nr);
-}
-
-
 #include <linux/random.h>
 
 int __must_check get_random_bytes_arch(void * buf,int nbytes)

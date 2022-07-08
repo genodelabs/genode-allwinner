@@ -374,3 +374,24 @@ int rhashtable_init(struct rhashtable * ht,const struct rhashtable_params * para
 	lx_emul_trace(__func__);
 	return -EINVAL;
 }
+
+
+extern void rcu_irq_enter(void);
+void rcu_irq_enter(void)
+{
+	lx_emul_trace(__func__);
+}
+
+
+extern void rcu_irq_exit(void);
+void rcu_irq_exit(void)
+{
+	lx_emul_trace(__func__);
+}
+
+
+extern void rcu_softirq_qs(void);
+void rcu_softirq_qs(void)
+{
+	lx_emul_trace(__func__);
+}
