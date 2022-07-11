@@ -1,7 +1,7 @@
 /*
  * \brief  Array defining order of Linux Kernel initcalls
  * \author Automatically generated file - do no edit
- * \date   2022-06-24
+ * \date   2022-07-11
  */
 
 #pragma once
@@ -88,6 +88,8 @@ static const char * lx_emul_initcall_order[] = {
 	"__initcall_serio_init4",
 	"__initcall_input_init4",
 	"__initcall_power_supply_class_init4",
+	"__initcall_devfreq_init4",
+	"__initcall_devfreq_simple_ondemand_init4",
 	"__initcall_proto_init4",
 	"__initcall_net_dev_init4",
 	"__initcall_neigh_init4",
@@ -184,6 +186,7 @@ static const char * lx_emul_initcall_order[] = {
 	"__initcall_of_platform_serial_driver_init6",
 	"__initcall_drm_kms_helper_init6",
 	"__initcall_drm_core_init6",
+	"__initcall_drm_sched_fence_slab_init6",
 	"__initcall_sun4i_drv_platform_driver_init6",
 	"__initcall_sun4i_tcon_platform_driver_init6",
 	"__initcall_sun4i_tv_platform_driver_init6",
@@ -196,6 +199,7 @@ static const char * lx_emul_initcall_order[] = {
 	"__initcall_sun8i_mixer_platform_driver_init6",
 	"__initcall_sun8i_tcon_top_platform_driver_init6",
 	"__initcall_st7703_driver_init6",
+	"__initcall_lima_platform_driver_init6",
 	"__initcall_topology_sysfs_init6",
 	"__initcall_cacheinfo_sysfs_init6",
 	"__initcall_sun6i_prcm_driver_init6",
