@@ -1,6 +1,3 @@
-CUSTOM_TARGET_DEPS := scp.bin
+SRC_F := pine_a64lts/app.f
 
-SHELL := /bin/bash
-
-scp.bin:
-	$(VERBOSE)ln -s /dev/null $@
+include $(REP_DIR)/lib/mk/scp-a64.inc

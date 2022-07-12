@@ -11,18 +11,6 @@
 
 hex
 
-\ direct output to UART
-: output_uart  xtalit do_uart 'mainloop !  xtalit emit_uart 'emit ! ;
-
-: r_pio 1f02c00 ;
-: pl_cfg1 r_pio 4 + ;
-: pl_data r_pio 10 + ;
-
-pl_cfg1 @ ffff and pl_cfg1 !
-
-\ activate command line not before pogo pin INT gets connected to GND
-: do_pogo  pl_data @ 1000 and 0 = IF output_uart reset_tib THEN ;
-
 \ mbox input buffer, 32-bit length value followed by characters
 : mib 13c00 ;
 : eval_mib mib 4 + mib @ evaluate ;
@@ -47,5 +35,4 @@ variable seq
 : ack      seq @ mbox 184 + ! ;
 : do_mib   pending IF req output_mob eval_mib ack THEN ;
 
-: mainloop  do_pogo do_mib ;
-' mainloop 'mainloop !
+' do_mib 'mainloop !
