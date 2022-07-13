@@ -308,3 +308,73 @@ void register_handler_proc(unsigned int irq,struct irqaction * action)
 {
 	lx_emul_trace(__func__);
 }
+
+
+#include <linux/rcutree.h>
+
+noinstr void rcu_irq_enter(void)
+{
+	lx_emul_trace(__func__);
+}
+
+
+void noinstr rcu_irq_exit(void)
+{
+	lx_emul_trace(__func__);
+}
+
+
+void rcu_softirq_qs(void)
+{
+	lx_emul_trace(__func__);
+}
+
+
+void calc_load_nohz_start(void)
+{
+	lx_emul_trace(__func__);
+}
+
+
+void calc_load_nohz_stop(void)
+{
+	lx_emul_trace(__func__);
+}
+
+
+void quiet_vmstat(void)
+{
+	lx_emul_trace(__func__);
+}
+
+
+void account_idle_ticks(unsigned long ticks)
+{
+	lx_emul_trace(__func__);
+}
+
+
+bool irq_work_needs_cpu(void)
+{
+	lx_emul_trace(__func__);
+	return false;
+}
+
+
+void wake_up_nohz_cpu(int cpu)
+{
+	lx_emul_trace(__func__);
+}
+
+
+int idle_cpu(int cpu)
+{
+	lx_emul_trace(__func__);
+	return 1;
+}
+
+
+void nohz_balance_enter_idle(int cpu)
+{
+	lx_emul_trace(__func__);
+}
