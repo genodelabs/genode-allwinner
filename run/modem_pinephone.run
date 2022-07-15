@@ -25,6 +25,28 @@
 #
 # 5. Shutdown modem before reset/poweroff
 # ! AT+QPOWD
+#
+# 6. For the cdc_ether driver to work the modem has to be configured to use the ECM
+# USB networking profile via AT commands (default is QMI/PPP)
+# The current mode can be retrieved via:
+# ! AT+QCFG="usbnet"
+# > "usbnet",0 - is PPP & QMI (default)
+# > "usbnet",1 - is ECM.
+# > "usbnet",2 - is MBIM
+#
+# In case mode is not 1 enter:
+# ! AT+QCFG="usbnet",1
+# > OK
+# Reboot modem
+# ! AT+CFUN=1,1
+# > OK
+# On next start the modem should connect to the Internet which can be checked
+# using:
+# !AT+CGCONTRDP
+# > +CGCONTRDP: 1,5,internet.provider.de,10.208.76.151,,62.109.121.17,62.109.121.18
+#
+# This operation has to be performed only once
+#
 
 build { core init timer
         drivers/uart/ns16550 drivers/platform/a64 drivers/pin/a64
