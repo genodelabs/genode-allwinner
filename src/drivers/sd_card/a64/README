@@ -1,0 +1,32 @@
+This directory contains a port of the Linux SUNXI-MMC driver for
+SD/MMC controllers.
+
+
+Limitiations
+~~~~~~~~~~~~
+
+The eMMC module in the PinePhone is not initialized properly and
+therefor is not usable. Furthermore SD card detection is not supported.
+
+
+Usage
+~~~~~
+
+The driver will announce the 'Block' service for each successfully
+initialized card.
+
+To start the driver the following configuration snippet can be used:
+
+!<start name="a64_sd_card_drv" caps="500">
+!  <resource name="RAM" quantum="16M"/>
+!  <provides> <service name="Block"/> </provides>
+!  <config>
+!    <default-policy device="mmcblk0" writeable="no"/>
+!  </config>
+!</start>
+
+
+Additionally there exists the 'dtb' attribute in the '<config> node
+that may be used to specify the name of the DTB ROM module, e.g.:
+
+! <config dtb="sd_card-pinephone.dtb"/>

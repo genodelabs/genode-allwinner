@@ -1,0 +1,105 @@
+build {
+	core init timer
+	drivers/platform/a64
+	drivers/sd_card/a64
+	app/block_tester
+}
+
+create_boot_directory
+
+install_config {
+	<config>
+		<parent-provides>
+			<service name="LOG"/>
+			<service name="PD"/>
+			<service name="CPU"/>
+			<service name="ROM"/>
+			<service name="IO_MEM"/>
+			<service name="IRQ"/>
+		</parent-provides>
+
+		<default caps="100"/>
+
+		<start name="timer">
+			<resource name="RAM" quantum="1M"/>
+			<route> <any-service> <parent/> </any-service> </route>
+			<provides> <service name="Timer"/> </provides>
+		</start>
+
+		<start name="platform_drv" caps="150" managing_system="yes">
+			<binary name="a64_platform_drv"/>
+			<resource name="RAM" quantum="1M"/>
+			<provides> <service name="Platform"/> </provides>
+			<config devices_rom="config">
+				<device name="sd_card" type="allwinner,sun50i-a64-mmc">
+					<io_mem address="0x01c0f000" size="0x1000"/>
+					<irq number="92"/>
+					<clock name="bus-mmc0" driver_name="ahb"/>
+					<clock name="mmc0" driver_name="mmc"/>
+					<reset-domain name="mmc0"/>
+				</device>
+				<device name="emmc" type="allwinner,sun50i-a64-emmc">
+					<io_mem address="0x01c11000" size="0x1000"/>
+					<irq number="94"/>
+					<clock name="bus-mmc2" driver_name="ahb"/>
+					<clock name="mmc2" driver_name="mmc"/>
+					<reset-domain name="mmc2"/>
+				</device>
+				<policy label="a64_sd_card_drv -> " info="yes">
+					<device name="sd_card"/>
+					<device name="emmc"/>
+				</policy>
+			</config>
+			<route> <any-service> <parent/> </any-service> </route>
+		</start>
+
+		<start name="a64_sd_card_drv" caps="500">
+			<resource name="RAM" quantum="16M"/>
+			<provides> <service name="Block"/> </provides>
+			<config>
+				<default-policy device="mmcblk0" writeable="yes"/>
+			</config>
+			<route>
+				<service name="ROM" label="dtb">
+					<parent label="sd_card-} [board] {.dtb"/> </service>
+				<service name="ROM"> <parent/> </service>
+				<service name="CPU"> <parent/> </service>
+				<service name="PD">  <parent/> </service>
+				<service name="LOG"> <parent/> </service>
+				<service name="Timer">    <child name="timer"/> </service>
+				<service name="Platform"> <child name="platform_drv"/> </service>
+			</route>
+		</start>
+
+		<start name="block_tester">
+			<resource name="RAM" quantum="64M" />
+			<config verbose="no" report="no" log="yes" stop_on_error="no">
+				<tests>
+					<sequential length="256M" size="1M" io_buffer="8M" batch="4"/>
+					<sequential start="2097152" write="no" length="256M" size="1M" io_buffer="8M" batch="4"/>
+				</tests>
+			</config>
+			<route>
+				<service name="ROM"> <parent/> </service>
+				<service name="PD">  <parent/> </service>
+				<service name="RM">  <parent/> </service>
+				<service name="CPU"> <parent/> </service>
+				<service name="LOG"> <parent/> </service>
+				<any-service> <any-child/> </any-service>
+			</route>
+		</start>
+
+	</config>
+}
+
+set build_components {
+	core ld.lib.so init timer a64_platform_drv
+	a64_sd_card_drv block_tester
+}
+
+lappend_if [have_board pine_a64lts] build_components sd_card-pine_a64lts.dtb
+lappend_if [have_board pinephone]   build_components sd_card-pinephone.dtb
+
+build_boot_image $build_components
+
+run_genode_until {.*child "block_tester" exited with exit value 0.*} 60
