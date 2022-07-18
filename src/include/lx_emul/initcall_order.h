@@ -1,7 +1,7 @@
 /*
  * \brief  Array defining order of Linux Kernel initcalls
  * \author Automatically generated file - do no edit
- * \date   2022-07-11
+ * \date   2022-07-18
  */
 
 #pragma once
@@ -77,6 +77,12 @@ static const char * lx_emul_initcall_order[] = {
 	"__initcall_init_user_reserve4",
 	"__initcall_init_admin_reserve4",
 	"__initcall_init_reserve_notifier4",
+	"__initcall_swap_init_sysfs4",
+	"__initcall_swapfile_init4",
+	"__initcall_init_bio4",
+	"__initcall_blk_ioc_init4",
+	"__initcall_blk_mq_init4",
+	"__initcall_genhd_device_init4",
 	"__initcall_pwm_sysfs_init4",
 	"__initcall_fbmem_init4",
 	"__initcall_misc_init4",
@@ -88,6 +94,7 @@ static const char * lx_emul_initcall_order[] = {
 	"__initcall_serio_init4",
 	"__initcall_input_init4",
 	"__initcall_power_supply_class_init4",
+	"__initcall_mmc_init4",
 	"__initcall_devfreq_init4",
 	"__initcall_devfreq_simple_ondemand_init4",
 	"__initcall_proto_init4",
@@ -116,6 +123,7 @@ static const char * lx_emul_initcall_order[] = {
 	"__initcall_proc_kmsg_init5",
 	"__initcall_proc_page_init5",
 	"__initcall_init_ramfs_fs5",
+	"__initcall_blk_scsi_ioctl_init5",
 	"__initcall_chr_dev_init5",
 	"__initcall_firmware_class_init5",
 	"__initcall_sysctl_core_init5",
@@ -140,10 +148,17 @@ static const char * lx_emul_initcall_order[] = {
 	"__initcall_mm_compute_batch_init6",
 	"__initcall_workingset_init6",
 	"__initcall_proc_vmalloc_init6",
+	"__initcall_procswaps_init6",
 	"__initcall_fcntl_init6",
 	"__initcall_proc_filesystems_init6",
 	"__initcall_start_dirtytime_writeback6",
+	"__initcall_blkdev_init6",
+	"__initcall_dio_init6",
 	"__initcall_init_devpts_fs6",
+	"__initcall_proc_genhd_init6",
+	"__initcall_bsg_init6",
+	"__initcall_deadline_init6",
+	"__initcall_kyber_init6",
 	"__initcall_percpu_counter_startup6",
 	"__initcall_sun50i_de2_bus_driver_init6",
 	"__initcall_sunxi_rsb_init6",
@@ -219,6 +234,10 @@ static const char * lx_emul_initcall_order[] = {
 	"__initcall_psmouse_init6",
 	"__initcall_goodix_ts_driver_init6",
 	"__initcall_mv64xxx_i2c_driver_init6",
+	"__initcall_mmc_pwrseq_simple_driver_init6",
+	"__initcall_mmc_pwrseq_emmc_driver_init6",
+	"__initcall_mmc_blk_init6",
+	"__initcall_sunxi_mmc_driver_init6",
 	"__initcall_hid_init6",
 	"__initcall_hid_generic_init6",
 	"__initcall_extcon_class_init6",
@@ -236,7 +255,9 @@ static const char * lx_emul_initcall_order[] = {
 	"__initcall_reboot_ksysfs_init7",
 	"__initcall_sched_init_debug7",
 	"__initcall_printk_late_init7",
+	"__initcall_max_swapfiles_check7",
 	"__initcall_check_early_ioremap_leak7",
+	"__initcall_blk_timeout_init7",
 	"__initcall_prandom_init_late7",
 	"__initcall_amba_deferred_retry7",
 	"__initcall_sync_state_resume_initcall7",
