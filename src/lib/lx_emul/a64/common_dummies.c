@@ -286,3 +286,8 @@ void register_handler_proc(unsigned int irq,struct irqaction * action)
 {
 	lx_emul_trace(__func__);
 }
+
+
+#include <linux/genhd.h>
+
+struct device_type part_type;
