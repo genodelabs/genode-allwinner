@@ -374,3 +374,11 @@ int rhashtable_init(struct rhashtable * ht,const struct rhashtable_params * para
 	lx_emul_trace(__func__);
 	return -EINVAL;
 }
+
+
+#include <linux/wait_bit.h>
+
+void __init wait_bit_init(void)
+{
+	lx_emul_trace(__func__);
+}

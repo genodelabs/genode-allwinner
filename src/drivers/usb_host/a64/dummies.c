@@ -254,3 +254,11 @@ void wake_up_var(void * var)
 {
 	lx_emul_trace(__func__);
 }
+
+
+#include <linux/wait_bit.h>
+
+void __init wait_bit_init(void)
+{
+	lx_emul_trace(__func__);
+}

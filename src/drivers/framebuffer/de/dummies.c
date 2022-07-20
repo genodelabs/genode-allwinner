@@ -243,3 +243,11 @@ int of_clk_set_defaults(struct device_node * node,bool clk_supplier)
 	lx_emul_trace(__func__);
 	return 0;
 }
+
+
+#include <linux/wait_bit.h>
+
+void __init wait_bit_init(void)
+{
+	lx_emul_trace(__func__);
+}

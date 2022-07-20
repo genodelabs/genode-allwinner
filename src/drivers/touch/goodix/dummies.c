@@ -160,3 +160,11 @@ int reset_control_reset(struct reset_control * rstc)
 	lx_emul_trace(__func__);
 	return 0;
 }
+
+
+#include <linux/wait_bit.h>
+
+void __init wait_bit_init(void)
+{
+	lx_emul_trace(__func__);
+}
