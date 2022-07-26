@@ -8,7 +8,6 @@ SRC_CC  += emul.cc
 SRC_C   += lx_emul.c
 SRC_C   += lx_user.c
 SRC_C   += clock.c
-SRC_C   += lx_emul/a64/sched.c
 SRC_C   += lx_emul/a64/common_dummies.c
 
 vpath lx_emul/a64/sched.c          $(REP_DIR)/src/lib

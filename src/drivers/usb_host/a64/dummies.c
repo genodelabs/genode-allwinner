@@ -17,15 +17,6 @@ DEFINE_PER_CPU(unsigned long, net_rand_noise);
 EXPORT_PER_CPU_SYMBOL(net_rand_noise);
 
 
-#include <linux/cpumask.h>
-
-unsigned int cpumask_next(int n,const struct cpumask * srcp)
-{
-	lx_emul_trace(__func__);
-	return n + 1;
-}
-
-
 #include <linux/sysfs.h>
 
 int sysfs_create_dir_ns(struct kobject * kobj,const void * ns)

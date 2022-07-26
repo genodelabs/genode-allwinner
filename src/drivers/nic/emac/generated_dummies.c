@@ -81,11 +81,6 @@ struct nlmsghdr * __nlmsg_put(struct sk_buff * skb,u32 portid,u32 seq,int type,i
 }
 
 
-#include <linux/cpumask.h>
-
-atomic_t __num_online_cpus;
-
-
 #include <linux/reset.h>
 
 struct reset_control * __of_reset_control_get(struct device_node * node,const char * id,int index,bool shared,bool optional,bool acquired)
@@ -240,14 +235,6 @@ void bpf_warn_invalid_xdp_action(u32 act)
 #include <linux/bsearch.h>
 
 void * bsearch(const void * key,const void * base,size_t num,size_t size,cmp_func_t cmp)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/rcupdate.h>
-
-void call_rcu(struct rcu_head * head,rcu_callback_t func)
 {
 	lx_emul_trace_and_stop(__func__);
 }

@@ -116,14 +116,6 @@ void cdev_device_del(struct cdev * cdev,struct device * dev)
 }
 
 
-#include <linux/rcupdate.h>
-
-void call_rcu(struct rcu_head * head,rcu_callback_t func)
-{
-	lx_emul_trace(__func__);
-}
-
-
 #include <linux/sched.h>
 
 void sched_set_fifo(struct task_struct * p)

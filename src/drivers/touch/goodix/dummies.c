@@ -82,14 +82,6 @@ void cdev_device_del(struct cdev * cdev,struct device * dev)
 }
 
 
-#include <linux/rcupdate.h>
-
-void call_rcu(struct rcu_head * head,rcu_callback_t func)
-{
-	lx_emul_trace(__func__);
-}
-
-
 #include <linux/sched.h>
 
 void sched_set_fifo(struct task_struct * p)
@@ -167,4 +159,13 @@ int reset_control_reset(struct reset_control * rstc)
 void __init wait_bit_init(void)
 {
 	lx_emul_trace(__func__);
+}
+
+
+#include <linux/mm.h>
+
+bool is_vmalloc_addr(const void * x)
+{
+	lx_emul_trace(__func__);
+	return false;
 }

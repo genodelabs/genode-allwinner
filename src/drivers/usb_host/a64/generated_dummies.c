@@ -160,25 +160,9 @@ void async_synchronize_full(void)
 char __initdata boot_command_line[] = {};
 
 
-#include <linux/rcupdate.h>
-
-void call_rcu(struct rcu_head * head,rcu_callback_t func)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
 #include <linux/clk.h>
 
 void clk_put(struct clk * clk)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/cpumask.h>
-
-int cpumask_next_and(int n,const struct cpumask * src1p,const struct cpumask * src2p)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -841,6 +825,14 @@ void unregister_irq_proc(unsigned int irq,struct irq_desc * desc)
 #include <linux/uuid.h>
 
 const u8 uuid_index[16] = {};
+
+
+#include <linux/vmalloc.h>
+
+void vfree(const void * addr)
+{
+	lx_emul_trace_and_stop(__func__);
+}
 
 
 #include <linux/sched/wake_q.h>

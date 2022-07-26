@@ -46,20 +46,6 @@ const struct trace_print_flags pageflag_names[] = {};
 const struct trace_print_flags vmaflag_names[]  = {};
 
 
-#include <linux/rcupdate.h>
-
-void rcu_read_unlock_strict(void)
-{
-	lx_emul_trace(__func__);
-}
-
-
-#include <linux/kernel_stat.h>
-#include <linux/stat.h>
-
-struct kernel_stat kstat;
-
-
 #include <asm/memory.h>
 
 u64 vabits_actual;
@@ -103,14 +89,6 @@ void update_vsyscall(struct timekeeper * tk)
 #include <linux/sched/signal.h>
 
 void ignore_signals(struct task_struct * t)
-{
-	lx_emul_trace(__func__);
-}
-
-
-#include <linux/sched.h>
-
-void do_set_cpus_allowed(struct task_struct * p,const struct cpumask * new_mask)
 {
 	lx_emul_trace(__func__);
 }
@@ -305,76 +283,6 @@ void register_irq_proc(unsigned int irq,struct irq_desc * desc)
 
 extern void register_handler_proc(unsigned int irq,struct irqaction * action);
 void register_handler_proc(unsigned int irq,struct irqaction * action)
-{
-	lx_emul_trace(__func__);
-}
-
-
-#include <linux/rcutree.h>
-
-noinstr void rcu_irq_enter(void)
-{
-	lx_emul_trace(__func__);
-}
-
-
-void noinstr rcu_irq_exit(void)
-{
-	lx_emul_trace(__func__);
-}
-
-
-void rcu_softirq_qs(void)
-{
-	lx_emul_trace(__func__);
-}
-
-
-void calc_load_nohz_start(void)
-{
-	lx_emul_trace(__func__);
-}
-
-
-void calc_load_nohz_stop(void)
-{
-	lx_emul_trace(__func__);
-}
-
-
-void quiet_vmstat(void)
-{
-	lx_emul_trace(__func__);
-}
-
-
-void account_idle_ticks(unsigned long ticks)
-{
-	lx_emul_trace(__func__);
-}
-
-
-bool irq_work_needs_cpu(void)
-{
-	lx_emul_trace(__func__);
-	return false;
-}
-
-
-void wake_up_nohz_cpu(int cpu)
-{
-	lx_emul_trace(__func__);
-}
-
-
-int idle_cpu(int cpu)
-{
-	lx_emul_trace(__func__);
-	return 1;
-}
-
-
-void nohz_balance_enter_idle(int cpu)
 {
 	lx_emul_trace(__func__);
 }

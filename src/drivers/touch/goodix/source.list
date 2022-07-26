@@ -106,7 +106,6 @@ kernel/time/timer.c
 kernel/time/timer_list.c
 kernel/workqueue.c
 lib/bitmap.c
-lib/cpumask.c
 lib/crc-ccitt.c
 lib/crc32.c
 lib/ctype.c

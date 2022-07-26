@@ -31,22 +31,6 @@ u64 kimage_voffset;
 s64 memstart_addr = -1; /* referenced by PHYS_OFFSET, presumably not accessed */
 
 
-#include <linux/cpumask.h>
-
-unsigned int cpumask_next(int n,const struct cpumask * srcp)
-{
-	lx_emul_trace(__func__);
-	return n + 1;
-}
-
-
-int cpumask_next_and(int n,const struct cpumask * src1p,const struct cpumask * src2p)
-{
-	lx_emul_trace(__func__);
-	return n + 1;
-}
-
-
 #include <linux/prandom.h>
 
 DEFINE_PER_CPU(unsigned long, net_rand_noise);

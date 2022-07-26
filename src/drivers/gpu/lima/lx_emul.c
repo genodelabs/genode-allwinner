@@ -96,24 +96,6 @@ struct kmem_cache * kmem_cache_create_usercopy(const char * name,
 }
 
 
-#include <linux/rcupdate.h>
-
-void call_rcu(struct rcu_head * head,rcu_callback_t func)
-{
-	/*
-	 * In case func is a small offset kvfree should be
-	 * called directly, see 'rcu_reclaim_tiny'.
-	 */
-	enum { KVFREE_RCU_OFFSET = 4096, };
-	if (func < (rcu_callback_t)KVFREE_RCU_OFFSET) {
-		kvfree((void*)head - (unsigned long)func);
-		return;
-	}
-
-	func(head);
-}
-
-
 #include <linux/rcutree.h>
 
 void kvfree_call_rcu(struct rcu_head * head,rcu_callback_t func)
