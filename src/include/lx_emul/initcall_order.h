@@ -1,7 +1,7 @@
 /*
  * \brief  Array defining order of Linux Kernel initcalls
  * \author Automatically generated file - do no edit
- * \date   2022-10-17
+ * \date   2022-08-04
  */
 
 #pragma once
@@ -94,6 +94,10 @@ static const char * lx_emul_initcall_order[] = {
 	"__initcall_usb_roles_init4",
 	"__initcall_serio_init4",
 	"__initcall_input_init4",
+	"__initcall_i2c_gpio_init4",
+	"__initcall_media_devnode_init4",
+	"__initcall_videodev_init4",
+	"__initcall_v4l2_async_init4",
 	"__initcall_power_supply_class_init4",
 	"__initcall_mmc_init4",
 	"__initcall_devfreq_init4",
@@ -235,6 +239,9 @@ static const char * lx_emul_initcall_order[] = {
 	"__initcall_psmouse_init6",
 	"__initcall_goodix_ts_driver_init6",
 	"__initcall_mv64xxx_i2c_driver_init6",
+	"__initcall_ov5640_i2c_driver_init6",
+	"__initcall_gc2145_i2c_driver_init6",
+	"__initcall_sun6i_csi_platform_driver_init6",
 	"__initcall_mmc_pwrseq_simple_driver_init6",
 	"__initcall_mmc_pwrseq_emmc_driver_init6",
 	"__initcall_mmc_blk_init6",
