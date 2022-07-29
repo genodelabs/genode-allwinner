@@ -147,4 +147,14 @@
 		<clock name="mmc2" driver_name="mmc"/>
 		<reset-domain name="mmc2"/>
 	</device>
+	<device name="csi" type="allwinner,sun50i-a64-csi">
+		<io_mem address="0x01cb0000" size="0x1000"/>
+		<irq number="116"/>
+		<reset-domain name="csi"/>
+		<power-domain name="pmic-csi"/>
+		<clock name="bus-csi"  driver_name="bus"/>
+		<clock name="csi-sclk" driver_name="mod"/>
+		<clock name="dram-csi" driver_name="ram"/>
+		<clock name="csi-mclk" driver_name="xclk"/>
+	</device>
 </devices>

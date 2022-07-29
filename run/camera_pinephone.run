@@ -1,0 +1,343 @@
+assert_spec arm_v8a
+
+create_boot_directory
+import_from_depot [depot_user]/src/[base_src] \
+                  [depot_user]/src/init \
+                  [depot_user]/src/dynamic_rom \
+                  [depot_user]/src/nitpicker
+
+build {
+	drivers/platform/a64
+	drivers/camera/pinephone
+	drivers/framebuffer/de
+	drivers/pin/a64
+	test/framebuffer
+	app/dummy
+}
+
+install_config {
+<config verbose="yes">
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="IRQ"/>
+		<service name="IO_MEM"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="CPU"/>
+		<service name="LOG"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+	<default caps="100"/>
+
+	<start name="timer">
+		<resource name="RAM" quantum="1M"/>
+		<provides><service name="Timer"/></provides>
+	</start>
+
+	<start name="platform_drv" caps="200" managing_system="yes">
+		<resource name="RAM" quantum="2M"/>
+		<binary name="a64_platform_drv"/>
+		<provides> <service name="Platform"/> <service name="Scp"/> </provides>
+		<config devices_rom="config">
+
+			<device name="pio" type="allwinner,sun50i-a64-pinctrl">
+				<io_mem address="0x1c20800" size="0x400"/> <!-- Ports A-H -->
+				<io_mem address="0x1f02c00" size="0x400"/> <!-- Port L -->
+				<irq number="43"/> <!-- Port B -->
+				<irq number="49"/> <!-- Port G -->
+				<irq number="53"/> <!-- Port H -->
+				<irq number="77"/> <!-- Port L -->
+			</device>
+			<device name="dphy" type="allwinner,sun50i-a64-mipi-dphy">
+				<io_mem address="0x01ca1000" size="0x1000"/>
+				<clock name="bus-mipi-dsi" driver_name="bus"/>
+				<clock name="dsi-dphy"     driver_name="mod"/>
+				<reset-domain name="mipi-dsi"/>
+			</device>
+			<device name="dsi" type="allwinner,sun50i-a64-mipi-dsi">
+				<io_mem address="0x01ca0000" size="0x1000"/>
+				<reset-domain name="mipi-dsi"/>
+				<clock name="bus-mipi-dsi"/>
+				<clock name="pll-mipi"/>
+			</device>
+			<device name="syscon" type="allwinner,sun50i-a64-system-control">
+				<io_mem address="0x01c00000" size="0x1000"/>
+			</device>
+			<device name="de2_bus" type="allwinner,sun50i-a64-de2">
+				<io_mem address="0x1000000" size="0x400000"/>
+				<reset-domain name="de"/>
+				<clock name="bus-de"  driver_name="bus"/>
+				<clock name="de-sclk" driver_name="mod"/>
+				<clock name="dummy"   driver_name="bus-mixer0"/>
+				<clock name="dummy"   driver_name="mixer0"/>
+				<clock name="dummy"   driver_name="bus-mixer1"/>
+				<clock name="dummy"   driver_name="mixer1"/>
+				<clock name="pll-de"/>
+				<clock name="pll-video0"/>
+			</device>
+			<device name="r_pwm" type="allwinner,sun50i-a64-pwm">
+				<io_mem address="0x01f03800" size="0x400"/>
+				<clock name="osc24M" driver_name="mod"/>
+				<clock name="osc24M" driver_name="bus"/>
+			</device>
+			<device name="tcon0" type="allwinner,sun8i-a83t-tcon-lcd">
+				<io_mem address="0x01c0c000" size="0x1000"/>
+				<irq number="118"/>
+				<reset-domain name="tcon0"/>
+				<reset-domain name="lvds"/>
+				<power-domain name="pmic-gpio0"/>
+				<clock name="bus-tcon0" driver_name="ahb"/>
+				<clock name="tcon0"     driver_name="tcon-ch0"/>
+				<clock name="dummy"     driver_name="tcon-pixel-clock"/>
+			</device>
+			<device name="tcon1" type="allwinner,sun8i-a83t-tcon-tv">
+				<io_mem address="0x01c0d000" size="0x1000"/>
+				<irq number="119"/>
+				<reset-domain name="tcon1"/>
+				<clock name="bus-tcon1" driver_name="ahb"/>
+				<clock name="tcon1"     driver_name="tcon-ch1"/>
+			</device>
+
+			<policy label="a64_pio_drv -> ">
+				<device name="pio"/>
+			</policy>
+
+			<policy label="fb_drv -> " info="yes">
+				<device name="dphy"/>
+				<device name="dsi"/>
+				<device name="syscon"/>
+				<device name="de2_bus"/>
+				<device name="r_pwm"/>
+				<device name="tcon0"/>
+				<device name="tcon1"/>
+			</policy>
+
+			<device name="csi" type="allwinner,sun50i-a64-csi">
+				<io_mem address="0x01cb0000" size="0x1000"/>
+				<irq number="116"/>
+				<reset-domain name="csi"/>
+<!--
+				<power-domain name="pmic-aldo1"/>
+				<power-domain name="pmic-eldo3"/>
+				<power-domain name="pmic-dldo3"/>
+-->
+				<power-domain name="pmic-csi"/>
+
+				<clock name="bus-csi"  driver_name="bus"/>
+				<clock name="csi-sclk" driver_name="mod"/>
+				<clock name="dram-csi" driver_name="ram"/>
+				<clock name="csi-mclk" driver_name="xclk"/>
+			</device>
+
+			<policy label="camera_drv -> " info="yes">
+				<device name="csi"/>
+			</policy>
+
+		</config>
+		<route> <any-service> <parent/> <any-child/> </any-service> </route>
+	</start>
+
+	<start name="a64_pio_drv">
+		<resource name="RAM" quantum="1M"/>
+		<provides>
+			<service name="Pin_state"/>
+			<service name="Pin_control"/>
+			<service name="IRQ"/>
+		</provides>
+		<route>
+			<service name="ROM"> <parent/> </service>
+			<service name="CPU"> <parent/> </service>
+			<service name="PD">  <parent/> </service>
+			<service name="LOG"> <parent/> </service>
+			<service name="Platform"> <child name="platform_drv"/> </service>
+		</route>
+		<config>
+			<select name="lcd-pwm"   bank="L" index="10" function="2"/>
+			<out    name="backlight" bank="H" index="10"/>
+			<out    name="lcd-reset" bank="D" index="23" default="0"/>
+
+			<policy label="fb_drv -> PH10" pin="backlight"/>
+			<policy label="fb_drv -> PD23" pin="lcd-reset"/>
+
+			<select name="csi-pclk"  bank="E" index="0"  function="2"/>
+			<select name="csi-mclk"  bank="E" index="1"  function="2"/>
+			<select name="csi-hsync" bank="E" index="2"  function="2"/>
+			<select name="csi-vsync" bank="E" index="3"  function="2"/>
+
+			<select name="csi-d0" bank="E" index="4"  function="2"/>
+			<select name="csi-d1" bank="E" index="5"  function="2"/>
+			<select name="csi-d2" bank="E" index="6"  function="2"/>
+			<select name="csi-d3" bank="E" index="7"  function="2"/>
+			<select name="csi-d4" bank="E" index="8"  function="2"/>
+			<select name="csi-d5" bank="E" index="9"  function="2"/>
+			<select name="csi-d6" bank="E" index="10" function="2"/>
+			<select name="csi-d7" bank="E" index="11" function="2"/>
+
+			<out    name="csi-sck" bank="E" index="12"/>
+			<in     name="csi-sck" bank="E" index="12"/>
+			<out    name="csi-sda" bank="E" index="13"/>
+			<in     name="csi-sda" bank="E" index="13"/>
+
+			<out    name="gc2145-reset"     bank="E" index="16"/>
+			<out    name="gc2145-powerdown" bank="E" index="17"/>
+
+			<out    name="ov5460-powerdown" bank="C" index="0"/>
+			<out    name="ov5460-reset"     bank="D" index="3"/>
+			<in     name="ov5460-reset"     bank="D" index="3"/>
+
+			<policy label="camera_drv -> PC0"  pin="ov5460-powerdown"/>
+			<policy label="camera_drv -> PD3"  pin="ov5460-reset"/>
+
+			<policy label="camera_drv -> PE12" pin="csi-sck"/>
+			<policy label="camera_drv -> PE13" pin="csi-sda"/>
+
+			<policy label="camera_drv -> PE16" pin="gc2145-reset"/>
+			<policy label="camera_drv -> PE17" pin="gc2145-powerdown"/>
+		</config>
+	</start>
+
+	<start name="nitpicker">
+		<resource name="RAM" quantum="1M"/>
+		<provides>
+			<service name="Gui"/> <service name="Capture"/> <service name="Event"/>
+		</provides>
+		<config verbose="yes">
+			<capture/> <event/>
+
+			<domain name="default" layer="1" content="client" label="no"/>
+			<default-policy domain="default"/>
+		</config>
+	</start>
+
+	<start name="fb_drv" caps="250">
+		<binary name="de_fb_drv"/>
+		<resource name="RAM" quantum="40M"/>
+		<route>
+			<service name="ROM" label="dtb">     <parent label="de-pinephone.dtb"/> </service>
+			<service name="Platform">   <child name="platform_drv"/> </service>
+			<service name="Pin_control" label_last="PH10"> <child name="a64_pio_drv" label="fb_drv -> PH10"/> </service>
+			<service name="Pin_control" label_last="PD23"> <child name="a64_pio_drv" label="fb_drv -> PD23"/> </service>
+			<service name="Timer">       <child name="timer"/>            </service>
+			<service name="Capture">     <child name="nitpicker"/> </service>
+			<any-service> <parent/> </any-service>
+		</route>
+	</start>
+
+	<start name="dummy-log">
+		<binary name="dummy"/>
+		<resource name="RAM" quantum="1M"/>
+		<provides><service name="LOG"/></provides>
+		<config>
+			<log_service/>
+		</config>
+		<route>
+			<any-service> <parent/> </any-service>
+		</route>
+	</start>
+
+	<start name="dynamic_rom">
+		<resource name="RAM" quantum="4M"/>
+		<provides><service name="ROM"/></provides>
+		<config verbose="yes">
+			<rom name="config">
+				<inline description="camera front present 640x480@15">
+					<config>
+						<parent-provides>
+							<service name="ROM"/>
+							<service name="PD"/>
+							<service name="CPU"/>
+							<service name="LOG"/>
+							<service name="Platform"/>
+							<service name="Timer"/>
+							<service name="Capture"/>
+							<service name="Pin_control"/>
+							<service name="Pin_state"/>
+							<service name="Gui"/>
+						</parent-provides>
+						<start name="camera_drv" caps="250">
+							<binary name="pinephone_camera_drv"/>
+							<resource name="RAM" quantum="80M"/>
+							<config width="640" height="480" fps="15" format="yuv" camera="front"/>
+							<route>
+								<service name="ROM" label="dtb"> <parent label="camera.dtb"/> </service>
+								<any-service> <parent/> </any-service>
+							</route>
+						</start>
+					</config>
+				</inline>
+				<sleep milliseconds="10000"/>
+				<inline description="camera back present 640x480@15">
+					<config>
+						<parent-provides>
+							<service name="ROM"/>
+							<service name="PD"/>
+							<service name="CPU"/>
+							<service name="LOG"/>
+							<service name="Platform"/>
+							<service name="Timer"/>
+							<service name="Capture"/>
+							<service name="Pin_control"/>
+							<service name="Pin_state"/>
+							<service name="Gui"/>
+						</parent-provides>
+						<start name="camera_drv" version="2" caps="250">
+							<binary name="pinephone_camera_drv"/>
+							<resource name="RAM" quantum="80M"/>
+							<config width="640" height="480" fps="15" format="yuv" camera="rear"/>
+							<route>
+								<service name="ROM" label="dtb"> <parent label="camera.dtb"/> </service>
+								<any-service> <parent/> </any-service>
+							</route>
+						</start>
+					</config>
+				</inline>
+				<sleep milliseconds="10000"/>
+			</rom>
+		</config>
+	</start>
+
+	<start name="dynamic_init" caps="1000">
+		<binary name="init"/>
+		<resource name="RAM" quantum="128M"/>
+		<route>
+			<service name="ROM" label="config"> <child name="dynamic_rom"/> </service>
+
+			<service name="ROM" label_last="camera.dtb"> <parent label="camera-pinephone.dtb"/> </service>
+			<service name="Platform" label_suffix="camera_drv -> "> <child name="platform_drv" label="camera_drv -> "/> </service>
+			<service name="Pin_control" label_last="PC0">  <child name="a64_pio_drv" label="camera_drv -> PC0"/> </service>
+			<service name="Pin_control" label_last="PD3">  <child name="a64_pio_drv" label="camera_drv -> PD3"/> </service>
+			<service name="Pin_control" label_last="PE12"> <child name="a64_pio_drv" label="camera_drv -> PE12"/> </service>
+			<service name="Pin_control" label_last="PE13"> <child name="a64_pio_drv" label="camera_drv -> PE13"/> </service>
+			<service name="Pin_control" label_last="PE16"> <child name="a64_pio_drv" label="camera_drv -> PE16"/> </service>
+			<service name="Pin_control" label_last="PE17"> <child name="a64_pio_drv" label="camera_drv -> PE17"/> </service>
+			<service name="Pin_state" label_last="PC0">  <child name="a64_pio_drv" label="camera_drv -> PC0"/> </service>
+			<service name="Pin_state" label_last="PD3">  <child name="a64_pio_drv" label="camera_drv -> PD3"/> </service>
+			<service name="Pin_state" label_last="PE12"> <child name="a64_pio_drv" label="camera_drv -> PE12"/> </service>
+			<service name="Pin_state" label_last="PE13"> <child name="a64_pio_drv" label="camera_drv -> PE13"/> </service>
+			<service name="Pin_state" label_last="PE16"> <child name="a64_pio_drv" label="camera_drv -> PE16"/> </service>
+			<service name="Pin_state" label_last="PE17"> <child name="a64_pio_drv" label="camera_drv -> PE17"/> </service>
+
+			<service name="Timer"> <child name="timer"/>     </service>
+			<service name="Gui">   <child name="nitpicker"/> </service>
+			<!-- <service name="LOG">   <child name="dummy-log"/> </service> -->
+			<any-service> <parent/> </any-service>
+		</route>
+	</start>
+
+</config>}
+
+build_boot_image {
+	test-framebuffer
+	a64_platform_drv
+	a64_pio_drv
+	de_fb_drv
+	de-pinephone.dtb
+	pinephone_camera_drv
+	camera-pinephone.dtb
+
+	dummy
+}
+
+run_genode_until forever

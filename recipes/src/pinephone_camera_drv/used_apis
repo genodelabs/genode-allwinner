@@ -1,0 +1,11 @@
+a64_linux
+base
+framebuffer_session
+genode_c_api
+gui_session
+input_session
+os
+pin_control_session
+pin_state_session
+platform_session
+report_session

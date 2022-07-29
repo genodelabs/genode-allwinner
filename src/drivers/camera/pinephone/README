@@ -1,0 +1,39 @@
+This directory contains a port of the Linux SUN6-CSI, GC2145 and
+OV5640 camera drivers used in the PinePhone.
+
+
+Usage
+~~~~~
+
+The driver renders its captured camera image data into a Gui session.
+To start the driver the following configuration snippet can be used:
+
+!<start name="pinephone_camera_drv" caps="500">
+!  <resource name="RAM" quantum="16M"/>
+!  <config width="640" height="480" fps="30" format="yuv"
+!          convert="yes" rotate="yes"/>
+!</start>
+
+The :width: attribute selects the horizontal resolution and the :height:
+attribute the vertical resolution. Valid configurations are '640x480'
+as well as '1280x720'.
+
+The :fps: attribute selects the capture rate of the camera. Valid values
+are '15' and '30'.
+
+The :format: attribute selects the capture format. The only valid value
+is 'yuv', which selects YUV420.
+
+The :convert: attribute specifies if the captured image data is converted
+to the pixel format suitable for displaying directly. Default is 'true'.
+
+The :rotate: attribute specifies if the capture image data is rotated
+counter-clockwise and flipped. Default is 'true'.
+
+
+Limitations
+~~~~~~~~~~~
+
+The YUV420 to ABGR conversion as well as the rotation of the resulting
+picture is done in software on the CPU and comes with computational effort.
+Thus the actual capture rate is expected to be lower then configured.
