@@ -79,6 +79,7 @@ struct Driver::Ccu : private Attached_mmio
 	Gating_bit _bus_bus_ohci1{ _clocks, "bus-ohci1",    _osc_24m_clk, _regs(),  0x60, 29 };
 	Gating_bit _bus_tcon0    { _clocks, "bus-tcon0",    _osc_24m_clk, _regs(),  0x64,  3 };
 	Gating_bit _bus_tcon1    { _clocks, "bus-tcon1",    _osc_24m_clk, _regs(),  0x64,  4 };
+	Gating_bit _bus_csi      { _clocks, "bus-csi",      _osc_24m_clk, _regs(),  0x64,  8 };
 	Gating_bit _bus_hdmi     { _clocks, "bus-hdmi",     _osc_24m_clk, _regs(),  0x64, 11 };
 	Gating_bit _bus_de       { _clocks, "bus-de",       _osc_24m_clk, _regs(),  0x64, 12 };
 	Gating_bit _bus_gpu      { _clocks, "bus-gpu",      _osc_24m_clk, _regs(),  0x64, 20 };
@@ -91,9 +92,65 @@ struct Driver::Ccu : private Attached_mmio
 	Gating_bit _usb_phy0_gate{ _clocks, "usb-phy0",     _osc_24m_clk, _regs(),  0xcc,  8 };
 	Gating_bit _usb_phy1_gate{ _clocks, "usb-phy1",     _osc_24m_clk, _regs(),  0xcc,  9 };
 	Gating_bit _ohci1_gate   { _clocks, "ohci1",        _osc_24m_clk, _regs(),  0xcc, 17 };
+	Gating_bit _dram_csi     { _clocks, "dram-csi",     _osc_24m_clk, _regs(), 0x100,  1 };
 	Gating_bit _tcon0_gate   { _clocks, "tcon0",        _osc_24m_clk, _regs(), 0x118, 31 };
 	Gating_bit _tcon1_gate   { _clocks, "tcon1",        _osc_24m_clk, _regs(), 0x11c, 31 };
 	Gating_bit _ac           { _clocks, "ac",           _osc_24m_clk, _regs(), 0x140, 31 };
+
+	struct Csi_mclk : Clock, private Mmio
+	{
+		struct Reg : Register<0x134, 32>
+		{
+			struct Mclk_gating  : Bitfield<15, 1> { enum { MASK = 0, PASS = 1 }; };
+			struct Mclk_src_sel : Bitfield< 8, 3> { enum { PERIPH1 = 2, VIDEO1 = 2, INITIAL = 0 }; };
+		};
+
+		Csi_mclk(Clocks &clocks, void *ccu_regs)
+		:
+			Clock(clocks, "csi-mclk"), Mmio((addr_t)ccu_regs)
+		{ }
+
+		void _enable()  override
+		{
+			write<Reg::Mclk_src_sel>(Reg::Mclk_src_sel::INITIAL);
+			write<Reg::Mclk_gating>(Reg::Mclk_gating::PASS);
+		}
+
+		void _disable() override
+		{
+			write<Reg::Mclk_gating>(Reg::Mclk_gating::MASK);
+			write<Reg::Mclk_src_sel>(Reg::Mclk_src_sel::INITIAL);
+		}
+	} _csi_mclk { _clocks, _regs() };
+
+	struct Csi_sclk : Clock, private Mmio
+	{
+		struct Reg : Register<0x134, 32>
+		{
+			struct Sclk_gating  : Bitfield<31, 1> { enum { MASK = 0, PASS = 1 }; };
+			struct Sclk_src_sel : Bitfield<24, 3> { enum { PERIPH1 = 1, PERIPH0 = 0 }; };
+			struct Sclk_div_m   : Bitfield<16, 4> { };
+		};
+
+		Csi_sclk(Clocks &clocks, void *ccu_regs)
+		:
+			Clock(clocks, "csi-sclk"), Mmio((addr_t)ccu_regs)
+		{ }
+
+		void _enable()  override
+		{
+			write<Reg::Sclk_div_m>(1);
+			write<Reg::Sclk_src_sel>(Reg::Sclk_src_sel::PERIPH0);
+			write<Reg::Sclk_gating>(Reg::Sclk_gating::PASS);
+		}
+
+		void _disable() override
+		{
+			write<Reg::Sclk_gating>(Reg::Sclk_gating::MASK);
+			write<Reg::Sclk_src_sel>(Reg::Sclk_src_sel::PERIPH0);
+			write<Reg::Sclk_div_m>(0);
+		}
+	} _csi_sclk { _clocks, _regs() };
 
 	struct De_clk : Clock, private Mmio
 	{
@@ -292,6 +349,7 @@ struct Driver::Ccu : private Attached_mmio
 	Reset_bit _ohci1_rst     { _resets, "ohci1",    _regs(), 0x2c0, 29 };
 	Reset_bit _tcon0_rst     { _resets, "tcon0",    _regs(), 0x2c4,  3 };
 	Reset_bit _tcon1_rst     { _resets, "tcon1",    _regs(), 0x2c4,  4 };
+	Reset_bit _csi_rst       { _resets, "csi",      _regs(), 0x2c4,  8 };
 	Reset_bit _de_rst        { _resets, "de",       _regs(), 0x2c4, 12 };
 	Reset_bit _gpu_rst       { _resets, "gpu",      _regs(), 0x2c4, 20 };
 	Reset_bit _mbox_rst      { _resets, "mbox",     _regs(), 0x2c4, 21 };

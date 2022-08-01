@@ -52,6 +52,31 @@ struct Driver::Pmic : private Noncopyable
 	                  "3 90 pmic!",
 	                  "7 90 pmic!" };
 
+	Power csi_power { _powers, "pmic-csi", _scp,
+	                  /* ALDO1, set bit 5 in output control 3 */
+	                  "b 28 pmic! "
+	                  "13 pmic@ 20 or 13 pmic! "
+	                  "32 udelay "
+	                  /* ELDO3, set bit 2 in output control 2 */
+	                  "10 1b pmic! "
+	                  "12 pmic@ 4 or 12 pmic! "
+	                  "a udelay "
+	                  /* DLDO3, set bit 5 in output control 2 */
+	                  "15 17 pmic! "
+	                  "12 pmic@ 20 or 12 pmic! "
+	                  "a udelay "
+	                  ,
+	                  /* DLDO3, clear bit 5 in output control 2 */
+	                  "12 pmic@ df and 12 pmic! "
+	                  "15 17 pmic! "
+	                  /* ELDO3, clear bit 2 in output control 2 */
+	                  "12 pmic@ fb and 12 pmic! "
+	                  "0 1b pmic! "
+	                  /* ALDO1, clear bit 5 in output control 3 */
+	                  "13 pmic@ df and 13 pmic! "
+	                  "17 28 pmic! "
+	};
+
 	Pmic(Scp::Local_connection &scp, Powers &powers)
 	:
 		_scp(scp), _powers(powers)
