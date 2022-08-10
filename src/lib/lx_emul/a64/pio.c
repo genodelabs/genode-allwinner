@@ -80,8 +80,8 @@ static const struct irq_domain_ops sunxi_pinctrl_irq_domain_ops = {
 
 
 static int sunxi_pinctrl_gpio_of_xlate(struct gpio_chip *gc,
-                                const struct of_phandle_args *gpiospec,
-                                u32 *flags)
+                                       const struct of_phandle_args *gpiospec,
+                                       u32 *flags)
 {
 	int const bank   = gpiospec->args[0];
 	int const pin    = gpiospec->args[1];
@@ -111,6 +111,44 @@ static void sunxi_pinctrl_gpio_set(struct gpio_chip *chip,
 	sunxi_pinctrl_pin_name(name, sizeof(name), offset);
 
 	lx_emul_pin_control(name, value);
+}
+
+
+static int sunxi_pinctrl_gpio_direction_output(struct gpio_chip *chip,
+                                               unsigned offset, int value)
+{
+	sunxi_pinctrl_gpio_set(chip, offset, value);
+	return 0;
+}
+
+
+static int sunxi_pinctrl_gpio_get(struct gpio_chip *chip,
+                                  unsigned offset)
+{
+	char name[16];
+	sunxi_pinctrl_pin_name(name, sizeof(name), offset);
+
+	/*
+	 * Allow the time-multiplexed operation of selected pins as both input and
+	 * output.
+	 */
+
+	/* CSI I2C driven via bit banging */
+	if (strcmp(name, "PE12") == 0 || strcmp(name, "PE13") == 0)
+		return lx_emul_pin_sense(name);
+
+	/* reset line of the PinePhone's rear camera */
+	if (strcmp(name, "PD3" ) == 0)
+		return lx_emul_pin_sense(name);
+
+	return 0;
+}
+
+
+static int sunxi_pinctrl_gpio_direction_input(struct gpio_chip *chip,
+                                              unsigned offset)
+{
+	return sunxi_pinctrl_gpio_get(chip, offset);
 }
 
 
@@ -191,11 +229,15 @@ static int a64_pinctrl_probe(struct platform_device *pdev)
 		pctl->chip->free            = gpiochip_generic_free;
 		pctl->chip->set_config      = sunxi_pinctrl_gpio_set_config;
 		pctl->chip->set             = sunxi_pinctrl_gpio_set;
+		pctl->chip->get             = sunxi_pinctrl_gpio_get;
 		pctl->chip->of_xlate        = sunxi_pinctrl_gpio_of_xlate;
 		pctl->chip->of_gpio_n_cells = 3;
 		pctl->chip->ngpio           = NUM_PINS;
 		pctl->chip->label           = dev_name(&pdev->dev);
 		pctl->chip->parent          = &pdev->dev;
+
+		pctl->chip->direction_output = sunxi_pinctrl_gpio_direction_output;
+		pctl->chip->direction_input  = sunxi_pinctrl_gpio_direction_input;
 
 		{
 			int ret;
