@@ -104,6 +104,37 @@ class At_protocol::Control : Noncopyable
 			Command command() const override { return AT_POWER_DOWN; };
 		};
 
+		struct Reboot : Operation
+		{
+			Command command() const override { return Command("AT+CFUN=1,1"); }
+		};
+
+		struct Query_qcfg : Operation
+		{
+			Qcfg::Name const name;
+
+			Command command() const override
+			{
+				return Command(AT_QCFG_PREFIX, "\"", name, "\"");
+			}
+
+			Query_qcfg(Qcfg::Name const &name) : name(name) { }
+		};
+
+		struct Assign_qcfg : Operation
+		{
+			Qcfg::Name  const name;
+			Qcfg::Value const value;
+
+			Command command() const override
+			{
+				return Command(AT_QCFG_PREFIX, "\"", name, "\",", value);
+			}
+
+			Assign_qcfg(Qcfg::Name  const &name, Qcfg::Value const &value)
+			: name(name), value(value) { }
+		};
+
 		/**
 		 * User-defined command executed as response to a 'RING' URC
 		 */
@@ -117,15 +148,18 @@ class At_protocol::Control : Noncopyable
 
 		Constructible<Check_ready>       _check_ready       { };
 		Constructible<Disable_echo>      _disable_echo      { };
+		Constructible<Ring>              _ring              { };
 		Constructible<Set_pin>           _set_pin           { };
 		Constructible<Request_pin_state> _request_pin_state { };
 		Constructible<Request_pin_count> _request_pin_count { };
+		Constructible<Power_down>        _power_down        { };
+		Constructible<Reboot>            _reboot            { };
+		Constructible<Query_qcfg>        _query_qcfg        { };
+		Constructible<Assign_qcfg>       _assign_qcfg       { };
+		Constructible<Hang_up>           _hang_up           { };
 		Constructible<Request_call_list> _request_call_list { };
 		Constructible<Initiate_call>     _initiate_call     { };
-		Constructible<Hang_up>           _hang_up           { };
 		Constructible<Accept_call>       _accept_call       { };
-		Constructible<Power_down>        _power_down        { };
-		Constructible<Ring>              _ring              { };
 
 		template <typename FN, typename LAST>
 		void _apply_to(FN const &fn, LAST &last) { fn(last); }
@@ -142,15 +176,26 @@ class At_protocol::Control : Noncopyable
 		{
 			_apply_to(fn, _check_ready,
 			              _disable_echo,
-			              _power_down,
+			              _ring,
+			              _set_pin,
 			              _request_pin_state,
 			              _request_pin_count,
-			              _set_pin,
-			              _request_call_list,
+			              _power_down,
+			              _reboot,
+			              _query_qcfg,
+			              _assign_qcfg,
 			              _hang_up,
+			              _request_call_list,
 			              _initiate_call,
-			              _accept_call,
-			              _ring);
+			              _accept_call);
+		}
+
+		void _cancel_all_operations()
+		{
+			_apply_to_operations([&] (auto &op) {
+				op.destruct();
+				return false;
+			});
 		}
 
 		void _log_pending_operations()
@@ -418,13 +463,71 @@ class At_protocol::Control : Noncopyable
 			}
 		}
 
+		void _apply_qcfg(Qcfg const &qcfg)
+		{
+			auto failed = [&] (auto const &request) {
+				return request.constructed()
+				    && (request->state == Operation::State::SUBMITTED)
+				    && _status.error; };
+
+			if (failed(_query_qcfg))
+				_query_qcfg.destruct();
+
+			/* query current modem configuration */
+			if (!_query_qcfg.constructed())
+				qcfg.with_any_unknown_entry([&] (Qcfg::Entry const &e) {
+					_query_qcfg.construct(e.name); });
+
+			/* assign mismatching configuration values */
+			if (!_assign_qcfg.constructed())
+				qcfg.with_any_mismatching_entry([&] (Qcfg::Entry const &e) {
+					_assign_qcfg.construct(e.name, e.value); });
+
+			/* reboot modem to ensure that changed settings become effective */
+			if (!_reboot.constructed() && qcfg.reboot_needed()) {
+				_cancel_all_operations();
+				_reboot.construct();
+				_current_pin = { };
+			}
+		}
+
+		void _apply_config(Xml_node const &config, Qcfg const &qcfg)
+		{
+			/* don't issue AT commands during modem reboot */
+			if (_reboot.constructed() || !_status.rdy)
+				return;
+
+			/* disable echo to avoid mixing up URC content with commands */
+			_disable_echo.conditional(!_status.echo_disabled && _status.at_ok);
+
+			if (!_status.echo_disabled)
+				return;
+
+			_apply_qcfg(qcfg);
+
+			_apply_pin(config.attribute_value("pin", Pin()));
+
+			_apply_power(config.attribute_value("power", Power()));
+
+			_apply_hang_up(config);
+
+			_keep_call_list_up_to_date();
+
+			config.with_sub_node("call", [&] (Xml_node const &call) {
+				_apply_call(call); });
+
+			config.with_sub_node("ring", [&] (Xml_node const &ring) {
+				_apply_ring(ring); });
+		}
+
 	public:
 
 		Control(Status const &status) : _status(status) { }
 
 		struct Verbose { bool value; };
 
-		void apply_config(Xml_node const &config, Command_channel &command_channel,
+		void apply_config(Xml_node const &config, Qcfg const &qcfg,
+		                  Command_channel &command_channel,
 		                  Verbose const verbose)
 		{
 			_complete_operation();
@@ -432,25 +535,7 @@ class At_protocol::Control : Noncopyable
 			/* issue 'AT' command until we get the response 'OK' */
 			_check_ready.conditional(!_status.at_ok);
 
-			/* disable echo to avoid mixing up URC content with commands */
-			_disable_echo.conditional(!_status.echo_disabled && _status.at_ok);
-
-			if (_status.echo_disabled) {
-
-				_apply_pin(config.attribute_value("pin", Pin()));
-
-				_apply_power(config.attribute_value("power", Power()));
-
-				_apply_hang_up(config);
-
-				_keep_call_list_up_to_date();
-
-				config.with_sub_node("call", [&] (Xml_node const &call) {
-					_apply_call(call); });
-
-				config.with_sub_node("ring", [&] (Xml_node const &ring) {
-					_apply_ring(ring); });
-			}
+			_apply_config(config, qcfg);
 
 			if (!_any_operation_in_flight())
 				_submit_one_pending_operation(command_channel);

@@ -59,6 +59,7 @@ struct Test::Modem : Noncopyable
 	bool _initiated_invalid_call = false;
 	bool _initiated_valid_call   = false;
 	bool _audible_ring           = false;
+	bool _usbnet_ecm             = false;
 
 	void _handle_timeout()
 	{
@@ -129,6 +130,33 @@ struct Test::Modem : Noncopyable
 		/* disable echo */
 		if (line == "ATE0") {
 			_modem_sends("OK\r\n");
+		}
+
+		/* query SMS ring indicator setting */
+		if (line == "AT+QCFG=\"urc/ri/smsincoming\"") {
+			_modem_sends("+QCFG: \"urc/ri/smsincoming\",pulse,120,1\r\n");
+			_modem_sends("OK\r\n");
+		}
+
+		/* query usbnet setting */
+		if (line == "AT+QCFG=\"usbnet\"") {
+			if (_usbnet_ecm)
+				_modem_sends("+QCFG: \"usbnet\",1\r\n");
+			else
+				_modem_sends("+QCFG: \"usbnet\",0\r\n");
+			_modem_sends("OK\r\n");
+		}
+
+		/* set usbnet mode to ECM */
+		if (line == "AT+QCFG=\"usbnet\",1") {
+			_usbnet_ecm = true;
+			_modem_sends("OK\r\n");
+		}
+
+		/* reboot */
+		if (line == "AT+CFUN=1,1") {
+			_modem_sends("OK\r\n");
+			_modem_sends_delayed("RDY\r\n", Delay { .ms = 1000 });
 		}
 
 		/* set wrong pin */

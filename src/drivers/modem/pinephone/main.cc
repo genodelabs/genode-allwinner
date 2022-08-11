@@ -53,7 +53,7 @@ struct Modem::Main : private Delayer
 		UNKNOWN,
 		POWERING_ON,         /* power driver in progress */
 		AT_PROTOCOL,
-		AT_SIM_BUSY,
+		AT_BUSY,
 		AT_SHUTDOWN,         /* AT driver in progress */
 		AT_GRACE_DELAY,      /* wait 1 sec after AT shutdown */
 		POWERING_OFF,        /* power driver in progress */
@@ -75,6 +75,8 @@ struct Modem::Main : private Delayer
 	{
 		At_protocol_driver(Env &env, Signal_context_capability sigh)
 		: At_protocol_driver_base(env) { modem.sigh(sigh); };
+
+		At_protocol::Qcfg::Entry _qcfg_usbnet_ecm { this->qcfg, "usbnet", "1" };
 
 		void apply(Xml_node config)
 		{
@@ -149,7 +151,7 @@ struct Modem::Main : private Delayer
 			case Power_state::POWERING_ON:  return "starting up";
 			case Power_state::POWER_ON:
 			case Power_state::AT_PROTOCOL:
-			case Power_state::AT_SIM_BUSY:  return "on";
+			case Power_state::AT_BUSY:      return "on";
 			case Power_state::AT_SHUTDOWN:
 			case Power_state::AT_GRACE_DELAY:
 			case Power_state::POWERING_OFF: return "shutting down";
@@ -216,7 +218,7 @@ struct Modem::Main : private Delayer
 			[[fallthrough]];  /* allow triggering power-off during startup */
 
 		case Power_state::AT_PROTOCOL:
-		case Power_state::AT_SIM_BUSY:
+		case Power_state::AT_BUSY:
 
 			if (config.attribute_value("power", true) == false) {
 
@@ -295,15 +297,15 @@ struct Modem::Main : private Delayer
 
 		At_version const orig_at_version = at_version();
 
-		auto sim_busy_count = [&] {
+		auto busy_count = [&] {
 			return _at_protocol_driver.constructed()
-			     ? _at_protocol_driver->sim_busy_count() : 0; };
+			     ? _at_protocol_driver->busy_count() : 0; };
 
-		unsigned const orig_sim_busy_count = sim_busy_count();
+		unsigned const orig_busy_count = busy_count();
 
-		auto sim_busy = [&] {
+		auto busy = [&] {
 			return _at_protocol_driver.constructed()
-			    && (orig_sim_busy_count != sim_busy_count()); };
+			    && (orig_busy_count != busy_count()); };
 
 		/*
 		 * The state machines for the power driver and AT protocol driver
@@ -327,12 +329,12 @@ struct Modem::Main : private Delayer
 
 			overall_progress = true;
 
-			if (sim_busy())
+			if (busy())
 				break;
 		}
 
-		if (sim_busy())
-			_power_state = Power_state::AT_SIM_BUSY;
+		if (busy())
+			_power_state = Power_state::AT_BUSY;
 
 		if (orig_at_version.value != at_version().value)
 			_last_at_progress_ms = _event_timer.elapsed_ms();
@@ -340,7 +342,7 @@ struct Modem::Main : private Delayer
 		bool const need_polling = _starting_up()
 		                       || _shutting_down()
 		                       || _outbound_call()
-		                       || sim_busy()
+		                       || (_power_state == Power_state::AT_BUSY)
 		                       || _at_response_outstanding();
 
 		if (need_polling)
@@ -354,7 +356,7 @@ struct Modem::Main : private Delayer
 	{
 		_timer_scheduled = false;
 
-		if (_power_state == Power_state::AT_SIM_BUSY)
+		if (_power_state == Power_state::AT_BUSY)
 			_power_state =  Power_state::AT_PROTOCOL;
 
 		/* update call list while placing an outbound call */

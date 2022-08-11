@@ -116,6 +116,12 @@ struct Test::Driver : Noncopyable
 
 	Protocol_driver _protocol_driver { };
 
+	/* asserted modem configuration */
+	At_protocol::Qcfg::Entry _qcfg_usbnet_ecm {
+		_protocol_driver.qcfg, "usbnet", "1" };
+	At_protocol::Qcfg::Entry _qcfg_sms_ri {
+		_protocol_driver.qcfg, "urc/ri/smsincoming", "pulse,120,1" };
+
 	Timer::Connection _timer { _env };
 
 	Signal_handler<Driver> _timer_handler {

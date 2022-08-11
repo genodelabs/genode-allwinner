@@ -17,6 +17,7 @@
 /* local includes */
 #include <at_protocol/types.h>
 #include <at_protocol/line.h>
+#include <at_protocol/qcfg.h>
 
 namespace At_protocol { struct Status; }
 
@@ -45,6 +46,10 @@ class At_protocol::Status : Noncopyable
 
 		Version _version { };  /* used for tracking state changes */
 
+		void _status_changed() { _version.value++; }
+
+		Qcfg &_qcfg;
+
 		bool const &_verbose;
 
 		template <typename T>
@@ -52,7 +57,7 @@ class At_protocol::Status : Noncopyable
 		{
 			using Attr = typename T::Type;
 			line.with_value(Attr::prefix(), [&] (auto const &value) {
-				_version.value++;
+				_status_changed();
 				optional.construct(Attr { value });
 			});
 		}
@@ -60,7 +65,7 @@ class At_protocol::Status : Noncopyable
 		void _apply_boolean(Line const &line, char const *string, bool &var, bool value)
 		{
 			if (line == string) {
-				_version.value++;
+				_status_changed();
 				var = value;
 			}
 		}
@@ -78,7 +83,7 @@ class At_protocol::Status : Noncopyable
 		void _increment(Line const &line, char const *string, unsigned &var)
 		{
 			if (line == string) {
-				_version.value++;
+				_status_changed();
 				var++;
 			}
 		}
@@ -92,9 +97,10 @@ class At_protocol::Status : Noncopyable
 		void _reset_command()
 		{
 			_pending_command.destruct();
-			ok = false;
+			ok    = false;
+			error = false;
 			cme_error.destruct();
-			_version.value++;
+			_status_changed();
 		}
 
 		Constructible<Command> _pending_command { };
@@ -105,12 +111,14 @@ class At_protocol::Status : Noncopyable
 		bool echo_disabled   = false;
 		bool powered_down    = false;
 		bool ok              = false;
+		bool rdy             = true;  /* modem may be RDY from previous boot */
+		bool error           = false;
 		bool clcc_up_to_date = false;
 
 		unsigned ring_count               = 0;
 		unsigned incorrect_password_count = 0;
 		unsigned no_carrier_count         = 0;
-		unsigned sim_busy_count           = 0;
+		unsigned busy_count               = 0;
 
 		struct Sim_pin_count
 		{
@@ -189,6 +197,58 @@ class At_protocol::Status : Noncopyable
 				fn(*_pending_command);
 		}
 
+		void _apply_qcfg_response(Line const &line)
+		{
+			/* handle response to QCFG query */
+			line.with_value("+QCFG: ", [&] (String<100> const &response) {
+
+				Qcfg::Name const name = comma_separated_element(0, response);
+
+				/*
+				 * The attribute name appears in quotes. Retain all remaining
+				 * comma-separated values in one string. Skip the attribute
+				 * name length (value includes null termination), the quote
+				 * characters and the comma after the attribute name.
+				 */
+				size_t const skip = name.length() + 2;
+				if (response.length() < skip)
+					return;
+
+				Qcfg::Value const value(Cstring(response.string() + skip));
+
+				_qcfg.with_entry(name, [&] (Qcfg::Entry &entry) {
+					entry.state = (entry.value == value)
+					            ? Qcfg::Entry::State::CONFIRMED
+					            : Qcfg::Entry::State::MISMATCH;
+					_status_changed();
+				});
+			});
+
+			/* handle response to QCFG assignment */
+			if (line == "OK") {
+
+				with_pending_command([&] (Command const &command) {
+
+					if (!starts_with(command, AT_QCFG_PREFIX))
+						return;
+
+					using Attr = String<100>;
+					Attr const attr(Cstring(command.string() + strlen(AT_QCFG_PREFIX)));
+
+					/* a QCFG assigment features at least one comma */
+					Qcfg::Value const value = comma_separated_element(1, attr);
+					if (value.length() <= 1)
+						return;
+
+					Qcfg::Name const name = comma_separated_element(0, attr);
+					_qcfg.with_entry(name, [&] (Qcfg::Entry &e) {
+						e.state = Qcfg::Entry::State::MODIFIED;
+						_status_changed();
+					});
+				});
+			}
+		}
+
 		void apply_line(Line const &line)
 		{
 			if (_verbose)
@@ -201,18 +261,23 @@ class At_protocol::Status : Noncopyable
 			_apply_attr_value(cme_error,     line);
 			_apply_attr_value(sim_pin_count, line);
 
+			_apply_qcfg_response(line);
+
 			Current_call::with_match(line, [&] (Current_call const &match) {
 				current_call.construct(match);
-				_version.value++;
+				_status_changed();
 			});
 
 			_enable_boolean(line, "POWERED DOWN", powered_down);
 			_enable_boolean(line, "OK",           ok);
+			_enable_boolean(line, "ERROR",        error);
+			_enable_boolean(line, "RDY",          rdy);
 
 			_increment(line, "RING",           ring_count);
 			_increment(line, "NO CARRIER",     no_carrier_count);
-			_increment(line, "+CME ERROR: 10", sim_busy_count);
-			_increment(line, "+CME ERROR: 14", sim_busy_count);
+			_increment(line, "+CME ERROR: 10", busy_count);
+			_increment(line, "+CME ERROR: 14", busy_count);
+			_increment(line, "ERROR",          busy_count);
 
 			/* discard outdated pin info */
 			if (line == "+CME ERROR: 16")
@@ -237,22 +302,30 @@ class At_protocol::Status : Noncopyable
 			if (current_call.constructed())
 				clcc_up_to_date = true;
 
-			/* manage freshness of call list */
 			if (line == "OK") {
 
 				with_pending_command([&] (Command const &command) {
+
+					/* reboot confirmed */
+					if (command == AT_REBOOT) {
+						at_ok         = false;
+						echo_disabled = false;
+						rdy           = false;
+
+						cpin         .destruct();
+						cme_error    .destruct();
+						sim_pin_count.destruct();
+
+						_clcc_out_of_date();
+						_qcfg.invalidate_after_reboot();
+					}
 
 					/* detect end of empty call list */
 					if (command == AT_REQUEST_CALL_LIST)
 						clcc_up_to_date = true;
 
-					auto command_starts_with = [&] (char const *prefix)
-					{
-						return strcmp(prefix, command.string(), 3) == 0;
-					};
-
 					/* certain commands have a side effect on the call list */
-					bool const clcc_invalidated = command_starts_with("ATD")
+					bool const clcc_invalidated = starts_with(command, "ATD")
 					                          || (command == AT_HANG_UP)
 					                          || (command == AT_ACCEPT_CALL);
 					if (clcc_invalidated)
@@ -278,7 +351,7 @@ class At_protocol::Status : Noncopyable
 
 		Version version() const { return _version; }
 
-		Status(bool const &verbose) : _verbose(verbose) { }
+		Status(Qcfg &qcfg, bool const &verbose) : _qcfg(qcfg), _verbose(verbose) { }
 };
 
 #endif /* _AT_PROTOCOL__STATUS_H_ */

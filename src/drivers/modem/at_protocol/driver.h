@@ -18,6 +18,7 @@
 #include <at_protocol/read_buffer.h>
 #include <at_protocol/status.h>
 #include <at_protocol/control.h>
+#include <at_protocol/qcfg.h>
 
 namespace At_protocol { template <size_t> class Driver; }
 
@@ -29,7 +30,9 @@ class At_protocol::Driver : Noncopyable
 
 		bool verbose = false;
 
-		Status status { verbose };
+		Qcfg qcfg { };
+
+		Status status { qcfg, verbose };
 
 	private:
 
@@ -118,7 +121,7 @@ class At_protocol::Driver : Noncopyable
 
 			Command_filter command_filter { command_channel, status, verbose };
 
-			_control.apply_config(config, command_filter,
+			_control.apply_config(config, qcfg, command_filter,
 			                      Control::Verbose { verbose });
 
 			/* invalidate current-call information on disconnect */
@@ -261,14 +264,19 @@ class At_protocol::Driver : Noncopyable
 		bool powered_down() const { return status.powered_down; }
 
 		/**
-		 * Return indicator that SIM-related command processing must be deferred
+		 * Return indicator that command processing must be deferred
 		 *
 		 * The pin state is not available while booting the SIM card. Whenever
 		 * in increasing count is observed, it is best to wait a bit.
+		 *
+		 * Another case is the queriying of QCFG attributes while the modem
+		 * is booting. E.g., when requesting "usbnet" too early, the modem
+		 * responds with a plain "ERROR". When queried at a later time, the
+		 * command succeeds.
 		 */
-		unsigned sim_busy_count() const
+		unsigned busy_count() const
 		{
-			return status.sim_busy_count;
+			return status.busy_count;
 		}
 };
 

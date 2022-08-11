@@ -29,6 +29,11 @@ namespace At_protocol {
 	static constexpr char const * AT_ACCEPT_CALL       = "ATA";
 	static constexpr char const * AT_POWER_DOWN        = "AT+QPOWD";
 	static constexpr char const * AT_DISABLE_ECHO      = "ATE0";
+	static constexpr char const * AT_QCFG_PREFIX       = "AT+QCFG=";
+	static constexpr char const * AT_REBOOT            = "AT+CFUN=1,1";
+
+	template <size_t N>
+	static bool starts_with(String<N> const &, char const *prefix);
 
 	template <size_t N>
 	static String<N> comma_separated_element(unsigned, String<N> const &);
@@ -43,6 +48,16 @@ namespace At_protocol {
 		virtual size_t read_from_modem(void *buf, size_t buf_len) = 0;
 	};
 }
+
+
+template <Genode::size_t N>
+bool At_protocol::starts_with(String<N> const &string, char const *prefix)
+{
+	size_t const len = strlen(prefix);
+
+	return (string.length() > len)
+	    && (strcmp(prefix, string.string(), len) == 0);
+};
 
 
 template <Genode::size_t N>
