@@ -434,6 +434,54 @@ struct Sculpt::Main : Input_event_handler,
 
 
 	/***********
+	 ** Audio **
+	 ***********/
+
+	Expanding_reporter _audio_config { _env, "config", "audio_config" };
+
+	struct Audio_config
+	{
+		bool earpiece, speaker, mic;
+
+		bool operator != (Audio_config const &other) const
+		{
+			return (earpiece != other.earpiece)
+			    || (speaker  != other.speaker)
+			    || (mic      != other.mic);
+		}
+
+		void generate(Xml_generator &xml) const
+		{
+			xml.attribute("earpiece", earpiece);
+			xml.attribute("speaker",  speaker);
+			xml.attribute("mic",      mic);
+		}
+	};
+
+	Audio_config _curr_audio_config { };
+
+	void _generate_audio_config()
+	{
+		Audio_config const new_config {
+
+			.earpiece = true,
+
+			/* enable speaker for the ring tone when no call is active */
+			.speaker  = !_current_call.active() || _current_call.speaker,
+
+			/* enable microphone during call */
+			.mic = _current_call.active()
+		};
+
+		if (new_config != _curr_audio_config) {
+			_curr_audio_config = new_config;
+			_audio_config.generate([&] (Xml_generator &xml) {
+				_curr_audio_config.generate(xml); });
+		}
+	}
+
+
+	/***********
 	 ** Phone **
 	 ***********/
 
@@ -460,6 +508,26 @@ struct Sculpt::Main : Input_event_handler,
 			    || (modem_state  != other.modem_state)
 			    || (sim_pin      != other.sim_pin)
 			    || (current_call != other.current_call);
+		}
+
+		void generate(Xml_generator &xml) const
+		{
+			switch (modem_power) {
+			case Modem_config_power::OFF: xml.attribute("power", "off"); break;
+			case Modem_config_power::ON:  xml.attribute("power", "on");  break;
+			case Modem_config_power::ANY: break;
+			}
+
+			bool const supply_pin = modem_state.pin_required()
+			                     && sim_pin.suitable_for_unlock()
+			                     && sim_pin.confirmed;
+			if (supply_pin)
+				xml.attribute("pin", String<10>(sim_pin));
+
+			xml.node("ring", [&] {
+				xml.append_content("AT+QLDTMF=5,\"4,3,6,#,D,3\",1"); });
+
+			current_call.gen_modem_config(xml);
 		}
 	};
 
@@ -497,26 +565,6 @@ struct Sculpt::Main : Input_event_handler,
 		}
 	}
 
-	static void _generate_modem_config(Xml_generator &xml, Modem_config const &config)
-	{
-		switch (config.modem_power) {
-		case Modem_config_power::OFF: xml.attribute("power", "off"); break;
-		case Modem_config_power::ON:  xml.attribute("power", "on");  break;
-		case Modem_config_power::ANY: break;
-		}
-
-		bool const supply_pin = config.modem_state.pin_required()
-		                     && config.sim_pin.suitable_for_unlock()
-		                     && config.sim_pin.confirmed;
-		if (supply_pin)
-			xml.attribute("pin", String<10>(config.sim_pin));
-
-		xml.node("ring", [&] {
-			xml.append_content("AT+QLDTMF=5,\"4,3,6,#,D,3\",1"); });
-
-		config.current_call.gen_modem_config(xml);
-	}
-
 	void _generate_modem_config()
 	{
 		Modem_config const new_config {
@@ -535,9 +583,12 @@ struct Sculpt::Main : Input_event_handler,
 				if (_verbose_modem)
 					xml.attribute("verbose", "yes");
 
-				_generate_modem_config(xml, _curr_modem_config);
+				_curr_modem_config.generate(xml);
 			});
 		}
+
+		/* update audio config as it depends on the current call state */
+		_generate_audio_config();
 	}
 
 	/**

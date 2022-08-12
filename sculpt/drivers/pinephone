@@ -46,7 +46,7 @@
 				<device name="pio"/>
 			</policy>
 
-			<policy label="modem -> ">
+			<policy label="audio_control -> ">
 				<device name="audio_codec"/>
 				<device name="audio_analog"/>
 			</policy>
@@ -200,7 +200,6 @@
 			<service name="ROM" label="config"> <parent label="modem.config"/> </service>
 			<service name="Pin_control"> <child name="a64_pio_drv"/>        </service>
 			<service name="Pin_state">   <child name="a64_pio_drv"/>        </service>
-			<service name="Platform">    <child name="platform_drv"/>       </service>
 			<service name="Terminal">    <child name="terminal_crosslink"/> </service>
 			<service name="ROM">    <parent/> </service>
 			<service name="PD">     <parent/> </service>
@@ -216,6 +215,16 @@
 		<resource name="RAM" quantum="2M"/>
 		<route>
 			<service name="Terminal"> <child name="terminal_crosslink"/> </service>
+			<service name="Platform"> <child name="platform_drv"/> </service>
+			<any-service> <parent/> </any-service>
+		</route>
+	</start>
+
+	<start name="audio_control">
+		<binary name="pinephone_audio_control"/>
+		<resource name="RAM" quantum="1M"/>
+		<route>
+			<service name="ROM" label="config"> <parent label="audio.config"/> </service>
 			<service name="Platform"> <child name="platform_drv"/> </service>
 			<any-service> <parent/> </any-service>
 		</route>

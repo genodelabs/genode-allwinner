@@ -125,6 +125,8 @@
 						<child name="config_fs_report" label="managed -> runtime"/> </service>
 					<service name="Report" label="modem_config">
 						<child name="config_fs_report" label="managed -> modem"/> </service>
+					<service name="Report" label="audio_config">
+						<child name="config_fs_report" label="managed -> audio"/> </service>
 					<service name="Report"> <child name="report_rom"/> </service>
 					<service name="ROM" label_prefix="report ->"> <parent/> </service>
 					<service name="ROM" label_suffix="_hover">     <child name="report_rom"/> </service>
