@@ -48,17 +48,160 @@
 # This operation has to be performed only once
 #
 
-build { core init timer
-        drivers/uart/ns16550 drivers/platform/a64 drivers/pin/a64
-        drivers/modem/pinephone drivers/audio_control/pinephone
-        drivers/usb_host/a64
-        server/terminal_crosslink server/report_rom
-        drivers/usb_net
-        server/nic_router
-        app/ping
-      }
+# set to 0 to let the modem driver interact with the modem's AT interface
+proc interactive_at_control { } { return 1 }
+
+# set to 1 to establish network connectivity via the modem's usbnet interface
+proc test_network_connectivity { } { return 0 }
+
+# return SIM pin unless using 'interactive_at_control'
+proc sim_pin { } {
+	global ::env
+	if {[info exists ::env(SIM_PIN)]} {
+		return $::env(SIM_PIN) }
+
+	puts stderr "Error: SIM_PIN is required as run-script argument"
+	exit
+}
+
+# return number to call unless using 'interactive_at_control'
+proc call_number { } {
+	global ::env
+	if {[info exists ::env(CALL_NUMBER)]} {
+		return $::env(CALL_NUMBER) }
+
+	return ""
+}
+
+build {
+	core init timer
+	drivers/uart/ns16550 drivers/platform/a64 drivers/pin/a64
+	drivers/modem/pinephone drivers/audio_control/pinephone
+	drivers/usb_host/a64
+	server/terminal_crosslink server/report_rom
+	drivers/usb_net
+	server/nic_router
+	app/ping
+}
 
 create_boot_directory
+
+
+proc modem_config { } {
+
+	set at_protocol_attr {at_protocol="no"}
+	set sim_pin_attr     {}
+	set call_node        {}
+
+	if {![interactive_at_control]} {
+		set at_protocol_attr {at_protocol="yes"}
+		set sim_pin_attr     "pin=\"[sim_pin]\""
+	}
+
+	if {[call_number] != ""} {
+		set call_node "<call number=\"[call_number]\"/>"
+	}
+
+	return "<config verbose=\"no\" power=\"on\" $at_protocol_attr $sim_pin_attr>
+	          $call_node
+	        </config>"
+}
+
+
+proc uart_log_start_node { } {
+
+	if {![interactive_at_control]} { return "" }
+
+	return {
+		<start name="uart_log">
+			<binary name="ns16550_uart"/>
+			<resource name="RAM" quantum="2M"/>
+			<config carriage_return="true"/>
+			<route>
+				<service name="Terminal"> <child name="terminal_crosslink"/> </service>
+				<service name="Platform"> <child name="platform_drv"/> </service>
+				<any-service> <parent/> </any-service>
+			</route>
+		</start>
+	}
+}
+
+
+proc network_related_start_nodes { } {
+
+	if {![test_network_connectivity]} { return "" }
+
+	return {
+		<start name="usb_host_drv" caps="200">
+			<binary name="a64_usb_host_drv"/>
+			<resource name="RAM" quantum="16M"/>
+			<provides> <service name="Usb"/> </provides>
+			<config>
+				<policy label_prefix="cdc_ether" vendor_id="0x2c7c" product_id="0x0125"/>
+			</config>
+			<route>
+				<service name="Timer"> <child name="timer"/> </service>
+				<service name="Platform"> <child name="platform_drv"/> </service>
+				<service name="ROM" label="dtb">
+					<parent label="usb-pinephone.dtb"/> </service>
+
+				<any-service> <parent/> </any-service>
+			</route>
+		</start>
+
+		<start name="cdc_ether" caps="200">
+			<binary name="usb_net_drv"/>
+			<resource name="RAM" quantum="20M"/>
+			<config mac="02:00:00:00:01:05" ld_verbose="yes"/>
+			<route>
+				<service name="Uplink"><child name="nic_router"/></service>
+				<any-service> <parent/> <any-child/> </any-service>
+			</route>
+		</start>
+
+		<start name="nic_router" caps="200">
+			<resource name="RAM" quantum="10M"/>
+			<provides>
+				<service name="Nic"/>
+				<service name="Uplink"/>
+			</provides>
+			<config verbose_domain_state="yes"
+			 dhcp_discover_timeout_sec="10"
+			 dhcp_request_timeout_sec="6">
+
+				<policy label_prefix="ping"       domain="downlink"/>
+				<policy label_prefix="cdc_ether"  domain="uplink"/>
+
+				<domain name="uplink">
+
+					<nat domain="downlink" tcp-ports="16384" icmp-ids="1000"/>
+					<tcp-forward port="443" domain="downlink" to="10.0.3.2"/>
+					<tcp-forward port="80"  domain="downlink" to="10.0.3.2"/>
+
+				</domain>
+
+				<domain name="downlink" interface="10.0.3.1/24">
+					<dhcp-server ip_first="10.0.3.2" ip_last="10.0.3.2"/>
+					<icmp dst="0.0.0.0/0" domain="uplink"/>
+				</domain>
+
+			</config>
+		</start>
+
+		<start name="ping">
+			<resource name="RAM" quantum="8M"/>
+			<config period_sec="5"
+			        verbose="no"
+			        count="100"
+			        dst_ip="94.130.141.228" />
+			<route>
+				<service name="Nic"> <child name="nic_router"/> </service>
+				<any-service> <parent/> <any-child/> </any-service>
+			</route>
+		</start>
+	}
+}
+
 
 install_config {
 	<config verbose="yes">
@@ -180,12 +323,13 @@ install_config {
 		<start name="modem">
 			<binary name="pinephone_modem"/>
 			<resource name="RAM" quantum="1M"/>
-			<config power="on" at_protocol="no"/>
+			} [modem_config] {
 			<route>
-				<service name="Timer">       <child name="timer"/>        </service>
-				<service name="Report">      <child name="report_rom"/>   </service>
-				<service name="Pin_control"> <child name="a64_pio_drv"/>  </service>
-				<service name="Pin_state">   <child name="a64_pio_drv"/>  </service>
+				<service name="Timer">       <child name="timer"/>              </service>
+				<service name="Report">      <child name="report_rom"/>         </service>
+				<service name="Pin_control"> <child name="a64_pio_drv"/>        </service>
+				<service name="Pin_state">   <child name="a64_pio_drv"/>        </service>
+				<service name="Terminal">    <child name="terminal_crosslink"/> </service>
 				<any-service> <parent/> </any-service>
 			</route>
 		</start>
@@ -193,17 +337,6 @@ install_config {
 		<start name="terminal_crosslink">
 			<resource name="RAM" quantum="1M"/>
 			<provides> <service name="Terminal"/> </provides>
-		</start>
-
-		<start name="uart_log">
-			<binary name="ns16550_uart"/>
-			<resource name="RAM" quantum="2M"/>
-			<config carriage_return="true"/>
-			<route>
-				<service name="Terminal"> <child name="terminal_crosslink"/> </service>
-				<service name="Platform"> <child name="platform_drv"/> </service>
-				<any-service> <parent/> </any-service>
-			</route>
 		</start>
 
 		<start name="uart_phone">
@@ -216,83 +349,20 @@ install_config {
 			</route>
 		</start>
 
-		<start name="usb_host_drv" caps="200">
-			<binary name="a64_usb_host_drv"/>
-			<resource name="RAM" quantum="16M"/>
-			<provides> <service name="Usb"/> </provides>
-			<config>
-				<policy label_prefix="cdc_ether" vendor_id="0x2c7c" product_id="0x0125"/>
-			</config>
-			<route>
-				<service name="Timer"> <child name="timer"/> </service>
-				<service name="Platform"> <child name="platform_drv"/> </service>
-				<service name="ROM" label="dtb">
-					<parent label="usb-pinephone.dtb"/> </service>
-
-				<any-service> <parent/> </any-service>
-			</route>
-		</start>
-
-		<start name="cdc_ether" caps="200">
-			<binary name="usb_net_drv"/>
-			<resource name="RAM" quantum="20M"/>
-			<config mac="02:00:00:00:01:05" ld_verbose="yes"/>
-			<route>
-				<service name="Uplink"><child name="nic_router"/></service>
-				<any-service> <parent/> <any-child/> </any-service>
-			</route>
-		</start>
-
-		<start name="nic_router" caps="200">
-			<resource name="RAM" quantum="10M"/>
-			<provides>
-				<service name="Nic"/>
-				<service name="Uplink"/>
-			</provides>
-			<config verbose_domain_state="yes"
-			 dhcp_discover_timeout_sec="10"
-			 dhcp_request_timeout_sec="6">
-
-				<policy label_prefix="ping"       domain="downlink"/>
-				<policy label_prefix="cdc_ether"  domain="uplink"/>
-
-				<domain name="uplink">
-
-					<nat domain="downlink" tcp-ports="16384" icmp-ids="1000"/>
-					<tcp-forward port="443" domain="downlink" to="10.0.3.2"/>
-					<tcp-forward port="80"  domain="downlink" to="10.0.3.2"/>
-
-				</domain>
-
-				<domain name="downlink" interface="10.0.3.1/24">
-					<dhcp-server ip_first="10.0.3.2" ip_last="10.0.3.2"/>
-					<icmp dst="0.0.0.0/0" domain="uplink"/>
-				</domain>
-
-			</config>
-		</start>
-
-		<start name="ping">
-			<resource name="RAM" quantum="8M"/>
-			<config period_sec="5"
-			        verbose="no"
-			        count="100"
-			        dst_ip="94.130.141.228" />
-			<route>
-				<service name="Nic"> <child name="nic_router"/> </service>
-				<any-service> <parent/> <any-child/> </any-service>
-			</route>
-		</start>
+		} [uart_log_start_node] {
+		} [network_related_start_nodes] {
 
 	</config>
 }
 
 file copy [select_from_repositories board/[board]/devices] [run_dir]/genode/devices
 
-build_boot_image { core ld.lib.so init timer
-                   a64_platform_drv a64_pio_drv ns16550_uart
-                   a64_usb_host_drv pinephone_modem pinephone_audio_control
-                   terminal_crosslink report_rom usb-pinephone.dtb
-                   usb_net_drv nic_router ping }
+build_boot_image {
+	core ld.lib.so init timer
+	a64_platform_drv a64_pio_drv ns16550_uart
+	a64_usb_host_drv pinephone_modem pinephone_audio_control
+	terminal_crosslink report_rom usb-pinephone.dtb
+	usb_net_drv nic_router ping
+}
 
 run_genode_until forever
