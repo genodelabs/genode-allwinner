@@ -51,6 +51,11 @@
 				<device name="audio_analog"/>
 			</policy>
 
+			<policy label="usb_host_drv -> " info="yes">
+				<device name="ehci1"/>
+				<device name="usb_phy"/>
+			</policy>
+
 		</config>
 		<route> <any-service> <parent/> </any-service> </route>
 	</start>
@@ -226,6 +231,20 @@
 		<route>
 			<service name="ROM" label="config"> <parent label="audio.config"/> </service>
 			<service name="Platform"> <child name="platform_drv"/> </service>
+			<any-service> <parent/> </any-service>
+		</route>
+	</start>
+
+	<start name="usb_host_drv" caps="200">
+		<binary name="a64_usb_host_drv"/>
+		<resource name="RAM" quantum="16M"/>
+		<provides> <service name="Usb"/> </provides>
+		<config>
+			<policy label_prefix="usb_net" vendor_id="0x2c7c" product_id="0x0125"/>
+		</config>
+		<route>
+			<service name="Platform"> <child name="platform_drv"/> </service>
+			<service name="ROM" label="dtb"> <parent label="usb-pinephone.dtb"/> </service>
 			<any-service> <parent/> </any-service>
 		</route>
 	</start>
