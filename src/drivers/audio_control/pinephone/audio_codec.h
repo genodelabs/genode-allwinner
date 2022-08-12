@@ -17,10 +17,10 @@
 /* Genode includes */
 #include <platform_session/device.h>
 
-namespace Audio {
+/* local includes */
+#include <types.h>
 
-	using namespace Genode;
-
+namespace Audio_control {
 	class  Codec;
 	class  Analog_plain_access;
 	class  Analog_mmio;
@@ -29,7 +29,7 @@ namespace Audio {
 }
 
 
-class Audio::Codec : Platform::Device::Mmio
+class Audio_control::Codec : Platform::Device::Mmio
 {
 	private:
 
@@ -233,7 +233,7 @@ class Audio::Codec : Platform::Device::Mmio
 };
 
 
-class Audio::Analog_plain_access
+class Audio_control::Analog_plain_access
 {
 	friend Genode::Register_set_plain_access;
 
@@ -305,7 +305,8 @@ class Audio::Analog_plain_access
 };
 
 
-struct Audio::Analog_mmio : Analog_plain_access, Register_set<Analog_plain_access>
+struct Audio_control::Analog_mmio : Analog_plain_access,
+                                    Register_set<Analog_plain_access>
 {
 	Analog_mmio(Platform::Device &device)
 	:
@@ -315,7 +316,7 @@ struct Audio::Analog_mmio : Analog_plain_access, Register_set<Analog_plain_acces
 };
 
 
-class Audio::Analog : public Analog_mmio
+class Audio_control::Analog : public Analog_mmio
 {
 	private:
 
@@ -391,62 +392,55 @@ class Audio::Analog : public Analog_mmio
 
 	public:
 
-		void enable_mic1()
+		void mic1_enabled(bool enabled)
 		{
-			write<Mic1_control::Boost_amp_enable>(1);
+			write<Mic1_control::Boost_amp_enable>(enabled);
 			write<Mic1_control::Boost>(0);
 			write<Mic1_control::Gain>(0x5);
 
-			write<Adc_mixer_left::Mic1>(1);
-			write<Adc_mixer_right::Mic1>(1);
+			write<Adc_mixer_left::Mic1>(enabled);
+			write<Adc_mixer_right::Mic1>(enabled);
 
-			write<Adc::Left_enable>(1);
-			write<Adc::Right_enable>(1);
+			write<Adc::Left_enable>(enabled);
+			write<Adc::Right_enable>(enabled);
 
-			write<Hs_mbias_control::Master_mic_enable>(1);
+			write<Hs_mbias_control::Master_mic_enable>(enabled);
 		}
 
-		void enable_earpiece()
+		void earpiece_enabled(bool enabled)
 		{
 			using E0 = Earpiece_control0;
 			write<E0::Input_src>(E0::Input_src::DACL);
 
-			write<Earpiece_control1::Enable_pa>(1);
-			write<Earpiece_control1::Mute_off>(1);
+			write<Earpiece_control1::Enable_pa>(enabled);
+			write<Earpiece_control1::Mute_off>(enabled);
 			write<Earpiece_control1::Volume>(0x1f); /* maximum volume */
-
-			write<Dac_mixer::Dac_enable>(Dac_mixer::LEFT_RIGHT);
-			write<Dac_mixer::Mixer_enable>(Dac_mixer::LEFT_RIGHT);
 		}
 
-		void enable_speaker()
+		void speaker_enabled(bool enabled)
 		{
 			write<Lineout_control1::Volume>(0x1f); /* maximum volume */
 
 			using L0 = Lineout_control0;
 			write<L0::Right_src>(L0::Right_src::MONO_DIFF);
 			write<L0::Left_src>(L0::Left_src::LEFT_RIGHT);
-			write<L0::Enable>(L0::Enable::LEFT_RIGHT);
+			write<L0::Enable>(enabled ? L0::Enable::LEFT_RIGHT : 0);
 
-			write<Output_mixer_left::Dac_mute_left>(1);
-			write<Output_mixer_right::Dac_mute_right>(1);
-
-			write<Dac_mixer::Dac_enable>(Dac_mixer::LEFT_RIGHT);
-			write<Dac_mixer::Mixer_enable>(Dac_mixer::LEFT_RIGHT);
+			write<Output_mixer_left::Dac_mute_left>(enabled);
+			write<Output_mixer_right::Dac_mute_right>(enabled);
 		}
 
-		Analog(Platform::Device &device)
-		:
-			Analog_mmio(device)
+		void dac_mixer_enabled(bool enabled)
 		{
-			enable_mic1();
-			enable_earpiece();
-			enable_speaker();
+			write<Dac_mixer::Dac_enable>  (enabled ? Dac_mixer::LEFT_RIGHT : 0);
+			write<Dac_mixer::Mixer_enable>(enabled ? Dac_mixer::LEFT_RIGHT : 0);
 		}
+
+		Analog(Platform::Device &device) : Analog_mmio(device) { }
 };
 
 
-class Audio::Device
+class Audio_control::Device
 {
 	private:
 
@@ -462,6 +456,18 @@ class Audio::Device
 
 		Device(Platform::Connection &platform) : _platform(platform)
 		{ }
+
+		void apply_config(Xml_node const &config)
+		{
+			bool const mic      = config.attribute_value("mic",      false),
+			           earpiece = config.attribute_value("earpiece", false),
+			           speaker  = config.attribute_value("speaker",  false);
+
+			_analog.mic1_enabled(mic);
+			_analog.earpiece_enabled(earpiece);
+			_analog.speaker_enabled(speaker);
+			_analog.dac_mixer_enabled(earpiece || speaker);
+		}
 };
 
 #endif /* _AUDIO_CODEC_H_ */

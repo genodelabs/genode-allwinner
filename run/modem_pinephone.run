@@ -50,7 +50,7 @@
 
 build { core init timer
         drivers/uart/ns16550 drivers/platform/a64 drivers/pin/a64
-        drivers/modem/pinephone
+        drivers/modem/pinephone drivers/audio_control/pinephone
         drivers/usb_host/a64
         server/terminal_crosslink server/report_rom
         drivers/usb_net
@@ -104,7 +104,7 @@ install_config {
 				<policy label="a64_pio_drv -> ">
 					<device name="pio"/>
 				</policy>
-				<policy label="modem -> ">
+				<policy label="audio_control -> ">
 					<device name="audio_codec"/>
 					<device name="audio_analog"/>
 				</policy>
@@ -167,6 +167,16 @@ install_config {
 			</config>
 		</start>
 
+		<start name="audio_control">
+			<binary name="pinephone_audio_control"/>
+			<resource name="RAM" quantum="1M"/>
+			<config mic="yes" earpiece="yes" speaker="yes"/>
+			<route>
+				<service name="Platform"> <child name="platform_drv"/> </service>
+				<any-service> <parent/> </any-service>
+			</route>
+		</start>
+
 		<start name="modem">
 			<binary name="pinephone_modem"/>
 			<resource name="RAM" quantum="1M"/>
@@ -176,7 +186,6 @@ install_config {
 				<service name="Report">      <child name="report_rom"/>   </service>
 				<service name="Pin_control"> <child name="a64_pio_drv"/>  </service>
 				<service name="Pin_state">   <child name="a64_pio_drv"/>  </service>
-				<service name="Platform">    <child name="platform_drv"/> </service>
 				<any-service> <parent/> </any-service>
 			</route>
 		</start>
@@ -282,7 +291,7 @@ file copy [select_from_repositories board/[board]/devices] [run_dir]/genode/devi
 
 build_boot_image { core ld.lib.so init timer
                    a64_platform_drv a64_pio_drv ns16550_uart
-                   a64_usb_host_drv pinephone_modem
+                   a64_usb_host_drv pinephone_modem pinephone_audio_control
                    terminal_crosslink report_rom usb-pinephone.dtb
                    usb_net_drv nic_router ping }
 

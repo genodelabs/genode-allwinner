@@ -22,7 +22,6 @@
 #include <at_protocol/driver.h>
 
 /* local includes */
-#include <audio_codec.h>
 #include <power.h>
 
 namespace Modem { struct Main; }
@@ -378,23 +377,12 @@ struct Modem::Main : private Delayer
 	 */
 	void msleep(unsigned long ms) override { _sleep_timer.msleep(ms); }
 
-	struct Audio_driver
-	{
-		Platform::Connection _platform;
-		Audio::Device device { _platform };
-		Audio_driver(Env &env) : _platform(env) { }
-	};
-
-	Constructible<Audio_driver> _audio { };
-
 	Main(Env &env) : _env(env)
 	{
 		_config.sigh(_config_handler);
 		_event_timer.sigh(_timer_handler);
 
 		_handle_config();
-
-		_audio.construct(_env);
 	}
 };
 
