@@ -383,6 +383,9 @@ struct Sculpt::Main : Input_event_handler,
 			_try_handle_clack();
 	}
 
+	/* true while touched, used to issue only one click per touch sequence */
+	bool _touched = false;
+
 	/**
 	 * Input_event_handler interface
 	 */
@@ -391,13 +394,17 @@ struct Sculpt::Main : Input_event_handler,
 		bool need_generate_dialog = false;
 
 		if (ev.key_press(Input::BTN_LEFT) || ev.touch()) {
-			_clicked_seq_number.construct(_global_input_seq_number);
-			_try_handle_click();
+			if (!_touched) {
+				_clicked_seq_number.construct(_global_input_seq_number);
+				_try_handle_click();
+				_touched = true;
+			}
 		}
 
 		if (ev.key_release(Input::BTN_LEFT) || ev.touch_release()) {
 			_clacked_seq_number.construct(_global_input_seq_number);
 			_try_handle_clack();
+			_touched = false;
 		}
 
 		if (need_generate_dialog)
