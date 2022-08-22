@@ -105,6 +105,20 @@ struct Sculpt::Main : Input_event_handler,
 		_verbose_modem = config.attribute_value("verbose_modem", false);
 	}
 
+	Attached_rom_dataspace _leitzentrale_rom { _env, "leitzentrale" };
+
+	Signal_handler<Main> _leitzentrale_handler {
+		_env.ep(), *this, &Main::_handle_leitzentrale };
+
+	void _handle_leitzentrale()
+	{
+		_leitzentrale_rom.update();
+
+		_leitzentrale_visible = _leitzentrale_rom.xml().attribute_value("enabled", false);
+
+		_handle_window_layout();
+	}
+
 
 	/************
 	 ** Deploy **
@@ -118,6 +132,8 @@ struct Sculpt::Main : Input_event_handler,
 	 ************/
 
 	Area _screen_size { };
+
+	bool _leitzentrale_visible = false;
 
 	Affinity::Space _affinity_space { 1, 1 };
 
@@ -719,6 +735,7 @@ struct Sculpt::Main : Input_event_handler,
 		_section_enabled(_phone_dialog, true);
 
 		_config.sigh(_config_handler);
+		_leitzentrale_rom.sigh(_leitzentrale_handler);
 		_runtime_state_rom.sigh(_runtime_state_handler);
 		_runtime_config_rom.sigh(_runtime_config_handler);
 		_gui.input()->sigh(_input_handler);
@@ -735,6 +752,7 @@ struct Sculpt::Main : Input_event_handler,
 		 * Import initial report content
 		 */
 		_handle_config();
+		_handle_leitzentrale();
 		_handle_gui_mode();
 		_handle_runtime_config();
 		_handle_modem_state();
@@ -815,7 +833,7 @@ void Sculpt::Main::_handle_window_layout()
 
 		_with_window(window_list, menu_view_label, [&] (Xml_node win) {
 			Area  const size = win_size(win);
-			Point const pos(0, 0);
+			Point const pos(_leitzentrale_visible ? 0 : (int)size.w(), 0);
 			gen_window(win, Rect(pos, size));
 		});
 	});

@@ -2,6 +2,8 @@ drivers:      phone_linux
 leitzentrale: phone
 nitpicker:    phone
 fonts:        phone
+event_filter: phone_linux
 build:        app/phone_manager server/nitpicker app/menu_view server/wm
+build:        server/event_filter
 build:        app/dummy_modem
 import:       pkg/drivers_interactive-linux
