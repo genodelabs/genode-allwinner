@@ -3,10 +3,12 @@
 	<report hover="yes" focus="yes" clicked="yes" keystate="no"/>
 	<background color="#000000"/>
 
-	<domain name="invisible" layer="6" xpos="10000" />
-	<domain name="default"   layer="6" label="no" hover="always" content="client" focus="transient" />
+	<domain name="invisible"    layer="1" xpos="10000" />
+	<domain name="leitzentrale" layer="1" label="no" hover="always" focus="transient" />
+	<domain name="default"      layer="2" label="no" hover="always" content="client" focus="transient" />
 
-	<policy label_prefix="pointer -> " domain="invisible"/>
+	<policy label_prefix="pointer -> "      domain="invisible"/>
+	<policy label_prefix="leitzentrale -> " domain="leitzentrale"/>
 	<default-policy domain="default"/>
 
 	<global-key name="KEY_DASHBOARD" label="global_keys_handler -> input" />

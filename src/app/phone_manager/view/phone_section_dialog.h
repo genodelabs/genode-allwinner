@@ -11,18 +11,18 @@
  * under the terms of the GNU Affero General Public License version 3.
  */
 
-#ifndef _VIEW__PHONE_DIALOG_H_
-#define _VIEW__PHONE_DIALOG_H_
+#ifndef _VIEW__PHONE_SECTION_DIALOG_H_
+#define _VIEW__PHONE_SECTION_DIALOG_H_
 
 #include <view/section_dialog.h>
 #include <view/layout_helper.h>
 #include <model/modem_state.h>
 #include <model/current_call.h>
 
-namespace Sculpt { struct Phone_dialog; }
+namespace Sculpt { struct Phone_section_dialog; }
 
 
-struct Sculpt::Phone_dialog : Registered<Section_dialog>
+struct Sculpt::Phone_section_dialog : Registered<Section_dialog>
 {
 	Modem_state const &_modem_state;
 
@@ -51,11 +51,11 @@ struct Sculpt::Phone_dialog : Registered<Section_dialog>
 		});
 	}
 
-	Phone_dialog(Registry<Registered<Section_dialog> > &dialogs,
-	             Modem_state const &modem_state)
+	Phone_section_dialog(Registry<Registered<Section_dialog> > &dialogs,
+	                     Modem_state const &modem_state)
 	:
 		Registered<Section_dialog>(dialogs, "phone"), _modem_state(modem_state)
 	{ }
 };
 
-#endif /* _VIEW__PHONE_DIALOG_H_ */
+#endif /* _VIEW__PHONE_SECTION_DIALOG_H_ */

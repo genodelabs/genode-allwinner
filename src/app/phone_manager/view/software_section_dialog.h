@@ -11,22 +11,21 @@
  * under the terms of the GNU Affero General Public License version 3.
  */
 
-#ifndef _VIEW__SOFTWARE_DIALOG_H_
-#define _VIEW__SOFTWARE_DIALOG_H_
+#ifndef _VIEW__SOFTWARE_SECTION_DIALOG_H_
+#define _VIEW__SOFTWARE_SECTION_DIALOG_H_
 
 #include <view/section_dialog.h>
 #include <view/layout_helper.h>
 
 
-namespace Sculpt { struct Software_dialog; }
+namespace Sculpt { struct Software_section_dialog; }
 
 
-struct Sculpt::Software_dialog : Registered<Section_dialog>
+struct Sculpt::Software_section_dialog : Registered<Section_dialog>
 {
 	void generate(Xml_generator &xml) const override
 	{
 		_gen_frame(xml, [&] {
-			xml.attribute("style", "unimportant");
 			gen_left_right(xml, 12,
 				[&] {
 					xml.node("label", [&] {
@@ -44,10 +43,10 @@ struct Sculpt::Software_dialog : Registered<Section_dialog>
 		});
 	}
 
-	Software_dialog(Registry<Registered<Section_dialog> > &dialogs)
+	Software_section_dialog(Registry<Registered<Section_dialog> > &dialogs)
 	:
 		Registered<Section_dialog>(dialogs, "software")
 	{ }
 };
 
-#endif /* _VIEW__SOFTWARE_DIALOG_H_ */
+#endif /* _VIEW__SOFTWARE_SECTION_DIALOG_H_ */

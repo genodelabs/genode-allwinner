@@ -11,16 +11,17 @@
  * under the terms of the GNU Affero General Public License version 3.
  */
 
-#ifndef _VIEW__STORAGE_DIALOG_H_
-#define _VIEW__STORAGE_DIALOG_H_
+#ifndef _VIEW__STORAGE_SECTION_DIALOG_H_
+#define _VIEW__STORAGE_SECTION_DIALOG_H_
 
 #include <view/section_dialog.h>
+#include <view/storage_device_dialog.h>
 #include <view/layout_helper.h>
 
-namespace Sculpt { struct Storage_dialog; }
+namespace Sculpt { struct Storage_section_dialog; }
 
 
-struct Sculpt::Storage_dialog : Registered<Section_dialog>
+struct Sculpt::Storage_section_dialog : Registered<Section_dialog>
 {
 	void generate(Xml_generator &xml) const override
 	{
@@ -42,10 +43,10 @@ struct Sculpt::Storage_dialog : Registered<Section_dialog>
 		});
 	}
 
-	Storage_dialog(Registry<Registered<Section_dialog> > &dialogs)
+	Storage_section_dialog(Registry<Registered<Section_dialog> > &dialogs)
 	:
 		Registered<Section_dialog>(dialogs, "storage")
 	{ }
 };
 
-#endif /* _VIEW__STORAGE_DIALOG_H_ */
+#endif /* _VIEW__STORAGE_SECTION_DIALOG_H_ */

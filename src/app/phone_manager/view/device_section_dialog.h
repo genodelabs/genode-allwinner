@@ -1,5 +1,5 @@
 /*
- * \brief  Network dialog
+ * \brief  Device dialog
  * \author Norman Feske
  * \date   2022-05-20
  */
@@ -11,25 +11,26 @@
  * under the terms of the GNU Affero General Public License version 3.
  */
 
-#ifndef _VIEW__NETWORK_DIALOG_H_
-#define _VIEW__NETWORK_DIALOG_H_
+#ifndef _VIEW__DEVICE_SECTION_DIALOG_H_
+#define _VIEW__DEVICE_SECTION_DIALOG_H_
 
 #include <view/section_dialog.h>
 #include <view/layout_helper.h>
+#include <view/conditional_float_dialog.h>
 
-namespace Sculpt { struct Network_dialog; }
+
+namespace Sculpt { struct Device_section_dialog; }
 
 
-struct Sculpt::Network_dialog : Registered<Section_dialog>
+struct Sculpt::Device_section_dialog : Registered<Section_dialog>
 {
 	void generate(Xml_generator &xml) const override
 	{
 		_gen_frame(xml, [&] {
-			xml.attribute("style", "unimportant");
 			gen_left_right(xml, 12,
 				[&] {
 					xml.node("label", [&] {
-						xml.attribute("text", "Network");
+						xml.attribute("text", "Device");
 						_gen_label_attr(xml);
 					});
 				},
@@ -41,15 +42,12 @@ struct Sculpt::Network_dialog : Registered<Section_dialog>
 				}
 			);
 		});
-		if (detail == Detail::SELECTED) {
-			xml.node("vbox", [&] { });
-		}
 	}
 
-	Network_dialog(Registry<Registered<Section_dialog> > &dialogs)
+	Device_section_dialog(Registry<Registered<Section_dialog> > &dialogs)
 	:
-		Registered<Section_dialog>(dialogs, "network")
+		Registered<Section_dialog>(dialogs, "device")
 	{ }
 };
 
-#endif /* _VIEW__NETWORK_DIALOG_H_ */
+#endif /* _VIEW__DEVICE_SECTION_DIALOG_H_ */

@@ -30,20 +30,24 @@
 #include <model/runtime_state.h>
 #include <model/child_exit_state.h>
 #include <model/sculpt_version.h>
+#include <model/file_operation_queue.h>
 #include <menu_view.h>
 #include <managed_config.h>
 #include <gui.h>
+#include <storage.h>
+#include <network.h>
 #include <deploy.h>
-#include <view/device_dialog.h>
-#include <view/phone_dialog.h>
+#include <graph.h>
+#include <view/device_section_dialog.h>
+#include <view/phone_section_dialog.h>
 #include <view/modem_power_dialog.h>
 #include <view/pin_dialog.h>
 #include <view/dialpad_dialog.h>
 #include <view/current_call_dialog.h>
 #include <view/outbound_dialog.h>
-#include <view/storage_dialog.h>
-#include <view/network_dialog.h>
-#include <view/software_dialog.h>
+#include <view/storage_section_dialog.h>
+#include <view/network_section_dialog.h>
+#include <view/software_section_dialog.h>
 
 namespace Sculpt { struct Main; }
 
@@ -51,7 +55,11 @@ namespace Sculpt { struct Main; }
 struct Sculpt::Main : Input_event_handler,
                       Dialog::Generator,
                       Runtime_config_generator,
+                      Storage::Target_user,
+                      Network::Action,
+                      Graph::Action,
                       Dialog,
+                      Depot_query,
                       Menu_view::Hover_update_handler,
                       Modem_power_dialog::Action,
                       Pin_dialog::Action,
@@ -120,11 +128,203 @@ struct Sculpt::Main : Input_event_handler,
 	}
 
 
+	/***************************
+	 ** Configuration loading **
+	 ***************************/
+
+	Prepare_version _prepare_version   { 0 };
+	Prepare_version _prepare_completed { 0 };
+
+	bool _prepare_in_progress() const
+	{
+		return _prepare_version.value != _prepare_completed.value;
+	}
+
+
+	Storage _storage { _env, _heap, _child_states, *this, *this, *this };
+
+	/**
+	 * Storage::Target_user interface
+	 */
+	void use_storage_target(Storage_target const &target) override
+	{
+		_storage._sculpt_partition = target;
+
+		/* trigger loading of the configuration from the sculpt partition */
+		_prepare_version.value++;
+
+		_deploy.restart();
+
+		generate_runtime_config();
+	}
+
+	Pci_info _pci_info { };
+
+	Network _network { _env, _heap, *this, _child_states, *this, _runtime_state, _pci_info };
+
+	/**
+	 * Network::Action interface
+	 */
+	void update_network_dialog() override
+	{
+		generate_dialog();
+	}
+
+
+	/************
+	 ** Update **
+	 ************/
+
+	Attached_rom_dataspace _update_state_rom {
+		_env, "report -> runtime/update/state" };
+
+	void _handle_update_state();
+
+	Signal_handler<Main> _update_state_handler {
+		_env.ep(), *this, &Main::_handle_update_state };
+
+	/**
+	 * Condition for spawning the update subsystem
+	 */
+	bool _update_running() const
+	{
+		return _storage._sculpt_partition.valid()
+		    && !_prepare_in_progress()
+		    && _network.ready()
+		    && _deploy.update_needed();
+	}
+
+	Download_queue _download_queue { _heap };
+
+	File_operation_queue _file_operation_queue { _heap };
+
+	Fs_tool_version _fs_tool_version { 0 };
+
+
+	/*****************
+	 ** Depot query **
+	 *****************/
+
+	Depot_query::Version _query_version { 0 };
+
+	Expanding_reporter _depot_query_reporter { _env, "query", "depot_query"};
+
+	/**
+	 * Depot_query interface
+	 */
+	Depot_query::Version depot_query_version() const override
+	{
+		return _query_version;
+	}
+
+	Timer::Connection _timer { _env };
+
+	Timer::One_shot_timeout<Main> _deferred_depot_query_handler {
+		_timer, *this, &Main::_handle_deferred_depot_query };
+
+	void _handle_deferred_depot_query(Duration)
+	{
+		if (_deploy._arch.valid()) {
+			_query_version.value++;
+			_depot_query_reporter.generate([&] (Xml_generator &xml) {
+				xml.attribute("arch",    _deploy._arch);
+				xml.attribute("version", _query_version.value);
+
+				/* update query for blueprints of all unconfigured start nodes */
+				_deploy.gen_depot_query(xml);
+			});
+		}
+	}
+
+	/**
+	 * Depot_query interface
+	 */
+	void trigger_depot_query() override
+	{
+		/*
+		 * Defer the submission of the query for a few milliseconds because
+		 * 'trigger_depot_query' may be consecutively called several times
+		 * while evaluating different conditions. Without deferring, the depot
+		 * query component would produce intermediate results that take time
+		 * but are ultimately discarded.
+		 */
+		_deferred_depot_query_handler.schedule(Microseconds{5000});
+	}
+
+
+	/*********************
+	 ** Blueprint query **
+	 *********************/
+
+	Attached_rom_dataspace _blueprint_rom { _env, "report -> runtime/depot_query/blueprint" };
+
+	Signal_handler<Main> _blueprint_handler {
+		_env.ep(), *this, &Main::_handle_blueprint };
+
+	void _handle_blueprint()
+	{
+		_blueprint_rom.update();
+
+		Xml_node const blueprint = _blueprint_rom.xml();
+
+		/*
+		 * Drop intermediate results that will be superseded by a newer query.
+		 * This is important because an outdated blueprint would be disregarded
+		 * by 'handle_deploy' anyway while at the same time a new query is
+		 * issued. This can result a feedback loop where blueprints are
+		 * requested but never applied.
+		 */
+		if (blueprint.attribute_value("version", 0U) != _query_version.value)
+			return;
+
+		_deploy.handle_deploy();
+	}
+
+
 	/************
 	 ** Deploy **
 	 ************/
 
 	Deploy::Prio_levels const _prio_levels { 4 };
+
+	Attached_rom_dataspace _launcher_listing_rom {
+		_env, "report -> /runtime/launcher_query/listing" };
+
+	Launchers _launchers { _heap };
+
+	Signal_handler<Main> _launcher_listing_handler {
+		_env.ep(), *this, &Main::_handle_launcher_listing };
+
+	void _handle_launcher_listing()
+	{
+		_launcher_listing_rom.update();
+
+		Xml_node listing = _launcher_listing_rom.xml();
+		if (listing.has_sub_node("dir")) {
+			Xml_node dir = listing.sub_node("dir");
+
+			/* let 'update_from_xml' iterate over <file> nodes */
+			_launchers.update_from_xml(dir);
+		}
+
+		generate_dialog();
+		_deploy._handle_managed_deploy();
+	}
+
+	Deploy _deploy { _env, _heap, _child_states, _runtime_state, *this, *this, *this,
+	                 _launcher_listing_rom, _blueprint_rom, _download_queue };
+
+	Attached_rom_dataspace _manual_deploy_rom { _env, "config -> deploy" };
+
+	void _handle_manual_deploy()
+	{
+		_runtime_state.reset_abandoned_and_launched_children();
+		_manual_deploy_rom.update();
+		_deploy.update_managed_deploy_config(_manual_deploy_rom.xml());
+	}
+
+	Signal_handler<Main> _manual_deploy_handler {
+		_env.ep(), *this, &Main::_handle_manual_deploy };
 
 
 	/************
@@ -151,13 +351,13 @@ struct Sculpt::Main : Input_event_handler,
 	 * Device section
 	 */
 
-	Device_dialog _device_dialog { _section_dialogs };
+	Device_section_dialog _device_section_dialog { _section_dialogs };
 
 	/*
 	 * Phone section
 	 */
 
-	Phone_dialog _phone_dialog { _section_dialogs, _modem_state };
+	Phone_section_dialog _phone_section_dialog { _section_dialogs, _modem_state };
 
 	Conditional_float_dialog<Modem_power_dialog>
 		_modem_power_dialog { "modempower", _modem_state, *this };
@@ -178,19 +378,25 @@ struct Sculpt::Main : Input_event_handler,
 	 * Storage section
 	 */
 
-	Storage_dialog _storage_dialog  { _section_dialogs };
+	Storage_section_dialog _storage_section_dialog  { _section_dialogs };
 
 	/*
 	 * Network section
 	 */
 
-	Network_dialog _network_dialog  { _section_dialogs };
+	Network_section_dialog _network_section_dialog  { _section_dialogs };
 
 	/*
 	 * Software section
 	 */
 
-	Software_dialog _software_dialog { _section_dialogs };
+	Software_section_dialog _software_section_dialog { _section_dialogs };
+
+	Conditional_float_dialog<Graph>
+		_graph { "graph",
+		         _runtime_state, _cached_runtime_config, _storage._storage_devices,
+		         _storage._sculpt_partition, _storage._ram_fs_state,
+		         _popup.state, _deploy._children };
 
 	/**
 	 * Dialog interface
@@ -208,31 +414,33 @@ struct Sculpt::Main : Input_event_handler,
 			xml.attribute("style", "full");
 
 			xml.node("vbox", [&] {
-				_device_dialog.generate(xml);
+				_device_section_dialog.generate(xml);
 
-				_phone_dialog.generate(xml);
-				_modem_power_dialog.generate_conditional(xml, _phone_dialog.selected());
-				_pin_dialog.generate_conditional(xml, _phone_dialog.selected()
+				_phone_section_dialog.generate(xml);
+				_modem_power_dialog.generate_conditional(xml, _phone_section_dialog.selected());
+				_pin_dialog.generate_conditional(xml, _phone_section_dialog.selected()
 				                                   && _modem_state.ready()
 				                                   && _modem_state.pin_required());
 
-				_outbound_dialog.generate_conditional(xml, _phone_dialog.selected()
+				_outbound_dialog.generate_conditional(xml, _phone_section_dialog.selected()
 				                                        && _modem_state.ready()
 				                                        && _modem_state.pin_ok());
 
-				_dialpad_dialog.generate_conditional(xml, _phone_dialog.selected()
+				_dialpad_dialog.generate_conditional(xml, _phone_section_dialog.selected()
 				                                       && _modem_state.ready()
 				                                       && _modem_state.pin_ok());
 
-				_current_call_dialog.generate_conditional(xml, _phone_dialog.selected()
+				_current_call_dialog.generate_conditional(xml, _phone_section_dialog.selected()
 				                                            && _modem_state.ready()
 				                                            && _modem_state.pin_ok());
 
-				_storage_dialog.generate(xml);
+				_storage_section_dialog.generate(xml);
 
-				_network_dialog .generate(xml);
+				_network_section_dialog.generate(xml);
 
-				_software_dialog.generate(xml);
+				_software_section_dialog.generate(xml);
+
+				_graph.generate_conditional(xml, _software_section_dialog.selected());
 			});
 		});
 	}
@@ -247,11 +455,16 @@ struct Sculpt::Main : Input_event_handler,
 
 	Attached_rom_dataspace _runtime_state_rom { _env, "report -> runtime/state" };
 
+	Runtime_state _runtime_state { _heap, _storage._sculpt_partition };
+
 	Managed_config<Main> _runtime_config {
 		_env, "config", "runtime", *this, &Main::_handle_runtime };
 
-	void _handle_runtime(Xml_node)
+	bool _manually_managed_runtime = false;
+
+	void _handle_runtime(Xml_node config)
 	{
+		_manually_managed_runtime = !config.has_type("empty");
 		generate_runtime_config();
 		generate_dialog();
 	}
@@ -263,8 +476,9 @@ struct Sculpt::Main : Input_event_handler,
 	 */
 	void generate_runtime_config() override
 	{
-		_runtime_config.generate([&] (Xml_generator &xml) {
-			_generate_runtime_config(xml); });
+		if (!_runtime_config.try_generate_manually_managed())
+			_runtime_config.generate([&] (Xml_generator &xml) {
+				_generate_runtime_config(xml); });
 	}
 
 	Signal_handler<Main> _runtime_state_handler {
@@ -295,6 +509,7 @@ struct Sculpt::Main : Input_event_handler,
 	{
 		_runtime_config_rom.update();
 		_cached_runtime_config.update_from_xml(_runtime_config_rom.xml());
+		generate_dialog(); /* update graph */
 	}
 
 
@@ -364,6 +579,9 @@ struct Sculpt::Main : Input_event_handler,
 			if (_current_call_dialog.hovered())
 				_current_call_dialog.click();
 
+			if (_graph.hovered())
+				_graph.dialog.click(*this);
+
 			_main_menu_view.generate();
 			_clicked_seq_number.destruct();
 		}
@@ -381,6 +599,9 @@ struct Sculpt::Main : Input_event_handler,
 			_pin_dialog.clack();
 			_dialpad_dialog.clack();
 			_current_call_dialog.clack();
+
+			if (_graph.hovered())
+				_graph.dialog.clack(*this, _storage);
 
 			_main_menu_view.generate();
 			_clacked_seq_number.destruct();
@@ -454,6 +675,88 @@ struct Sculpt::Main : Input_event_handler,
 		_env.ep(), *this, &Main::_handle_window_layout };
 
 	Expanding_reporter _window_layout { _env, "window_layout", "window_layout" };
+
+	/*
+	 * Fs_dialog::Action interface
+	 */
+	void toggle_inspect_view(Storage_target const &) override { }
+
+	void use(Storage_target const &target) override { _storage.use(target); }
+
+	/*
+	 * Storage_dialog::Action interface
+	 */
+	void format(Storage_target const &target) override
+	{
+		_storage.format(target);
+	}
+
+	void cancel_format(Storage_target const &target) override
+	{
+		_storage.cancel_format(target);
+		_graph.dialog.reset_storage_operation();
+	}
+
+	void expand(Storage_target const &target) override
+	{
+		_storage.expand(target);
+	}
+
+	void cancel_expand(Storage_target const &target) override
+	{
+		_storage.cancel_expand(target);
+		_graph.dialog.reset_storage_operation();
+	}
+
+	void check(Storage_target const &target) override
+	{
+		_storage.check(target);
+	}
+
+	void toggle_default_storage_target(Storage_target const &target) override
+	{
+		_storage.toggle_default_storage_target(target);
+	}
+
+	/*
+	 * Graph::Action interface
+	 */
+	void remove_deployed_component(Start_name const &name) override
+	{
+		_runtime_state.abandon(name);
+
+		/* update config/managed/deploy with the component 'name' removed */
+		_deploy.update_managed_deploy_config(_manual_deploy_rom.xml());
+	}
+
+	/*
+	 * Graph::Action interface
+	 */
+	void restart_deployed_component(Start_name const &name) override
+	{
+		if (name == "nic_drv") {
+
+			_network.restart_nic_drv_on_next_runtime_cfg();
+			generate_runtime_config();
+
+		} else if (name == "wifi_drv") {
+
+			_network.restart_wifi_drv_on_next_runtime_cfg();
+			generate_runtime_config();
+
+		} else {
+
+			_runtime_state.restart(name);
+
+			/* update config/managed/deploy with the component 'name' removed */
+			_deploy.update_managed_deploy_config(_manual_deploy_rom.xml());
+		}
+	}
+
+	/*
+	 * Graph::Action interface
+	 */
+	void toggle_launcher_selector(Rect) override { }
 
 
 	/***********
@@ -729,17 +1032,26 @@ struct Sculpt::Main : Input_event_handler,
 		_generate_modem_config();
 	}
 
+
+	/*******************
+	 ** Runtime graph **
+	 *******************/
+
+	Popup _popup { };
+
 	Main(Env &env) : _env(env)
 	{
 		/* XXX select phone dialog by default */
-		_section_enabled(_phone_dialog, true);
+		_section_enabled(_phone_section_dialog, true);
 
 		_config.sigh(_config_handler);
 		_leitzentrale_rom.sigh(_leitzentrale_handler);
+		_manual_deploy_rom.sigh(_manual_deploy_handler);
 		_runtime_state_rom.sigh(_runtime_state_handler);
 		_runtime_config_rom.sigh(_runtime_config_handler);
 		_gui.input()->sigh(_input_handler);
 		_gui.mode_sigh(_gui_mode_handler);
+		_launcher_listing_rom.sigh(_launcher_listing_handler);
 
 		/*
 		 * Subscribe to reports
@@ -747,6 +1059,7 @@ struct Sculpt::Main : Input_event_handler,
 		_window_list      .sigh(_window_list_handler);
 		_decorator_margins.sigh(_decorator_margins_handler);
 		_modem_state_rom  .sigh(_modem_state_handler);
+		_blueprint_rom    .sigh(_blueprint_handler);
 
 		/*
 		 * Import initial report content
@@ -754,6 +1067,8 @@ struct Sculpt::Main : Input_event_handler,
 		_handle_config();
 		_handle_leitzentrale();
 		_handle_gui_mode();
+		_storage.handle_storage_devices_update();
+		_deploy.handle_deploy();
 		_handle_runtime_config();
 		_handle_modem_state();
 
@@ -764,6 +1079,11 @@ struct Sculpt::Main : Input_event_handler,
 			_affinity_space = Affinity::Space(node.attribute_value("width",  1U),
 			                                  node.attribute_value("height", 1U));
 		});
+
+		/*
+		 * Generate initial config/managed/deploy configuration
+		 */
+		_handle_manual_deploy();
 
 		_generate_modem_config();
 		generate_runtime_config();
@@ -872,10 +1192,39 @@ Sculpt::Dialog::Hover_result Sculpt::Main::hover(Xml_node hover)
 			_dialpad_dialog     .hover(vbox);
 			_current_call_dialog.hover(vbox);
 			_outbound_dialog    .hover(vbox);
+			_graph              .hover(vbox);
 		});
 	});
 
 	return Dialog::Hover_result { };
+}
+
+
+void Sculpt::Main::_handle_update_state()
+{
+	_update_state_rom.update();
+	generate_dialog();
+
+	Xml_node const update_state = _update_state_rom.xml();
+
+	if (update_state.num_sub_nodes() == 0)
+		return;
+
+	_download_queue.apply_update_state(update_state);
+	_download_queue.remove_inactive_downloads();
+
+	Xml_node const blueprint = _blueprint_rom.xml();
+	bool const new_depot_query_needed = blueprint_any_missing(blueprint)
+	                                 || blueprint_any_rom_missing(blueprint);
+	if (new_depot_query_needed)
+		trigger_depot_query();
+
+	bool const installation_complete =
+		!update_state.attribute_value("progress", false);
+
+	if (installation_complete) {
+		_deploy.reattempt_after_installation();
+	}
 }
 
 
@@ -885,8 +1234,152 @@ void Sculpt::Main::_handle_runtime_state()
 
 	Xml_node state = _runtime_state_rom.xml();
 
+	_runtime_state.update_from_state_report(state);
+
 	bool reconfigure_runtime = false;
 	bool regenerate_dialog   = false;
+
+	/* check for completed storage operations */
+	_storage._storage_devices.for_each([&] (Storage_device &device) {
+
+		device.for_each_partition([&] (Partition &partition) {
+
+			Storage_target const target { device.label, partition.number };
+
+			if (partition.check_in_progress) {
+				String<64> name(target.label(), ".e2fsck");
+				Child_exit_state exit_state(state, name);
+
+				if (exit_state.exited) {
+					if (exit_state.code != 0)
+						error("file-system check failed");
+					if (exit_state.code == 0)
+						log("file-system check succeeded");
+
+					partition.check_in_progress = 0;
+					reconfigure_runtime = true;
+					_storage.dialog.reset_operation();
+					_graph.dialog.reset_storage_operation();
+				}
+			}
+
+			if (partition.format_in_progress) {
+				String<64> name(target.label(), ".mke2fs");
+				Child_exit_state exit_state(state, name);
+
+				if (exit_state.exited) {
+					if (exit_state.code != 0)
+						error("file-system creation failed");
+
+					partition.format_in_progress = false;
+					partition.file_system.type = File_system::EXT2;
+
+					if (partition.whole_device())
+						device.rediscover();
+
+					reconfigure_runtime = true;
+					_storage.dialog.reset_operation();
+					_graph.dialog.reset_storage_operation();
+				}
+			}
+
+			/* respond to completion of file-system resize operation */
+			if (partition.fs_resize_in_progress) {
+				Child_exit_state exit_state(state, Start_name(target.label(), ".resize2fs"));
+				if (exit_state.exited) {
+					partition.fs_resize_in_progress = false;
+					reconfigure_runtime = true;
+					device.rediscover();
+					_storage.dialog.reset_operation();
+					_graph.dialog.reset_storage_operation();
+				}
+			}
+
+		}); /* for each partition */
+
+		/* respond to failure of part_block */
+		if (device.discovery_in_progress()) {
+			Child_exit_state exit_state(state, device.part_block_start_name());
+			if (!exit_state.responsive) {
+				error(device.part_block_start_name(), " got stuck");
+				device.state = Storage_device::RELEASED;
+				reconfigure_runtime = true;
+			}
+		}
+
+		/* respond to completion of GPT relabeling */
+		if (device.relabel_in_progress()) {
+			Child_exit_state exit_state(state, device.relabel_start_name());
+			if (exit_state.exited) {
+				device.rediscover();
+				reconfigure_runtime = true;
+				_storage.dialog.reset_operation();
+				_graph.dialog.reset_storage_operation();
+			}
+		}
+
+		/* respond to completion of GPT expand */
+		if (device.gpt_expand_in_progress()) {
+			Child_exit_state exit_state(state, device.expand_start_name());
+			if (exit_state.exited) {
+
+				/* kick off resize2fs */
+				device.for_each_partition([&] (Partition &partition) {
+					if (partition.gpt_expand_in_progress) {
+						partition.gpt_expand_in_progress = false;
+						partition.fs_resize_in_progress  = true;
+					}
+				});
+
+				reconfigure_runtime = true;
+				_storage.dialog.reset_operation();
+				_graph.dialog.reset_storage_operation();
+			}
+		}
+
+	}); /* for each device */
+
+	/* handle failed initialization of USB-storage devices */
+	_storage._storage_devices.usb_storage_devices.for_each([&] (Usb_storage_device &dev) {
+		String<64> name(dev.usb_block_drv_name());
+		Child_exit_state exit_state(state, name);
+		if (exit_state.exited) {
+			dev.discard_usb_block_drv();
+			reconfigure_runtime = true;
+			regenerate_dialog   = true;
+		}
+	});
+
+	/* remove prepare subsystem when finished */
+	{
+		Child_exit_state exit_state(state, "prepare");
+		if (exit_state.exited) {
+			_prepare_completed = _prepare_version;
+
+			/* trigger deployment */
+			_deploy.handle_deploy();
+
+			/* trigger update and deploy */
+			reconfigure_runtime = true;
+		}
+	}
+
+	/* schedule pending file operations to new fs_tool instance */
+	{
+		Child_exit_state exit_state(state, "fs_tool");
+
+		if (exit_state.exited) {
+
+			Child_exit_state::Version const expected_version(_fs_tool_version.value);
+
+			if (exit_state.version == expected_version) {
+
+				_file_operation_queue.schedule_next_operations();
+				_fs_tool_version.value++;
+				reconfigure_runtime = true;
+			}
+		}
+	}
 
 	/* upgrade RAM and cap quota on demand */
 	state.for_each_sub_node("child", [&] (Xml_node child) {
@@ -901,6 +1394,11 @@ void Sculpt::Main::_handle_runtime_state()
 			regenerate_dialog   = true;
 		}
 	});
+
+	if (_deploy.update_child_conditions()) {
+		reconfigure_runtime = true;
+		regenerate_dialog   = true;
+	}
 
 	if (regenerate_dialog)
 		generate_dialog();
@@ -957,6 +1455,52 @@ void Sculpt::Main::_generate_runtime_config(Xml_generator &xml) const
 	});
 
 	_main_menu_view.gen_start_node(xml);
+	_storage.gen_runtime_start_nodes(xml);
+
+	/*
+	 * Load configuration and update depot config on the sculpt partition
+	 */
+	if (_storage._sculpt_partition.valid() && _prepare_in_progress())
+		xml.node("start", [&] () {
+			gen_prepare_start_content(xml, _prepare_version); });
+
+	/*
+	 * Spawn chroot instances for accessing '/depot' and '/public'. The
+	 * chroot instances implicitly refer to the 'default_fs_rw'.
+	 */
+	if (_storage._sculpt_partition.valid()) {
+
+		auto chroot = [&] (Start_name const &name, Path const &path, Writeable w) {
+			xml.node("start", [&] () {
+				gen_chroot_start_content(xml, name, path, w); }); };
+
+		if (_update_running()) {
+			chroot("depot_rw",  "/depot",  WRITEABLE);
+			chroot("public_rw", "/public", WRITEABLE);
+		}
+
+		chroot("depot", "/depot",  READ_ONLY);
+	}
+
+	/* execute file operations */
+	if (_storage._sculpt_partition.valid())
+		if (_file_operation_queue.any_operation_in_progress())
+			xml.node("start", [&] () {
+				gen_fs_tool_start_content(xml, _fs_tool_version,
+				                          _file_operation_queue); });
+
+	_network.gen_runtime_start_nodes(xml);
+
+	if (_update_running())
+		xml.node("start", [&] () {
+			gen_update_start_content(xml); });
+
+	if (_storage._sculpt_partition.valid() && !_prepare_in_progress()) {
+		xml.node("start", [&] () {
+			gen_launcher_query_start_content(xml); });
+
+		_deploy.gen_runtime_start_nodes(xml, _prio_levels, _affinity_space);
+	}
 }
 
 
