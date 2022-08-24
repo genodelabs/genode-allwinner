@@ -158,7 +158,7 @@ struct Sculpt::Main : Input_event_handler,
 		generate_runtime_config();
 	}
 
-	Pci_info _pci_info { };
+	Pci_info _pci_info { .modem_present = true };
 
 	Network _network { _env, _heap, *this, _child_states, *this, _runtime_state, _pci_info };
 
@@ -384,7 +384,8 @@ struct Sculpt::Main : Input_event_handler,
 	 * Network section
 	 */
 
-	Network_section_dialog _network_section_dialog  { _section_dialogs };
+	Network_section_dialog _network_section_dialog  {
+		_section_dialogs, _network._nic_target, _network._nic_state };
 
 	/*
 	 * Software section
@@ -437,6 +438,13 @@ struct Sculpt::Main : Input_event_handler,
 				_storage_section_dialog.generate(xml);
 
 				_network_section_dialog.generate(xml);
+
+				gen_named_node(xml, "float", "net settings", [&] {
+					xml.attribute("east", "yes");
+					xml.attribute("west", "yes");
+					if (_network_section_dialog.selected())
+						_network.dialog.generate(xml);
+				});
 
 				_software_section_dialog.generate(xml);
 
@@ -581,6 +589,9 @@ struct Sculpt::Main : Input_event_handler,
 
 			if (_graph.hovered())
 				_graph.dialog.click(*this);
+
+			if (_network.dialog.hovered)
+				_network.dialog.click(_network);
 
 			_main_menu_view.generate();
 			_clicked_seq_number.destruct();
@@ -742,6 +753,11 @@ struct Sculpt::Main : Input_event_handler,
 		} else if (name == "wifi_drv") {
 
 			_network.restart_wifi_drv_on_next_runtime_cfg();
+			generate_runtime_config();
+
+		} else if (name == "usb_net") {
+
+			_network.restart_usb_net_on_next_runtime_cfg();
 			generate_runtime_config();
 
 		} else {
@@ -1193,6 +1209,8 @@ Sculpt::Dialog::Hover_result Sculpt::Main::hover(Xml_node hover)
 			_current_call_dialog.hover(vbox);
 			_outbound_dialog    .hover(vbox);
 			_graph              .hover(vbox);
+
+			_network.dialog.match_sub_dialog(vbox, "float");
 		});
 	});
 

@@ -14,6 +14,9 @@
 
 	<default caps="100"/>
 
+	<service name="Usb">
+		<default-policy> <child name="usb_host_drv"/> </default-policy> </service>
+
 	<start name="platform_drv" caps="150" managing_system="yes">
 		<resource name="RAM" quantum="2M"/>
 		<binary name="a64_platform_drv"/>
@@ -240,7 +243,7 @@
 		<resource name="RAM" quantum="16M"/>
 		<provides> <service name="Usb"/> </provides>
 		<config>
-			<policy label_prefix="usb_net" vendor_id="0x2c7c" product_id="0x0125"/>
+			<policy label_prefix="runtime -> usb_net" vendor_id="0x2c7c" product_id="0x0125"/>
 		</config>
 		<route>
 			<service name="Platform"> <child name="platform_drv"/> </service>
