@@ -74,15 +74,31 @@
 		<clock name="bus-uart3"/>
 		<reset-domain name="uart3"/>
 	</device>
-	<device name="audio_codec" type="allwinner,sun50i-a64-codec">
-		<io_mem address="0x01c22c00" size="0x800"/>
+	<device name="dma_controller" type="allwinner,sun50i-a64-dma">
+		<io_mem address="0x01c02000" size="0x1000"/>
+		<irq number="82"/>
+		<clock name="bus-dma"/>
+		<reset-domain name="dma"/>
+	</device>
+	<device name="audio_interface" type="allwinner,sun50i-a64-codec-i2s">
+		<io_mem address="0x01c22c00" size="0x100"/>
 		<irq number="61"/>
-		<clock name="pll-audio"/>
+	</device>
+	<device name="audio_codec" type="allwinner,sun50i-a64-codec">
+		<io_mem address="0x01c22e00" size="0x600"/>
+		<irq number="60"/>
 		<clock name="pll-audio-bias"/>
-		<clock name="pll-audio-pattern"/>
 		<clock name="bus-ac"/>
 		<clock name="ac"/>
 		<reset-domain name="ac"/>
+	</device>
+	<device name="audio_codec_modem">
+		<clock name="pll-audio-pattern-48"/>
+		<clock name="pll-audio-48"/>
+	</device>
+	<device name="audio_codec_soc">
+		<clock name="pll-audio-pattern-441"/>
+		<clock name="pll-audio-441"/>
 	</device>
 	<device name="audio_analog" type="allwinner,sun50i-a64-codec-analog">
 		<io_mem address="0x01f015c0" size="0x4"/>
