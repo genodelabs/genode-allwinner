@@ -7,3 +7,6 @@ build:        app/phone_manager server/nitpicker app/menu_view server/wm
 build:        server/event_filter
 build:        app/dummy_modem
 import:       pkg/drivers_interactive-linux
+deploy:       example
+ram_fs:       depot
+launcher:     sticks_blue_backdrop direct_nano3d direct_system_shell
