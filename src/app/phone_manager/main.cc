@@ -411,45 +411,41 @@ struct Sculpt::Main : Input_event_handler,
 	 */
 	void generate(Xml_generator &xml) const override
 	{
-		gen_named_node(xml, "frame", "background", [&] {
-			xml.attribute("style", "full");
+		xml.node("vbox", [&] {
+			_device_section_dialog.generate(xml);
 
-			xml.node("vbox", [&] {
-				_device_section_dialog.generate(xml);
+			_phone_section_dialog.generate(xml);
+			_modem_power_dialog.generate_conditional(xml, _phone_section_dialog.selected());
+			_pin_dialog.generate_conditional(xml, _phone_section_dialog.selected()
+			                                   && _modem_state.ready()
+			                                   && _modem_state.pin_required());
 
-				_phone_section_dialog.generate(xml);
-				_modem_power_dialog.generate_conditional(xml, _phone_section_dialog.selected());
-				_pin_dialog.generate_conditional(xml, _phone_section_dialog.selected()
-				                                   && _modem_state.ready()
-				                                   && _modem_state.pin_required());
+			_outbound_dialog.generate_conditional(xml, _phone_section_dialog.selected()
+			                                        && _modem_state.ready()
+			                                        && _modem_state.pin_ok());
 
-				_outbound_dialog.generate_conditional(xml, _phone_section_dialog.selected()
-				                                        && _modem_state.ready()
-				                                        && _modem_state.pin_ok());
+			_dialpad_dialog.generate_conditional(xml, _phone_section_dialog.selected()
+			                                       && _modem_state.ready()
+			                                       && _modem_state.pin_ok());
 
-				_dialpad_dialog.generate_conditional(xml, _phone_section_dialog.selected()
-				                                       && _modem_state.ready()
-				                                       && _modem_state.pin_ok());
+			_current_call_dialog.generate_conditional(xml, _phone_section_dialog.selected()
+			                                            && _modem_state.ready()
+			                                            && _modem_state.pin_ok());
 
-				_current_call_dialog.generate_conditional(xml, _phone_section_dialog.selected()
-				                                            && _modem_state.ready()
-				                                            && _modem_state.pin_ok());
+			_storage_section_dialog.generate(xml);
 
-				_storage_section_dialog.generate(xml);
+			_network_section_dialog.generate(xml);
 
-				_network_section_dialog.generate(xml);
-
-				gen_named_node(xml, "float", "net settings", [&] {
-					xml.attribute("east", "yes");
-					xml.attribute("west", "yes");
-					if (_network_section_dialog.selected())
-						_network.dialog.generate(xml);
-				});
-
-				_software_section_dialog.generate(xml);
-
-				_graph.generate_conditional(xml, _software_section_dialog.selected());
+			gen_named_node(xml, "float", "net settings", [&] {
+				xml.attribute("east", "yes");
+				xml.attribute("west", "yes");
+				if (_network_section_dialog.selected())
+					_network.dialog.generate(xml);
 			});
+
+			_software_section_dialog.generate(xml);
+
+			_graph.generate_conditional(xml, _software_section_dialog.selected());
 		});
 	}
 
@@ -661,7 +657,9 @@ struct Sculpt::Main : Input_event_handler,
 
 	Menu_view _main_menu_view { _env, _child_states, *this, "menu_view",
 	                             Ram_quota{4*1024*1024}, Cap_quota{150},
-	                             "menu_dialog", "menu_view_hover", *this };
+	                             "menu_dialog", "menu_view_hover", *this,
+	                             Menu_view::Alpha::OPAQUE,
+	                             Color { 62, 62, 67, 255 } };
 
 	void _handle_window_layout();
 
@@ -1198,20 +1196,18 @@ Sculpt::Dialog::Hover_result Sculpt::Main::hover(Xml_node hover)
 	_section_dialogs.for_each([&] (Section_dialog &dialog) {
 		dialog.hover(Xml_node("<empty/>")); });
 
-	hover.with_sub_node("frame", [&] (Xml_node const &background) {
-		background.with_sub_node("vbox", [&] (Xml_node const &vbox) {
-			_section_dialogs.for_each([&] (Section_dialog &dialog) {
-				dialog.hover(vbox); });
+	hover.with_sub_node("vbox", [&] (Xml_node const &vbox) {
+		_section_dialogs.for_each([&] (Section_dialog &dialog) {
+			dialog.hover(vbox); });
 
-			_modem_power_dialog .hover(vbox);
-			_pin_dialog         .hover(vbox);
-			_dialpad_dialog     .hover(vbox);
-			_current_call_dialog.hover(vbox);
-			_outbound_dialog    .hover(vbox);
-			_graph              .hover(vbox);
+		_modem_power_dialog .hover(vbox);
+		_pin_dialog         .hover(vbox);
+		_dialpad_dialog     .hover(vbox);
+		_current_call_dialog.hover(vbox);
+		_outbound_dialog    .hover(vbox);
+		_graph              .hover(vbox);
 
-			_network.dialog.match_sub_dialog(vbox, "float");
-		});
+		_network.dialog.match_sub_dialog(vbox, "float");
 	});
 
 	return Dialog::Hover_result { };
