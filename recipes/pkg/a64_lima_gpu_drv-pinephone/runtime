@@ -1,0 +1,17 @@
+<runtime ram="256M" caps="500" binary="lima_gpu_drv">
+
+	<requires>
+		<timer/>
+		<platform label="gpu"/>
+	</requires>
+
+	<provides> <gpu/> </provides>
+
+	<config dtb="lima-pinephone.dtb"/>
+
+	<content>
+		<rom label="lima_gpu_drv"/>
+		<rom label="lima-pinephone.dtb"/>
+	</content>
+
+</runtime>
