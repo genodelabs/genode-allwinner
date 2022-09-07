@@ -77,3 +77,8 @@ $(DRIVER)-%.dts:
 	          -x assembler-with-cpp -MMD -P $(LX_SRC_DIR)/${DTS_PATH($*)} |\
 	    $(BASE_DIR)/../../tool/dts/extract ${DTS_EXTRACT($*)} - |\
 	    grep -v "/omit-if-no-ref/" > $@
+
+#
+# Declare driver target and dtb files as build artifacts
+#
+BUILD_ARTIFACTS := $(TARGET) $(addprefix $(DRIVER)-,$(addsuffix .dtb,$(BOARDS)))
