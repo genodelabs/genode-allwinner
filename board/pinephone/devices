@@ -117,4 +117,18 @@
 		<clock name="pll-gpu"/>
 		<reset-domain name="gpu"/>
 	</device>
+	<device name="sd_card" type="allwinner,sun50i-a64-mmc">
+		<io_mem address="0x01c0f000" size="0x1000"/>
+		<irq number="92"/>
+		<clock name="bus-mmc0" driver_name="ahb"/>
+		<clock name="mmc0" driver_name="mmc"/>
+		<reset-domain name="mmc0"/>
+	</device>
+	<device name="emmc" type="allwinner,sun50i-a64-emmc">
+		<io_mem address="0x01c11000" size="0x1000"/>
+		<irq number="94"/>
+		<clock name="bus-mmc2" driver_name="ahb"/>
+		<clock name="mmc2" driver_name="mmc"/>
+		<reset-domain name="mmc2"/>
+	</device>
 </devices>
