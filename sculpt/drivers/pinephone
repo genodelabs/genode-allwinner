@@ -14,6 +14,9 @@
 
 	<default caps="100"/>
 
+	<service name="Block">
+		<default-policy> <child name="sd_card_drv"/> </default-policy> </service>
+
 	<service name="Usb">
 		<default-policy> <child name="usb_host_drv"/> </default-policy> </service>
 
@@ -57,6 +60,11 @@
 			<policy label="usb_host_drv -> " info="yes">
 				<device name="ehci1"/>
 				<device name="usb_phy"/>
+			</policy>
+
+			<policy label="sd_card_drv -> " info="yes">
+				<device name="sd_card"/>
+				<device name="emmc"/>
 			</policy>
 
 		</config>
@@ -249,6 +257,26 @@
 			<service name="Platform"> <child name="platform_drv"/> </service>
 			<service name="ROM" label="dtb"> <parent label="usb-pinephone.dtb"/> </service>
 			<any-service> <parent/> </any-service>
+		</route>
+	</start>
+
+	<start name="sd_card_drv" caps="500">
+		<binary name="a64_sd_card_drv"/>
+		<resource name="RAM" quantum="16M"/>
+		<provides> <service name="Block"/> </provides>
+		<config report="yes">
+			<default-policy device="mmcblk0" writeable="yes"/>
+		</config>
+		<route>
+			<service name="ROM" label="dtb">
+				<parent label="sd_card-pinephone.dtb"/> </service>
+			<service name="ROM">    <parent/> </service>
+			<service name="CPU">    <parent/> </service>
+			<service name="PD">     <parent/> </service>
+			<service name="LOG">    <parent/> </service>
+			<service name="Timer">  <parent/> </service>
+			<service name="Report"> <parent label="block_devices"/> </service>
+			<service name="Platform"> <child name="platform_drv"/> </service>
 		</route>
 	</start>
 
