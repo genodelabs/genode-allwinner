@@ -1070,6 +1070,7 @@ struct Sculpt::Main : Input_event_handler,
 		/*
 		 * Subscribe to reports
 		 */
+		_update_state_rom .sigh(_update_state_handler);
 		_window_list      .sigh(_window_list_handler);
 		_decorator_margins.sigh(_decorator_margins_handler);
 		_modem_state_rom  .sigh(_modem_state_handler);
