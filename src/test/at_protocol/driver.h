@@ -206,7 +206,7 @@ struct Test::Driver : Noncopyable
 		auto call_state = [&] (auto number, auto expected)
 		{
 			bool result = false;
-			state.with_sub_node("call", [&] (Xml_node const &call) {
+			state.with_optional_sub_node("call", [&] (Xml_node const &call) {
 				result = (call.attribute_value("number", Value()) == number)
 				      && (call.attribute_value("state",  Value()) == expected); });
 			return result;

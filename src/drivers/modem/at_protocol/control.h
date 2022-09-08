@@ -371,7 +371,7 @@ class At_protocol::Control : Noncopyable
 			auto call_node_rejected = [&]
 			{
 				bool rejected = false;
-				config.with_sub_node("call", [&] (Xml_node const &call) {
+				config.with_optional_sub_node("call", [&] (Xml_node const &call) {
 					rejected = _call_has_state(call, "rejected"); });
 				return rejected;
 			};
@@ -513,10 +513,10 @@ class At_protocol::Control : Noncopyable
 
 			_keep_call_list_up_to_date();
 
-			config.with_sub_node("call", [&] (Xml_node const &call) {
+			config.with_optional_sub_node("call", [&] (Xml_node const &call) {
 				_apply_call(call); });
 
-			config.with_sub_node("ring", [&] (Xml_node const &ring) {
+			config.with_optional_sub_node("ring", [&] (Xml_node const &ring) {
 				_apply_ring(ring); });
 		}
 

@@ -40,7 +40,7 @@ struct Sculpt::Conditional_float_dialog : Noncopyable
 		Hover_result const float_hover = _float.match(hover, "float", "name");
 
 		Hover_result dialog_hover = Hover_result::UNMODIFIED;
-		hover.with_sub_node("float", [&] (Xml_node const &hover) {
+		hover.with_optional_sub_node("float", [&] (Xml_node const &hover) {
 			dialog_hover = dialog.hover(hover); });
 
 		return Dialog::any_hover_changed(float_hover, dialog_hover);
