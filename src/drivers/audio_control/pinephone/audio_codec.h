@@ -34,40 +34,19 @@ class Audio_control::Codec : Platform::Device::Mmio
 	private:
 
 		/**
-		 * DA
-		 */
-		struct I2s_ap_format : Register<0x4, 32> { };
-
-		struct I2s_ap_fifo   : Register<0x14, 32>
-		{
-			struct Rxom : Bitfield<0, 2> { };
-			struct Txim : Bitfield<2, 1> { };
-		};
-
-		struct I2s_ap_clock_divide : Register<0x24, 32>
-		{
-			struct Mclkdiv  : Bitfield<0, 4> { };
-			struct Bclkdiv  : Bitfield<4, 3> { };
-			struct Mclko_en : Bitfield<7, 1> { };
-		};
-
-		struct I2s_ap_tx_counter : Register<0x28, 32> { };
-		struct I2s_ap_rx_counter : Register<0x2c, 32> { };
-
-		/**
 		 * Codec
 		 */
-		struct System_clock_control : Register<0x20c, 32>
+		struct System_clock_control : Register<0xc, 32>
 		{
-			struct Sysclk_src     : Bitfield<0, 1>  { enum { AIF2 =  1 }; };
+			struct Sysclk_src     : Bitfield<0, 1>  { enum { AIF = 0, AIF2 =  1 }; };
 			struct Sysclk_enable  : Bitfield<3, 1>  { };
 			struct Aif2clk_src    : Bitfield<4, 2>  { enum { AUDIO_PLL = 2 }; };
 			struct Aif2clk_enable : Bitfield<7, 1>  { };
-			struct Aif1clk_src    : Bitfield<8, 2>  { enum { AUDIO_PLL = 1 }; };
+			struct Aif1clk_src    : Bitfield<8, 2>  { enum { AUDIO_PLL = 2 }; };
 			struct Aif1clk_enable : Bitfield<11, 1> { };
 		};
 
-		struct Module_clock_control : Register<0x210, 32>
+		struct Module_clock_control : Register<0x10, 32>
 		{
 			struct Dac  : Bitfield<2, 1>  { };
 			struct Adc  : Bitfield<3, 1>  { };
@@ -75,7 +54,7 @@ class Audio_control::Codec : Platform::Device::Mmio
 			struct Aif1 : Bitfield<15, 1> { };
 		};
 
-		struct Module_reset_control : Register<0x214, 32>
+		struct Module_reset_control : Register<0x14, 32>
 		{
 			struct Dac  : Bitfield<2, 1>  { };
 			struct Adc  : Bitfield<3, 1>  { };
@@ -83,29 +62,44 @@ class Audio_control::Codec : Platform::Device::Mmio
 			struct Aif1 : Bitfield<15, 1> { };
 		};
 
-		struct System_sample_rate : Register<0x218, 32> { };
-
-		struct Aif1_clock_control : Register<0x240, 32>
+		struct System_sample_rate : Register<0x18, 32>
 		{
-			struct Word_size : Bitfield<4, 2> { };
-			struct Lrck_div  : Bitfield<6, 3>  { };
-			struct Bclk_div  : Bitfield<9, 4>  { };
-			struct Master    : Bitfield<15, 1> { };
+			enum { KHZ8 = 0, KHZ441 = 0x7, KHZ48 = 0x8 };
+			struct Aif2_fs : Bitfield<8,  4>  { };
+			struct Aif1_fs : Bitfield<12, 4>  { };
 		};
 
-		struct Aif1_dacdat_control : Register<0x248, 32>
+		struct Aif1_clock_control : Register<0x40, 32>
 		{
-			struct Dac0r_src : Bitfield<8, 2> { };
-			struct Dac0l_src : Bitfield<10, 2> { };
+			struct Data_fmt  : Bitfield<2, 2>  { enum { I2S = 0    }; };
+			struct Word_size : Bitfield<4, 2>  { enum { _16BIT = 1 }; };
+			struct Lrck_div  : Bitfield<6, 3>  { enum { DIV32 = 1  }; };
+			struct Bclk_div  : Bitfield<9, 4>  { enum { DIV16 = 6  }; };
+			struct Master    : Bitfield<15, 1> { enum { SLAVE = 1  }; };
 		};
 
-		struct Aif1_digital_mixer_source : Register<0x24c, 32>
+		struct Aif1_adcdat_control : Register<0x44, 32>
+		{
+			struct Adc0_right_enable : Bitfield<14, 1> { };
+			struct Adc0_left_enable  : Bitfield<15, 1> { };
+		};
+
+		struct Aif1_dacdat_control : Register<0x48, 32>
+		{
+			enum { MIX_MONO = 0x3 }; /* (left + right) / 2 */
+			struct Dac0r_src    : Bitfield<8, 2> { };
+			struct Dac0l_src    : Bitfield<10, 2> { };
+			struct Dac0r_enable : Bitfield<14, 1> { };
+			struct Dac0l_enable : Bitfield<15, 1> { };
+		};
+
+		struct Aif1_digital_mixer_source : Register<0x4c, 32>
 		{
 			struct Adc0r_src : Bitfield<8, 4> { };
 			struct Adc0l_src : Bitfield<12, 4> { };
 		};
 
-		struct Aif2_clock_control : Register<0x280, 32>
+		struct Aif2_clock_control : Register<0x80, 32>
 		{
 			struct Data_fmt  : Bitfield<2, 2>  { enum { DSP      = 0x3 }; };
 			struct Word_size : Bitfield<4, 2>  { enum { _16BIT   = 1   }; };
@@ -115,14 +109,14 @@ class Audio_control::Codec : Platform::Device::Mmio
 			struct Master    : Bitfield<15, 1> { enum { MASTER   = 0   }; };
 		};
 
-		struct Aif2_adcdat_control : Register<0x284, 32>
+		struct Aif2_adcdat_control : Register<0x84, 32>
 		{
 			struct Right_enable : Bitfield<14, 1> { };
 			struct Left_enable  : Bitfield<15, 1> { };
 			struct Loop : Bitfield<0, 1> { };
 		};
 
-		struct Aif2_dacdat_control : Register<0x288, 32>
+		struct Aif2_dacdat_control : Register<0x88, 32>
 		{
 			enum { MIX_MONO = 0x3 }; /* (left + right) / 2 */
 			struct Dacr_src    : Bitfield<8, 2>  { };
@@ -130,87 +124,116 @@ class Audio_control::Codec : Platform::Device::Mmio
 			struct Dacl_enable : Bitfield<15, 1> { };
 		};
 
-		struct Aif2_digital_mixer_source : Register<0x28c, 32>
+		struct Aif2_digital_mixer_source : Register<0x8c, 32>
 		{
 			struct Adcr_scr : Bitfield<8, 4>  { };
 			struct Adcl_scr : Bitfield<12, 4> { };
 		};
 
-		struct Adc_digital : Register<0x300, 32>
+		struct Adc_digital : Register<0x100, 32>
 		{
 			struct Enad : Bitfield<15, 1> { };
 		};
 
-		struct Hmic_control_1 : Register<0x310, 32>
+		struct Hmic_control_1 : Register<0x110, 32>
 		{
 			struct Jack_in_irq_en           : Bitfield<4, 1> { };
 			struct Mdata_threshold_debounce : Bitfield<5, 2> { };
 		};
 
-		struct Hmic_control_2 : Register<0x314, 32>
+		struct Hmic_control_2 : Register<0x114, 32>
 		{
 			struct Sf            : Bitfield<6, 2>  { enum { X1X2 = 1 }; };
 			struct Sample_select : Bitfield<14, 2> { enum { DOWN_BY_TWO = 1 }; };
 		};
 
-		struct Dac_control : Register<0x320, 32>
+		struct Dac_control : Register<0x120, 32>
 		{
 			struct Enable : Bitfield<15, 1> { };
 		};
 
-		struct Dac_mixer_source : Register<0x330, 32>
+		struct Dac_mixer_source : Register<0x130, 32>
 		{
-			struct Dacr_aif2_dacr : Bitfield<9, 1>  { };
-			struct Dacl_aif2_dacl : Bitfield<13, 1> { };
+			struct Dacr_aif2_dacr  : Bitfield<9, 1>  { };
+			struct Dacr_aif1_dac0r : Bitfield<11, 1>  { };
+			struct Dacl_aif2_dacl  : Bitfield<13, 1> { };
+			struct Dacl_aif1_dac0l : Bitfield<15, 1> { };
 		};
 
 		/* set defaults = modem from/to ADC/DAC path */
 		void _init()
 		{
-			/* system clock */
+			/*
+			 * Use AIF2 as clock source because it should be on when not calling as
+			 * well (AIF1 is interface from SOC to codec, AIF2 from modem to codec).
+			 */
 			using S = System_clock_control;
 			write<S::Sysclk_src>(S::Sysclk_src::AIF2);
 			write<S::Sysclk_enable>(1);
 			write<S::Aif2clk_src>(S::Aif2clk_src::AUDIO_PLL);
 			write<S::Aif2clk_enable>(1);
+			write<S::Aif1clk_src>(S::Aif1clk_src::AUDIO_PLL);
+			write<S::Aif1clk_enable>(1);
 
 			write<Module_reset_control::Dac>(1);
 			write<Module_reset_control::Adc>(1);
 			write<Module_reset_control::Aif2>(1);
+			write<Module_reset_control::Aif1>(1);
 
-			write<System_sample_rate>(0); /* 8 KHz */
+			write<System_sample_rate::Aif1_fs>(System_sample_rate::KHZ441);
+			write<System_sample_rate::Aif2_fs>(System_sample_rate::KHZ8);
+
+			/* AIF1 SOC */
+			using A1 = Aif1_clock_control;
+			write<A1::Data_fmt>(A1::Data_fmt::I2S);
+			write<A1::Word_size>(A1::Word_size::_16BIT);
+			write<A1::Lrck_div>(A1::Lrck_div::DIV32);
+			write<A1::Bclk_div>(A1::Bclk_div::DIV16);
+			write<A1::Master>(A1::Master::SLAVE);
+
 
 			/* AIF2 goes to modem */
-			using A = Aif2_clock_control;
-			write<A::Data_fmt>(A::Data_fmt::DSP);
-			write<A::Word_size>(A::Word_size::_16BIT);
-			write<A::Lrck_div>(A::Lrck_div::DIV32);
-			write<A::Bclk_div>(A::Bclk_div::DIV96);
-			write<A::Bclk_inv>(A::Bclk_inv::INVERTED);
-			write<A::Master>(A::Master::MASTER);
+			using A2 = Aif2_clock_control;
+			write<A2::Data_fmt>(A2::Data_fmt::DSP);
+			write<A2::Word_size>(A2::Word_size::_16BIT);
+			write<A2::Lrck_div>(A2::Lrck_div::DIV32);
+			write<A2::Bclk_div>(A2::Bclk_div::DIV96);
+			write<A2::Bclk_inv>(A2::Bclk_inv::INVERTED);
+			write<A2::Master>(A2::Master::MASTER);
 
 			/* enables clock */
+			write<Module_clock_control::Aif1>(1);
 			write<Module_clock_control::Aif2>(1);
 			write<Module_clock_control::Dac>(1);
 			write<Module_clock_control::Adc>(1);
 
-			/* ADC enable */
+			/* AIF1/2 capture - ADC enable */
+			write<Aif1_adcdat_control::Adc0_right_enable>(1);
+			write<Aif1_adcdat_control::Adc0_left_enable>(1);
 			write<Aif2_adcdat_control::Right_enable>(1);
 			write<Aif2_adcdat_control::Left_enable>(1);
 
 			/* DAC sources */
+			write<Aif1_dacdat_control::Dac0r_src>(Aif1_dacdat_control::MIX_MONO);
+			write<Aif1_dacdat_control::Dac0l_src>(Aif1_dacdat_control::MIX_MONO);
+			write<Aif1_dacdat_control::Dac0r_enable>(1);
+			write<Aif1_dacdat_control::Dac0l_enable>(1);
 			write<Aif2_dacdat_control::Dacr_src>(Aif2_dacdat_control::MIX_MONO);
 			write<Aif2_dacdat_control::Dacl_src>(Aif2_dacdat_control::MIX_MONO);
 			write<Aif2_dacdat_control::Dacl_enable>(1);
 
-			/* AIF2 mixer source = ADC (mic) */
+			/* AIF1/2 mixer source = ADC(L/R) (mic) */
+			write<Aif1_digital_mixer_source::Adc0r_src>(2);
+			write<Aif1_digital_mixer_source::Adc0l_src>(2);
 			write<Aif2_digital_mixer_source::Adcr_scr>(1);
 			write<Aif2_digital_mixer_source::Adcl_scr>(1);
 
 			/* ADC Digital part enable */
 			write<Adc_digital::Enad>(1);
 
-			/* DAC mixer is AIF2_DAC = modem */
+			/* DAC mixer is AI1_DAC SOC, AIF2_DAC = modem */
+			write<Dac_mixer_source::Dacr_aif1_dac0r>(1);
+			write<Dac_mixer_source::Dacl_aif1_dac0l>(1);
 			write<Dac_mixer_source::Dacr_aif2_dacr>(1);
 			write<Dac_mixer_source::Dacl_aif2_dacl>(1);
 
@@ -320,6 +343,12 @@ class Audio_control::Analog : public Analog_mmio
 {
 	private:
 
+		struct Headphone_amplifier : Register<0x0, 8>
+		{
+			struct Volume : Bitfield<0, 6> { }; /* mute: 0 */
+			struct Enable : Bitfield<5, 1> { };
+		};
+
 		struct Output_mixer_left : Register<0x1, 8>
 		{
 			struct Dac_mute_left : Bitfield<1, 1> { };
@@ -364,8 +393,9 @@ class Audio_control::Analog : public Analog_mmio
 		struct Dac_mixer : Register<0xa, 8>
 		{
 			enum { LEFT_RIGHT = 0x3 };
-			struct Dac_enable   : Bitfield<6, 2> { };
-			struct Mixer_enable : Bitfield<4, 2> { };
+			struct Headphone_mute : Bitfield<2, 2> { };
+			struct Mixer_enable   : Bitfield<4, 2> { };
+			struct Dac_enable     : Bitfield<6, 2> { };
 		};
 
 		struct Adc_mixer_left : Register<0xb, 8>
@@ -390,13 +420,22 @@ class Audio_control::Analog : public Analog_mmio
 			struct Master_mic_enable : Bitfield<7, 1> { };
 		};
 
+		enum { MUTE = 0u };
+
+		uint8_t _volume(unsigned const volume, unsigned const max)
+		{
+			return uint8_t((max * (volume > 100u ? 100u : volume)) / 100);
+		}
+
 	public:
 
-		void mic1_enabled(bool enabled)
+		void mic1_enabled(unsigned const volume)
 		{
+			bool enabled = volume != MUTE;
+
 			write<Mic1_control::Boost_amp_enable>(enabled);
-			write<Mic1_control::Boost>(0);
-			write<Mic1_control::Gain>(0x5);
+			write<Mic1_control::Boost>(0x3);
+			write<Mic1_control::Gain>(_volume(volume, 0x7));
 
 			write<Adc_mixer_left::Mic1>(enabled);
 			write<Adc_mixer_right::Mic1>(enabled);
@@ -407,19 +446,23 @@ class Audio_control::Analog : public Analog_mmio
 			write<Hs_mbias_control::Master_mic_enable>(enabled);
 		}
 
-		void earpiece_enabled(bool enabled)
+		void earpiece_enabled(unsigned const volume)
 		{
+			bool enabled = volume != MUTE;
+
 			using E0 = Earpiece_control0;
 			write<E0::Input_src>(E0::Input_src::DACL);
 
 			write<Earpiece_control1::Enable_pa>(enabled);
 			write<Earpiece_control1::Mute_off>(enabled);
-			write<Earpiece_control1::Volume>(0x1f); /* maximum volume */
+			write<Earpiece_control1::Volume>(_volume(volume, 0x1f));
 		}
 
-		void speaker_enabled(bool enabled)
+		void speaker_enabled(unsigned const volume)
 		{
-			write<Lineout_control1::Volume>(0x1f); /* maximum volume */
+			bool enabled = volume != MUTE;
+
+			write<Lineout_control1::Volume>(_volume(volume, 0x1f));
 
 			using L0 = Lineout_control0;
 			write<L0::Right_src>(L0::Right_src::MONO_DIFF);
@@ -428,6 +471,15 @@ class Audio_control::Analog : public Analog_mmio
 
 			write<Output_mixer_left::Dac_mute_left>(enabled);
 			write<Output_mixer_right::Dac_mute_right>(enabled);
+		}
+
+		void headphone_enabled(unsigned const volume)
+		{
+			bool enabled = volume != MUTE;
+
+			write<Headphone_amplifier::Volume>(_volume(volume, 0x3f));
+			write<Headphone_amplifier::Enable>(enabled ? 1 : 0);
+			write<Dac_mixer::Headphone_mute>(enabled ? Dac_mixer::LEFT_RIGHT : 0);
 		}
 
 		void dac_mixer_enabled(bool enabled)
@@ -459,14 +511,28 @@ class Audio_control::Device
 
 		void apply_config(Xml_node const &config)
 		{
-			bool const mic      = config.attribute_value("mic",      false),
-			           earpiece = config.attribute_value("earpiece", false),
-			           speaker  = config.attribute_value("speaker",  false);
+			unsigned mic = 0, earpiece = 0, speaker = 0, headphone = 0;
+
+			config.for_each_sub_node([&] (Xml_node node) {
+
+				if (node.has_type("mic"))
+					mic = node.attribute_value("volume", 0u);
+
+				if (node.has_type("earpiece"))
+					earpiece = node.attribute_value("volume", 0u);
+
+				if (node.has_type("speaker"))
+					speaker = node.attribute_value("volume", 0u);
+
+				if (node.has_type("headphone"))
+					headphone = node.attribute_value("volume", 0u);
+			});
 
 			_analog.mic1_enabled(mic);
 			_analog.earpiece_enabled(earpiece);
 			_analog.speaker_enabled(speaker);
-			_analog.dac_mixer_enabled(earpiece || speaker);
+			_analog.headphone_enabled(headphone);
+			_analog.dac_mixer_enabled(earpiece || speaker || headphone);
 		}
 };
 
