@@ -250,6 +250,7 @@ install_config {
 				<policy label="audio_control -> ">
 					<device name="audio_codec"/>
 					<device name="audio_analog"/>
+					<device name="audio_codec_modem"/>
 				</policy>
 				<policy label="usb_host_drv -> " info="yes">
 					<device name="ehci1"/>
@@ -313,7 +314,12 @@ install_config {
 		<start name="audio_control">
 			<binary name="pinephone_audio_control"/>
 			<resource name="RAM" quantum="1M"/>
-			<config mic="yes" earpiece="yes" speaker="yes"/>
+			<config>
+				<mic      volume="80"/>
+				<earpiece volume="100"/>
+				<speaker  volume="100"/>
+				<codec    target="modem"/>
+			</config>
 			<route>
 				<service name="Platform"> <child name="platform_drv"/> </service>
 				<any-service> <parent/> </any-service>
