@@ -1098,7 +1098,6 @@ struct Sculpt::Main : Input_event_handler,
 		_handle_leitzentrale();
 		_handle_gui_mode();
 		_storage.handle_storage_devices_update();
-		_deploy.handle_deploy();
 		_handle_runtime_config();
 		_handle_modem_state();
 
@@ -1385,9 +1384,6 @@ void Sculpt::Main::_handle_runtime_state()
 		Child_exit_state exit_state(state, "prepare");
 		if (exit_state.exited) {
 			_prepare_completed = _prepare_version;
-
-			/* trigger deployment */
-			_deploy.handle_deploy();
 
 			/* trigger update and deploy */
 			reconfigure_runtime = true;
