@@ -24,7 +24,7 @@ struct Pin_event::Main
 
 	Pin_state::Connection _pin { _env };
 
-	Irq_connection _irq { _env, 0 /* unused */ };
+	Irq_connection _irq { _env, 0u /* unused */ };
 
 	Signal_handler<Main> _irq_handler {
 		_env.ep(), *this, &Main::_handle_irq };
