@@ -50,6 +50,10 @@
 #include <view/storage_section_dialog.h>
 #include <view/network_section_dialog.h>
 #include <view/software_section_dialog.h>
+#include <view/software_tabs_dialog.h>
+#include <view/software_options_dialog.h>
+#include <view/software_status_dialog.h>
+#include <view/download_status.h>
 
 namespace Sculpt { struct Main; }
 
@@ -67,7 +71,9 @@ struct Sculpt::Main : Input_event_handler,
                       Pin_dialog::Action,
                       Dialpad_dialog::Action,
                       Current_call_dialog::Action,
-                      Outbound_dialog::Action
+                      Outbound_dialog::Action,
+                      Software_options_dialog::Action,
+                      Software_status_dialog::Status_generator
 {
 	Env &_env;
 
@@ -456,6 +462,15 @@ struct Sculpt::Main : Input_event_handler,
 
 	Software_section_dialog _software_section_dialog { _section_dialogs };
 
+	Conditional_float_dialog<Software_tabs_dialog>
+		_software_tabs_dialog { "software_tabs" };
+
+	Conditional_float_dialog<Software_options_dialog>
+		_software_options_dialog { "software_options", _runtime_state, _launchers, *this };
+
+	Conditional_float_dialog<Software_status_dialog>
+		_software_status_dialog { "software_status", *this };
+
 	Conditional_float_dialog<Graph>
 		_graph { "graph",
 		         _runtime_state, _cached_runtime_config, _storage._storage_devices,
@@ -508,7 +523,16 @@ struct Sculpt::Main : Input_event_handler,
 
 			_software_section_dialog.generate(xml);
 
-			_graph.generate_conditional(xml, _software_section_dialog.selected());
+			_software_tabs_dialog.generate_conditional(xml, _software_section_dialog.selected());
+
+			_graph.generate_conditional(xml, _software_section_dialog.selected()
+			                              && _software_tabs_dialog.dialog.runtime_selected());
+
+			_software_options_dialog.generate_conditional(xml, _software_section_dialog.selected()
+			                                                && _software_tabs_dialog.dialog.options_selected());
+
+			_software_status_dialog.generate_conditional(xml, _software_section_dialog.selected()
+			                                               && _software_tabs_dialog.dialog.status_selected());
 		});
 	}
 
@@ -646,11 +670,17 @@ struct Sculpt::Main : Input_event_handler,
 			if (_current_call_dialog.hovered())
 				_current_call_dialog.click();
 
+			if (_network.dialog.hovered)
+				_network.dialog.click(_network);
+
+			if (_software_tabs_dialog.hovered())
+				_software_tabs_dialog.click();
+
 			if (_graph.hovered())
 				_graph.dialog.click(*this);
 
-			if (_network.dialog.hovered)
-				_network.dialog.click(_network);
+			if (_software_options_dialog.hovered())
+				_software_options_dialog.click();
 
 			_main_menu_view.generate();
 			_clicked_seq_number.destruct();
@@ -838,6 +868,89 @@ struct Sculpt::Main : Input_event_handler,
 	 * Graph::Action interface
 	 */
 	void toggle_launcher_selector(Rect) override { }
+
+	/**
+	 * Software_tabs_dialog::Status_generator interface
+	 */
+	void generate_status(Xml_generator &xml) const override
+	{
+		xml.node("vbox", [&] () {
+			if (_manually_managed_runtime)
+				return;
+
+			bool const network_missing = _deploy.update_needed()
+			                         && !_network._nic_state.ready();
+			bool const show_diagnostics =
+				_deploy.any_unsatisfied_child() || network_missing;
+
+			auto gen_network_diagnostics = [&] (Xml_generator &xml)
+			{
+				if (!network_missing)
+					return;
+
+				gen_named_node(xml, "hbox", "network", [&] () {
+					gen_named_node(xml, "float", "left", [&] () {
+						xml.attribute("west", "yes");
+						xml.node("label", [&] () {
+							xml.attribute("text", "network needed for installation");
+							xml.attribute("font", "annotation/regular");
+						});
+					});
+				});
+			};
+
+			if (show_diagnostics) {
+				gen_named_node(xml, "frame", "diagnostics", [&] () {
+					xml.node("vbox", [&] () {
+
+						gen_named_node(xml, "label", "top", [&] () {
+							xml.attribute("min_ex", "40");
+							xml.attribute("text", ""); });
+
+						xml.node("label", [&] () {
+							xml.attribute("text", "Diagnostics"); });
+
+						xml.node("float", [&] () {
+							xml.node("vbox", [&] () {
+								gen_network_diagnostics(xml);
+								_deploy.gen_child_diagnostics(xml);
+							});
+						});
+
+						gen_named_node(xml, "label", "bottom", [&] () {
+							xml.attribute("text", " "); });
+					});
+				});
+			}
+
+			Xml_node const state = _update_state_rom.xml();
+			if (_update_running() && state.attribute_value("progress", false))
+				gen_download_status(xml, state);
+		});
+	}
+
+
+	/**
+	 * Software_options_dialog::Action interface
+	 */
+	void enable_optional_component(Path const &launcher) override
+	{
+		_runtime_state.launch(launcher, launcher);
+
+		/* trigger change of the deployment */
+		_deploy.update_managed_deploy_config(_manual_deploy_rom.xml());
+	}
+
+	/**
+	 * Software_options_dialog::Action interface
+	 */
+	void disable_optional_component(Path const &launcher) override
+	{
+		_runtime_state.abandon(launcher);
+
+		/* update config/managed/deploy with the component 'name' removed */
+		_deploy.update_managed_deploy_config(_manual_deploy_rom.xml());
+	}
 
 
 	/***********
@@ -1277,12 +1390,14 @@ Sculpt::Dialog::Hover_result Sculpt::Main::hover(Xml_node hover)
 		_section_dialogs.for_each([&] (Section_dialog &dialog) {
 			dialog.hover(vbox); });
 
-		_modem_power_dialog .hover(vbox);
-		_pin_dialog         .hover(vbox);
-		_dialpad_dialog     .hover(vbox);
-		_current_call_dialog.hover(vbox);
-		_outbound_dialog    .hover(vbox);
-		_graph              .hover(vbox);
+		_modem_power_dialog     .hover(vbox);
+		_pin_dialog             .hover(vbox);
+		_dialpad_dialog         .hover(vbox);
+		_current_call_dialog    .hover(vbox);
+		_outbound_dialog        .hover(vbox);
+		_graph                  .hover(vbox);
+		_software_tabs_dialog   .hover(vbox);
+		_software_options_dialog.hover(vbox);
 
 		_network.dialog.match_sub_dialog(vbox, "float");
 	});
@@ -1488,6 +1603,9 @@ void Sculpt::Main::_handle_runtime_state()
 		reconfigure_runtime = true;
 		regenerate_dialog   = true;
 	}
+
+	if (_software_section_dialog.selected() && _software_tabs_dialog.dialog.options_selected())
+		regenerate_dialog = true;
 
 	if (regenerate_dialog)
 		generate_dialog();
