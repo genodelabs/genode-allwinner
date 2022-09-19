@@ -58,6 +58,8 @@
 			<policy label="audio_control -> ">
 				<device name="audio_codec"/>
 				<device name="audio_analog"/>
+				<device name="audio_codec_modem"/>
+				<device name="audio_codec_soc"/>
 			</policy>
 
 			<policy label="usb_host_drv -> " info="yes">

@@ -501,8 +501,13 @@ class Audio_control::Device
 		Platform::Device _device_codec  { _platform, "audio_codec" };
 		Platform::Device _device_analog { _platform, "audio_analog" };
 
+		Constructible<Platform::Device> _device_codec_config { };
+
 		Codec  _codec  { _device_codec };
 		Analog _analog { _device_analog };
+
+		enum Codec_state { NONE , SOC, MODEM };
+		Codec_state _codec_state { NONE };
 
 	public:
 
@@ -512,6 +517,7 @@ class Audio_control::Device
 		void apply_config(Xml_node const &config)
 		{
 			unsigned mic = 0, earpiece = 0, speaker = 0, headphone = 0;
+			bool config_soc = true;
 
 			config.for_each_sub_node([&] (Xml_node node) {
 
@@ -526,7 +532,21 @@ class Audio_control::Device
 
 				if (node.has_type("headphone"))
 					headphone = node.attribute_value("volume", 0u);
+
+				if (node.has_type("codec")) {
+					String<6> target = node.attribute_value("target", String<6> { });
+					if (target == "modem") config_soc = false;
+				}
 			});
+
+			/* reconfigure for 'modem' or 'soc' (default) mode */
+			if (config_soc && _codec_state != SOC) {
+				_device_codec_config.construct(_platform, "audio_codec_soc");
+				_codec_state = SOC;
+			} else if (!config_soc && _codec_state != MODEM) {
+				_device_codec_config.construct(_platform, "audio_codec_modem");
+				_codec_state = MODEM;
+			}
 
 			_analog.mic1_enabled(mic);
 			_analog.earpiece_enabled(earpiece);
