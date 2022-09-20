@@ -1070,9 +1070,6 @@ struct Sculpt::Main : Input_event_handler,
 
 	Main(Env &env) : _env(env)
 	{
-		/* XXX select phone dialog by default */
-		_section_enabled(_phone_section_dialog, true);
-
 		_config.sigh(_config_handler);
 		_leitzentrale_rom.sigh(_leitzentrale_handler);
 		_manual_deploy_rom.sigh(_manual_deploy_handler);
