@@ -218,6 +218,15 @@ class At_protocol::Driver : Noncopyable
 				_control.cancel_command();
 				status.command_canceled();
 			});
+
+			/*
+			 * The command was canceled but the modem may still be busy with
+			 * processing it, disregarding new command characters at that point.
+			 * We trigger the submission of an AT command (with the expected
+			 * "OK" as response) to attain a consistent protocol state where
+			 * the next command submitted is recognised by the modem.
+			 */
+			status.at_ok = false;
 		}
 
 		/**
