@@ -94,6 +94,67 @@ struct Sculpt::Main : Input_event_handler,
 			handle_input_event(ev); });
 	}
 
+	Managed_config<Main> _system_config {
+	        _env, "system", "system", *this, &Main::_handle_system_config };
+
+	struct System
+	{
+		bool usb;
+		bool storage;
+
+		static System from_xml(Xml_node const &node)
+		{
+			return System {
+				.usb     = node.attribute_value("usb",     false),
+				.storage = node.attribute_value("storage", false)
+			};
+		}
+
+		void generate(Xml_generator &xml) const
+		{
+			if (usb)     xml.attribute("usb",     "yes");
+			if (storage) xml.attribute("storage", "yes");
+		}
+
+		bool operator != (System const &other) const
+		{
+			return (other.usb != usb) || (other.storage != storage);
+		}
+
+	} _system { };
+
+	void _update_managed_system_config()
+	{
+		_system_config.generate([&] (Xml_generator &xml) {
+			_system.generate(xml); });
+	}
+
+	void _handle_system_config(Xml_node node)
+	{
+		_system = System::from_xml(node);
+		_update_managed_system_config();
+	}
+
+	void _enter_second_driver_stage()
+	{
+		/*
+		 * At the first stage, we start only the drivers needed for the
+		 * bare-bones GUI functionality needed to pick up a call. Once the GUI
+		 * is up, we can kick off the start of the remaining drivers.
+		 */
+
+		if (_system.usb && _system.storage)
+			return;
+
+		System const orig_system = _system;
+
+		_system.usb     = true;
+		_system.storage = true;
+
+		if (_system != orig_system)
+			_update_managed_system_config();
+	}
+
 	Signal_handler<Main> _gui_mode_handler {
 		_env.ep(), *this, &Main::_handle_gui_mode };
 
@@ -622,6 +683,10 @@ struct Sculpt::Main : Input_event_handler,
 	 */
 	void menu_view_hover_updated() override
 	{
+		/* take first hover report as indicator that the GUI is ready */
+		if (!_system.storage && _runtime_state.present_in_runtime("menu_view"))
+			_enter_second_driver_stage();
+
 		if (_clicked_seq_number.constructed())
 			_try_handle_click();
 
@@ -658,7 +723,7 @@ struct Sculpt::Main : Input_event_handler,
 	}
 
 	Menu_view _main_menu_view { _env, _child_states, *this, "menu_view",
-	                             Ram_quota{4*1024*1024}, Cap_quota{150},
+	                             Ram_quota{12*1024*1024}, Cap_quota{150},
 	                             "menu_dialog", "menu_view_hover", *this,
 	                             Menu_view::Alpha::OPAQUE,
 	                             Color { 62, 62, 67, 255 } };

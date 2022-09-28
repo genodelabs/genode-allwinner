@@ -1,0 +1,3 @@
+<system state="" usb="no" storage="no" />
+<!-- the start of the USB and storage drivers is triggered by
+     the phone_manager not before the GUI is ready -->

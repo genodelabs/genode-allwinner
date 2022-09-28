@@ -125,6 +125,8 @@
 						<child name="config_fs_report" label="managed -> runtime"/> </service>
 					<service name="Report" label="deploy_config">
 						<child name="config_fs_report" label="managed -> deploy"/> </service>
+					<service name="Report" label="system_config">
+						<child name="config_fs_report" label="managed -> system"/> </service>
 					<service name="Report" label="wifi_config">
 						<child name="config_fs_report" label="managed -> wifi"/> </service>
 					<service name="Report" label="modem_config">

@@ -15,10 +15,10 @@
 	<default caps="100"/>
 
 	<service name="Block">
-		<default-policy> <child name="sd_card_drv"/> </default-policy> </service>
+		<default-policy> <child name="dynamic"/> </default-policy> </service>
 
 	<service name="Usb">
-		<default-policy> <child name="usb_host_drv"/> </default-policy> </service>
+		<default-policy> <child name="dynamic"/> </default-policy> </service>
 
 	<service name="Platform">
 		<default-policy> <child name="platform_drv"/> </default-policy> </service>
@@ -62,12 +62,12 @@
 				<device name="audio_codec_soc"/>
 			</policy>
 
-			<policy label="usb_host_drv -> " info="yes">
+			<policy label="dynamic -> usb_host_drv -> " info="yes">
 				<device name="ehci1"/>
 				<device name="usb_phy"/>
 			</policy>
 
-			<policy label="sd_card_drv -> " info="yes">
+			<policy label="dynamic -> sd_card_drv -> " info="yes">
 				<device name="sd_card"/>
 				<device name="emmc"/>
 			</policy>
@@ -255,37 +255,102 @@
 		</route>
 	</start>
 
-	<start name="usb_host_drv" caps="200">
-		<binary name="a64_usb_host_drv"/>
-		<resource name="RAM" quantum="16M"/>
-		<provides> <service name="Usb"/> </provides>
+	<start name="dynamic_config">
+		<binary name="rom_filter"/>
+		<resource name="RAM" quantum="1M"/>
+		<provides> <service name="ROM"/> </provides>
 		<config>
-			<policy label_prefix="runtime -> usb_net" vendor_id="0x2c7c" product_id="0x0125"/>
+			<input name="usb_enabled" rom="system" node="system">
+				<attribute name="usb" /> </input>
+
+			<input name="storage_enabled" rom="system" node="system">
+				<attribute name="storage" /> </input>
+
+			<output node="config">
+				<inline>
+					<parent-provides>
+						<service name="ROM"/>
+						<service name="PD"/>
+						<service name="CPU"/>
+						<service name="LOG"/>
+						<service name="Timer"/>
+						<service name="Report"/>
+						<service name="Platform"/>
+					</parent-provides>
+
+					<service name="Block">
+						<default-policy> <child name="sd_card_drv"/> </default-policy> </service>
+
+					<service name="Usb">
+						<default-policy> <child name="usb_host_drv"/> </default-policy> </service>
+				</inline>
+
+				<if>
+					<has_value input="usb_enabled" value="yes" />
+					<then>
+						<inline>
+							<start name="usb_host_drv" caps="200">
+								<binary name="a64_usb_host_drv"/>
+								<resource name="RAM" quantum="16M"/>
+								<provides> <service name="Usb"/> </provides>
+								<config>
+									<policy label_prefix="runtime -> usb_net" vendor_id="0x2c7c" product_id="0x0125"/>
+								</config>
+								<route>
+									<service name="Platform"> <parent/> </service>
+									<service name="ROM" label="dtb"> <parent label="usb-pinephone.dtb"/> </service>
+									<any-service> <parent/> </any-service>
+								</route>
+							</start>
+						</inline>
+					</then>
+				</if>
+
+				<if>
+					<has_value input="storage_enabled" value="yes" />
+					<then>
+						<inline>
+							<start name="sd_card_drv" caps="500">
+								<binary name="a64_sd_card_drv"/>
+								<resource name="RAM" quantum="16M"/>
+								<provides> <service name="Block"/> </provides>
+								<config report="yes">
+									<default-policy device="mmcblk0" writeable="yes"/>
+								</config>
+								<route>
+									<service name="ROM" label="dtb">
+										<parent label="sd_card-pinephone.dtb"/> </service>
+									<service name="ROM">    <parent/> </service>
+									<service name="CPU">    <parent/> </service>
+									<service name="PD">     <parent/> </service>
+									<service name="LOG">    <parent/> </service>
+									<service name="Timer">  <parent/> </service>
+									<service name="Report"> <parent label="block_devices"/> </service>
+									<service name="Platform"> <parent/> </service>
+								</route>
+							</start>
+						</inline>
+					</then>
+				</if>
+
+			</output>
 		</config>
 		<route>
-			<service name="Platform"> <child name="platform_drv"/> </service>
-			<service name="ROM" label="dtb"> <parent label="usb-pinephone.dtb"/> </service>
+			<service name="ROM" label="system"> <parent label="system"/> </service>
 			<any-service> <parent/> </any-service>
 		</route>
 	</start>
 
-	<start name="sd_card_drv" caps="500">
-		<binary name="a64_sd_card_drv"/>
-		<resource name="RAM" quantum="16M"/>
-		<provides> <service name="Block"/> </provides>
-		<config report="yes">
-			<default-policy device="mmcblk0" writeable="yes"/>
-		</config>
+	<start name="dynamic" caps="800">
+		<binary name="init"/>
+		<resource name="RAM" quantum="36M"/>
+		<provides> <service name="Usb"/> <service name="Block"/> </provides>
 		<route>
-			<service name="ROM" label="dtb">
-				<parent label="sd_card-pinephone.dtb"/> </service>
-			<service name="ROM">    <parent/> </service>
-			<service name="CPU">    <parent/> </service>
-			<service name="PD">     <parent/> </service>
-			<service name="LOG">    <parent/> </service>
-			<service name="Timer">  <parent/> </service>
-			<service name="Report"> <parent label="block_devices"/> </service>
+			<service name="ROM" label="config"> <child name="dynamic_config"/> </service>
+			<service name="Report" label_last="block_devices">
+				<parent label="block_devices"/> </service>
 			<service name="Platform"> <child name="platform_drv"/> </service>
+			<any-service> <parent/> </any-service>
 		</route>
 	</start>
 
