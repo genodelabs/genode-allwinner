@@ -449,6 +449,9 @@ struct Sculpt::Main : Input_event_handler,
 
 	Storage_section_dialog _storage_section_dialog  { _section_dialogs };
 
+	Storage_dialog _storage_dialog {
+		_storage._storage_devices, _storage._sculpt_partition };
+
 	/*
 	 * Network section
 	 */
@@ -511,6 +514,20 @@ struct Sculpt::Main : Input_event_handler,
 			                                            && _modem_state.pin_ok());
 
 			_storage_section_dialog.generate(xml);
+
+			gen_named_node(xml, "float", "storage dialog", [&] {
+				xml.attribute("east", "yes");
+				xml.attribute("west", "yes");
+				if (!_storage_section_dialog.selected())
+					return;
+
+				xml.node("frame", [&] {
+					xml.node("vbox", [&] {
+						_storage_dialog.gen_block_devices(xml);
+						_storage_dialog.gen_usb_storage_devices(xml);
+					});
+				});
+			});
 
 			_network_section_dialog.generate(xml);
 
@@ -670,6 +687,9 @@ struct Sculpt::Main : Input_event_handler,
 			if (_current_call_dialog.hovered())
 				_current_call_dialog.click();
 
+			if (_storage_dialog.hovered)
+				_storage_dialog.click(*this);
+
 			if (_network.dialog.hovered)
 				_network.dialog.click(_network);
 
@@ -699,6 +719,9 @@ struct Sculpt::Main : Input_event_handler,
 			_pin_dialog.clack();
 			_dialpad_dialog.clack();
 			_current_call_dialog.clack();
+
+			if (_storage_dialog.hovered)
+				_storage_dialog.clack(*this);
 
 			if (_graph.hovered())
 				_graph.dialog.clack(*this, _storage);
@@ -1383,26 +1406,30 @@ void Sculpt::Main::_handle_gui_mode()
 
 Sculpt::Dialog::Hover_result Sculpt::Main::hover(Xml_node hover)
 {
+	Hover_result result = Hover_result::UNMODIFIED;
+
 	_section_dialogs.for_each([&] (Section_dialog &dialog) {
-		dialog.hover(Xml_node("<empty/>")); });
+		result = any_hover_changed(result, dialog.hover(Xml_node("<empty/>"))); });
 
 	hover.with_optional_sub_node("vbox", [&] (Xml_node const &vbox) {
 		_section_dialogs.for_each([&] (Section_dialog &dialog) {
-			dialog.hover(vbox); });
+			result = any_hover_changed(result, dialog.hover(vbox)); });
 
-		_modem_power_dialog     .hover(vbox);
-		_pin_dialog             .hover(vbox);
-		_dialpad_dialog         .hover(vbox);
-		_current_call_dialog    .hover(vbox);
-		_outbound_dialog        .hover(vbox);
-		_graph                  .hover(vbox);
-		_software_tabs_dialog   .hover(vbox);
-		_software_options_dialog.hover(vbox);
-
-		_network.dialog.match_sub_dialog(vbox, "float");
+		result = any_hover_changed(result,
+			_modem_power_dialog     .hover(vbox),
+			_pin_dialog             .hover(vbox),
+			_dialpad_dialog         .hover(vbox),
+			_current_call_dialog    .hover(vbox),
+			_outbound_dialog        .hover(vbox),
+			_graph                  .hover(vbox),
+			_software_tabs_dialog   .hover(vbox),
+			_software_options_dialog.hover(vbox),
+			_storage_dialog.match_sub_dialog(vbox, "float", "frame", "vbox"),
+			_network.dialog.match_sub_dialog(vbox, "float")
+		);
 	});
 
-	return Dialog::Hover_result { };
+	return result;
 }
 
 
