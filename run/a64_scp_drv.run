@@ -1,4 +1,4 @@
-build { core init timer drivers/platform/a64 drivers/scp/a64 test/scp }
+build { core init timer drivers/platform/a64 test/scp }
 
 create_boot_directory
 
@@ -21,43 +21,18 @@ install_config {
 			<provides> <service name="Timer"/> </provides>
 		</start>
 
-		<start name="platform_drv" caps="150" managing_system="yes">
-			<binary name="a64_platform_drv"/>
+		<start name="a64_platform_drv" caps="150" managing_system="yes">
 			<resource name="RAM" quantum="1M"/>
-			<provides> <service name="Platform"/> </provides>
+			<provides> <service name="Platform"/> <service name="Scp"/> </provides>
 			<route> <any-service> <parent/> </any-service> </route>
 			<config devices_rom="config">
-
-				<device name="mbox">
-					<io_mem address="0x1c17000" size="0x1000"/>
-					<irq number="81"/>
-					<clock name="bus-mbox"/>
-					<reset-domain name="mbox"/>
-				</device>
-				<device name="sram a2">
-					<io_mem address="0x44000" size="0x10000"/>
-				</device>
-				<policy label="a64_scp_drv -> ">
-					<device name="mbox"/>
-					<device name="sram a2"/>
-				</policy>
 			</config>
-		</start>
-
-		<start name="a64_scp_drv">
-			<resource name="RAM" quantum="1M"/>
-			<provides> <service name="Scp"/> </provides>
-			<route>
-				<service name="Platform"> <child name="platform_drv"/> </service>
-				<any-service> <parent/> </any-service>
-			</route>
-			<config/>
 		</start>
 
 		<start name="test-scp">
 			<resource name="RAM" quantum="1M"/>
 			<route>
-				<service name="Scp"> <child name="a64_scp_drv"/> </service>
+				<service name="Scp"> <child name="a64_platform_drv"/> </service>
 				<any-service> <parent/> </any-service>
 			</route>
 			<config program="11 12 + . cr words cr"/>
@@ -67,7 +42,7 @@ install_config {
 			<binary name="test-scp"/>
 			<resource name="RAM" quantum="1M"/>
 			<route>
-				<service name="Scp"> <child name="a64_scp_drv"/> </service>
+				<service name="Scp"> <child name="a64_platform_drv"/> </service>
 				<any-service> <parent/> </any-service>
 			</route>
 			<config program="1 2 3 4 5 6 .s cr"/>
@@ -76,6 +51,6 @@ install_config {
 	</config>
 }
 
-build_boot_image { core ld.lib.so init timer a64_platform_drv a64_scp_drv test-scp }
+build_boot_image [build_artifacts]
 
 run_genode_until forever

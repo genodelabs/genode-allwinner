@@ -17,6 +17,7 @@
 #include <ccu.h>
 #include <pmic.h>
 #include <common.h>
+#include <scp.h>
 
 namespace Driver { struct Main; };
 
@@ -27,7 +28,6 @@ struct Driver::Main
 	Common                 _common         { _env, _config_rom     };
 	Signal_handler<Main>   _config_handler { _env.ep(), *this,
 	                                         &Main::_handle_config };
-
 	void _handle_config();
 
 	Fixed_clock _osc_24m_clk { _common.devices().clocks(), "osc24M",
@@ -40,12 +40,14 @@ struct Driver::Main
 	                 _common.devices().resets(), _osc_24m_clk };
 	Pmic   _pmic   { _env, _common.devices().powers() };
 
-	Main(Genode::Env & env)
-	: _env(env)
+	Scp::Driver _scp { _env, _ccu._mbox_rst, _ccu._mbox_gate };
+
+	Main(Genode::Env & env) : _env(env)
 	{
 		_config_rom.sigh(_config_handler);
 		_handle_config();
 		_common.announce_service();
+		log("initialized");
 	}
 };
 
@@ -57,5 +59,4 @@ void Driver::Main::_handle_config()
 }
 
 
-void Component::construct(Genode::Env &env) {
-	static Driver::Main main(env); }
+void Component::construct(Genode::Env &env) { static Driver::Main main(env); }

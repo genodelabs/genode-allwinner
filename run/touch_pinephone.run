@@ -41,7 +41,7 @@ install_config {
 	<start name="platform_drv" caps="150" managing_system="yes">
 		<binary name="a64_platform_drv"/>
 		<resource name="RAM" quantum="1M"/>
-		<provides> <service name="Platform"/> </provides>
+		<provides> <service name="Platform"/> <service name="Scp"/> </provides>
 		<config devices_rom="config">
 
 			<device name="pio">

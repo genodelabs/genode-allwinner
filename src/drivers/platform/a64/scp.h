@@ -9,15 +9,28 @@
  * Channel 1: SCP -> ARM
  */
 
+/*
+ * Copyright (C) 2022 Genode Labs GmbH
+ *
+ * This file is part of the Genode OS framework, which is distributed
+ * under the terms of the GNU Affero General Public License version 3.
+ */
+
+#ifndef _SRC__DRIVERS__PLATFORM__A64__SCP_H_
+#define _SRC__DRIVERS__PLATFORM__A64__SCP_H_
+
 /* Genode includes */
-#include <base/component.h>
 #include <base/session_object.h>
 #include <base/attached_ram_dataspace.h>
 #include <base/heap.h>
 #include <scp_session/scp_session.h>
+#include <irq_session/connection.h>
 #include <root/component.h>
-#include <platform_session/device.h>
-#include <platform_session/dma_buffer.h>
+#include <os/attached_mmio.h>
+
+/* local includes */
+#include <clock.h>
+#include <reset.h>
 
 namespace Scp {
 
@@ -27,9 +40,12 @@ namespace Scp {
 	struct Session_component;
 	struct Local_connection;
 	struct Root;
-	struct Main;
+	struct Driver;
 
 	using Sessions = Registry<Registered<Session_component> >;
+
+	using Clock = ::Driver::Clock;
+	using Reset = ::Driver::Reset;
 
 	struct Seq_number { unsigned value; };
 
@@ -51,7 +67,7 @@ namespace Scp {
 }
 
 
-struct Scp::Mbox_mmio : Platform::Device::Mmio
+struct Scp::Mbox_mmio : Attached_mmio
 {
 	struct Ctrl0 : Register<0x0, 32>
 	{
@@ -89,7 +105,7 @@ struct Scp::Mbox_mmio : Platform::Device::Mmio
 		write<Irq_status::Receive_mq1>(1);
 	}
 
-	Mbox_mmio(Platform::Device &device) : Platform::Device::Mmio(device)
+	Mbox_mmio(Env &env) : Attached_mmio(env, 0x1c17000, 0x1000)
 	{
 		/* configure channels 0 (ARM -> SCP) and 1 (SCP -> ARM) */
 		write<Ctrl0::Reception_mq0>(Ctrl0::USER_SCP);
@@ -120,7 +136,7 @@ struct Scp::Session_component : Session_object<Scp::Session, Session_component>
 	struct Not_executed { };
 	using Exec_id = Attempt<Seq_number, Not_executed>;
 
-	/* make protected 'Scp::Session' types available to 'Main' */
+	/* make protected 'Scp::Session' types available to 'Driver' */
 	using Response_error  = Scp::Session::Response_error;
 	using Response_result = Scp::Session::Response_result;
 	using Response        = Scp::Session::Response;
@@ -175,7 +191,6 @@ struct Scp::Session_component : Session_object<Scp::Session, Session_component>
 	template <typename FN>
 	void deliver_response(FN const &fn)
 	{
-
 		_response_result = fn(_ds.local_addr<char>(), MAX_RESPONSE_LEN);
 		_response_count++;
 
@@ -237,12 +252,41 @@ struct Scp::Local_connection : Noncopyable
 		_session(sessions, env, _resources, "local", Session::Diag { }, scheduler)
 	{ }
 
-	template <typename REQUEST_FN, typename RESPONSE_FN, typename ERROR_FN>
-	void execute(REQUEST_FN  const &request_fn,
-	             RESPONSE_FN const &response_fn,
-	             ERROR_FN    const &error_fn)
+	using Response = String<128>;
+
+	Response execute(char const *command)
 	{
-		_session.local_execute(request_fn, response_fn, error_fn);
+		Response response { };
+
+		_session.local_execute(
+
+			[&] (char *buf, size_t buf_len) {
+				size_t const command_len = strlen(command);
+				if (command_len > buf_len) {
+					error("SCP command exceeds maximum request size");
+					return 0UL;
+				} else {
+					copy_cstring(buf, command, buf_len);
+					return command_len;
+				}
+			},
+
+			[&] (char const *result, size_t len) {
+				response = Response(Cstring(result, len));
+			},
+
+			[&] (Scp::Execute_error e) {
+				switch (e) {
+				case Scp::Execute_error::REQUEST_TOO_LARGE:
+					error("unable to execute too large SCP request");
+					break;
+				case Scp::Execute_error::RESPONSE_TOO_LARGE:
+					error("unable to retrieve too large SCP response");
+					break;
+				}
+			}
+		);
+		return response;
 	}
 };
 
@@ -278,7 +322,7 @@ struct Scp::Root : Root_component<Session_component>
 };
 
 
-struct Scp::Main : private Scheduler
+struct Scp::Driver : private Scheduler
 {
 	Env &_env;
 
@@ -288,14 +332,14 @@ struct Scp::Main : private Scheduler
 
 	Root _root { _env, _sliced_heap, _sessions, *this };
 
-	Platform::Connection   _platform  { _env };
-	Platform::Device       _mbox      { _platform, "mbox"  };
-	Mbox_mmio              _mmio      { _mbox };
-	Platform::Device       _sram      { _platform, "sram a2" };
-	Platform::Device::Mmio _sram_mmio { _sram };
-	Platform::Device::Irq  _irq       { _mbox };
+	Clock::Guard _mbox_clock_guard;
+	Reset::Guard _mbox_reset_guard;
 
-	Io_signal_handler<Main> _irq_handler { _env.ep(), *this, &Main::_handle_irq };
+	Mbox_mmio      _mmio      { _env };
+	Irq_connection _irq       { _env, 81 };
+	Attached_mmio  _sram_mmio { _env, 0x44000, 0x10000 };
+
+	Io_signal_handler<Driver> _irq_handler { _env.ep(), *this, &Driver::_handle_irq };
 
 	Seq_number _last_submit   { };
 	Seq_number _last_response { };
@@ -315,7 +359,7 @@ struct Scp::Main : private Scheduler
 	void _handle_irq()
 	{
 		_mmio.clear_status();
-		_irq.ack();
+		_irq.ack_irq();
 
 		if (_mmio.scp_has_value()) {
 			_last_response.value = _mmio.value_from_scp();
@@ -441,15 +485,18 @@ struct Scp::Main : private Scheduler
 		});
 	}
 
-	Main(Env &env) : _env(env)
+	Local_connection local_connection { _env, _sessions, *this };
+
+	Driver(Env &env, Reset &mbox_reset, Clock &mbox_clock)
+	:
+		_env(env),
+		_mbox_clock_guard(mbox_clock),
+		_mbox_reset_guard(mbox_reset)
 	{
 		_irq.sigh(_irq_handler);
+		_handle_irq();
 		_env.parent().announce(_env.ep().manage(_root));
 	}
 };
 
-
-void Component::construct(Genode::Env &env)
-{
-	static Scp::Main main(env);
-}
+#endif /* _SRC__DRIVERS__PLATFORM__A64__SCP_H_ */

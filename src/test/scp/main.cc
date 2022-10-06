@@ -36,8 +36,7 @@ struct Test::Main
 							error("SCP program exceeds maximum request size");
 							return 0UL;
 						} else {
-							copy_cstring(buf, program, program_len);
-							memcpy(buf, program, program_len);
+							copy_cstring(buf, program, buf_len);
 							return program_len;
 						}
 					},

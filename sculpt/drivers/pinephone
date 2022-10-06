@@ -26,7 +26,7 @@
 	<start name="platform_drv" caps="200" managing_system="yes">
 		<resource name="RAM" quantum="2M"/>
 		<binary name="a64_platform_drv"/>
-		<provides> <service name="Platform"/> </provides>
+		<provides> <service name="Platform"/> <service name="Scp"/> </provides>
 		<config>
 
 			<policy label="a64_pio_drv -> ">
