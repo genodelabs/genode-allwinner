@@ -46,12 +46,12 @@ struct Test::Main
 						log("SCP response: ", Cstring(result, len));
 					},
 
-					[&] (Scp::Connection::Execute_error e) {
+					[&] (Scp::Execute_error e) {
 						switch (e) {
-						case Scp::Connection::Execute_error::REQUEST_TOO_LARGE:
+						case Scp::Execute_error::REQUEST_TOO_LARGE:
 							error("unable to execute too large SCP request");
 							break;
-						case Scp::Connection::Execute_error::RESPONSE_TOO_LARGE:
+						case Scp::Execute_error::RESPONSE_TOO_LARGE:
 							error("unable to retrieve too large SCP response");
 							break;
 						}

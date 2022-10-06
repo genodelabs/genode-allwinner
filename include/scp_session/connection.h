@@ -39,6 +39,16 @@ class Scp::Connection : Genode::Connection<Session>, Rpc_client<Session>
 
 		void _handle_response() { _response_count++; }
 
+		Request_result _request(size_t len) override
+		{
+			return call<Rpc_request>(len);
+		}
+
+		Response_result _response() override
+		{
+			return call<Rpc_response>();
+		}
+
 	public:
 
 		Connection(Env &env, char const *label = "")
@@ -54,8 +64,6 @@ class Scp::Connection : Genode::Connection<Session>, Rpc_client<Session>
 		{
 			call<Rpc_sigh>(_response_io_handler);
 		}
-
-		enum class Execute_error { REQUEST_TOO_LARGE, RESPONSE_TOO_LARGE };
 
 		/**
 		 * Execute Forth code snippet at the system-control processor
@@ -76,47 +84,10 @@ class Scp::Connection : Genode::Connection<Session>, Rpc_client<Session>
 		             RESPONSE_FN const &response_fn,
 		             ERROR_FN    const &error_fn)
 		{
-			/* marshal SCP program into shared buffer */
-			size_t const len = request_fn(_ds.local_addr<char>(), MAX_REQUEST_LEN);
-
-			/* schedule execution at the server */
-			Request_result const request_result = call<Rpc_request>(len);
-			if (request_result == Request_error::TOO_LARGE) {
-				error_fn(Execute_error::REQUEST_TOO_LARGE);
-				return;
-			}
-
-			Response_result response_result = Response_error::UNKNOWN;
-
-			while (response_result == Response_error::UNKNOWN) {
-
-				/* block for response signal */
-				unsigned const orig_count = _response_count;
-				while (orig_count == _response_count)
-					_ep.wait_and_dispatch_one_io_signal();
-
-				/* consume response */
-				response_result = call<Rpc_response>();
-
-				response_result.with_result(
-
-					[&] (Response response) {
-						response_fn(_ds.local_addr<char>(), response.bytes); },
-
-					[&] (Response_error e) {
-						switch (e) {
-							case Response_error::UNKNOWN:
-								warning("spurious SCP response signal");
-								break;
-							case Response_error::TOO_LARGE:
-								warning("SCP response too large");
-								break;
-						}
-					}
-				);
-			}
-			if (response_result == Response_error::TOO_LARGE)
-				error_fn(Execute_error::RESPONSE_TOO_LARGE);
+			_execute(_ep,
+			         Byte_range_ptr(_ds.local_addr<char>(), MAX_REQUEST_LEN),
+			         _response_count,
+			         request_fn, response_fn, error_fn);
 		}
 };
 

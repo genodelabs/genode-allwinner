@@ -25,6 +25,7 @@ namespace Scp {
 
 	struct Mbox_mmio;
 	struct Session_component;
+	struct Local_connection;
 	struct Root;
 	struct Main;
 
@@ -110,7 +111,9 @@ struct Scp::Session_component : Session_object<Scp::Session, Session_component>
 
 	Scheduler &_scheduler;
 
-	Attached_ram_dataspace _ds { _env.ram(), _env.rm(), 4096UL };
+	enum { DS_SIZE = 4096UL };
+
+	Attached_ram_dataspace _ds { _env.ram(), _env.rm(), DS_SIZE };
 
 	size_t _request_len = 0;
 
@@ -124,6 +127,8 @@ struct Scp::Session_component : Session_object<Scp::Session, Session_component>
 
 	Response_result _response_result = Response_error::UNKNOWN;
 
+	unsigned _response_count = 0;  /* solely used for 'local_execute' */
+
 	Signal_context_capability _response_sigh { };
 
 	Session_component(Env             &env,
@@ -134,7 +139,10 @@ struct Scp::Session_component : Session_object<Scp::Session, Session_component>
 	:
 		Session_object(env.ep(), resources, label, diag),
 		_env(env), _scheduler(scheduler)
-	{ }
+	{
+		_cap_quota_guard().withdraw(Cap_quota{1});
+		_ram_quota_guard().withdraw(Ram_quota{DS_SIZE});
+	}
 
 	/*
 	 * Identifier for the request while executed by the SCP. The number is
@@ -169,11 +177,26 @@ struct Scp::Session_component : Session_object<Scp::Session, Session_component>
 	{
 
 		_response_result = fn(_ds.local_addr<char>(), MAX_RESPONSE_LEN);
+		_response_count++;
 
 		if (_response_sigh.valid())
 			Signal_transmitter(_response_sigh).submit();
 
 		_exec_id = Not_executed { };
+	}
+
+	/**
+	 * Execute locally provided SCP program, used by 'Local_connection'
+	 */
+	template <typename REQUEST_FN, typename RESPONSE_FN, typename ERROR_FN>
+	void local_execute(REQUEST_FN  const &request_fn,
+	                   RESPONSE_FN const &response_fn,
+	                   ERROR_FN    const &error_fn)
+	{
+		_execute(_env.ep(),
+		         Byte_range_ptr(_ds.local_addr<char>(), MAX_REQUEST_LEN),
+		         _response_count,
+		         request_fn, response_fn, error_fn);
 	}
 
 
@@ -185,7 +208,7 @@ struct Scp::Session_component : Session_object<Scp::Session, Session_component>
 
 	void _sigh(Signal_context_capability sigh) { _response_sigh = sigh; }
 
-	Request_result _request(size_t len)
+	Request_result _request(size_t len) override
 	{
 		if (len > MAX_REQUEST_LEN)
 			return Request_error::TOO_LARGE;
@@ -198,7 +221,29 @@ struct Scp::Session_component : Session_object<Scp::Session, Session_component>
 		return Request { };
 	}
 
-	Response_result _response() { return _response_result; }
+	Response_result _response() override { return _response_result; }
+};
+
+
+struct Scp::Local_connection : Noncopyable
+{
+	Session::Resources _resources { .ram_quota = { 20*1024 },
+	                                .cap_quota = { Scp::Session::CAP_QUOTA } };
+
+	Registered<Session_component> _session;
+
+	Local_connection(Env &env, Sessions &sessions, Scheduler &scheduler)
+	:
+		_session(sessions, env, _resources, "local", Session::Diag { }, scheduler)
+	{ }
+
+	template <typename REQUEST_FN, typename RESPONSE_FN, typename ERROR_FN>
+	void execute(REQUEST_FN  const &request_fn,
+	             RESPONSE_FN const &response_fn,
+	             ERROR_FN    const &error_fn)
+	{
+		_session.local_execute(request_fn, response_fn, error_fn);
+	}
 };
 
 
@@ -250,7 +295,7 @@ struct Scp::Main : private Scheduler
 	Platform::Device::Mmio _sram_mmio { _sram };
 	Platform::Device::Irq  _irq       { _mbox };
 
-	Signal_handler<Main> _irq_handler { _env.ep(), *this, &Main::_handle_irq };
+	Io_signal_handler<Main> _irq_handler { _env.ep(), *this, &Main::_handle_irq };
 
 	Seq_number _last_submit   { };
 	Seq_number _last_response { };
