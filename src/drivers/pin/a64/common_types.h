@@ -188,7 +188,7 @@ struct Pin_driver::Attr
 	Function    function;
 	Irq_trigger irq_trigger;
 	bool        out_on_demand;  /* activate output on access by 'Pin_control' client */
-	bool        default_state;
+	Pin::Level  default_state;
 
 	Attr() = delete;
 
@@ -197,11 +197,20 @@ struct Pin_driver::Attr
 
 	static Attr from_xml(Xml_node const &node)
 	{
+		auto default_state_from_xml = [] (Xml_node const &node)
+		{
+			if (!node.has_attribute("default"))
+				return Pin::Level::HIGH_IMPEDANCE;
+
+			return node.attribute_value("default", false)
+			       ? Pin::Level::HIGH : Pin::Level::LOW;
+		};
+
 		return { .pull          = Pull::from_xml(node),
 		         .function      = Function::from_xml(node),
 		         .irq_trigger   = Irq_trigger::from_xml(node),
 		         .out_on_demand = !node.has_attribute("default"),
-		         .default_state = node.attribute_value("default", false) };
+		         .default_state = default_state_from_xml(node) };
 	}
 
 	static Attr disabled()
@@ -210,7 +219,7 @@ struct Pin_driver::Attr
 		         .function      = { Function::DISABLE },
 		         .irq_trigger   = { Irq_trigger::RISING },
 		         .out_on_demand = false,
-		         .default_state = false };
+		         .default_state = Pin::Level::HIGH_IMPEDANCE };
 	}
 };
 

@@ -187,9 +187,9 @@ struct Pio_driver::Main : Pin::Driver<Pin_id>, Irq_handler::Fn
 		return _pio.state(id);
 	}
 
-	void pin_state(Pin_id id, bool enabled) override
+	void pin_state(Pin_id id, Pin::Level level) override
 	{
-		return _pio.state(id, enabled);
+		_pio.state(id, level);
 	}
 
 	Pin_id assigned_pin(Session_label, Pin::Direction) const override;

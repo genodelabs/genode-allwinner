@@ -40,9 +40,15 @@ struct Pio_driver::Pio
 			return read<Data>(index.value);
 		}
 
-		void state(Index index, bool enabled)
+		void state(Index index, Pin::Level level)
 		{
-			write<Data>(enabled, index.value);
+			if (level == Pin::Level::HIGH_IMPEDANCE) {
+				write<Cfg>(Function::INPUT, index.value);
+
+			} else {
+				write<Cfg>(Function::OUTPUT, index.value);
+				write<Data>(level == Pin::Level::HIGH, index.value);
+			}
 		}
 	};
 
@@ -134,9 +140,9 @@ struct Pio_driver::Pio
 		return _io_banks[id.bank.value]->state(id.index);
 	}
 
-	void state(Pin_id id, bool enabled)
+	void state(Pin_id id, Pin::Level level)
 	{
-		_io_banks[id.bank.value]->state(id.index, enabled);
+		_io_banks[id.bank.value]->state(id.index, level);
 	}
 
 	void clear_irq_status(Pin_id id)
