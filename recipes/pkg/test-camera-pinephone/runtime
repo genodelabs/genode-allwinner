@@ -1,0 +1,21 @@
+<runtime ram="160M" caps="1200" binary="init" config="camera-pinephone.config">
+
+	<requires>
+		<gui/>
+		<platform label="camera"/>
+		<pin_state/>
+		<pin_control/>
+		<timer/>
+		<pd/>
+	</requires>
+
+	<content>
+		<rom label="init"/>
+		<rom label="ld.lib.so"/>
+		<rom label="dynamic_rom"/>
+		<rom label="pinephone_camera_drv"/>
+		<rom label="camera-pinephone.dtb"/>
+		<rom label="camera-pinephone.config"/>
+	</content>
+
+</runtime>

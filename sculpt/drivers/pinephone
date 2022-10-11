@@ -23,6 +23,12 @@
 	<service name="Platform">
 		<default-policy> <child name="platform_drv"/> </default-policy> </service>
 
+	<service name="Pin_control">
+		<default-policy> <child name="a64_pio_drv"/> </default-policy> </service>
+
+	<service name="Pin_state">
+		<default-policy> <child name="a64_pio_drv"/> </default-policy> </service>
+
 	<start name="platform_drv" caps="200" managing_system="yes">
 		<resource name="RAM" quantum="3M"/>
 		<binary name="a64_platform_drv"/>
@@ -74,6 +80,10 @@
 
 			<policy label="runtime -> gpu" info="yes">
 				<device name="gpu"/>
+			</policy>
+
+			<policy label="runtime -> camera" info="yes">
+				<device name="csi"/>
 			</policy>
 
 		</config>
@@ -143,6 +153,42 @@
 
 			<!-- speaker -->
 			<out name="speaker-amp" bank="C" index="7" default="on"/>
+
+			<!-- camera -->
+			<select name="csi-pclk"  bank="E" index="0" function="2"/>
+			<select name="csi-mclk"  bank="E" index="1" function="2"/>
+			<select name="csi-hsync" bank="E" index="2" function="2"/>
+			<select name="csi-vsync" bank="E" index="3" function="2"/>
+
+			<select name="csi-d0" bank="E" index="4"  function="2"/>
+			<select name="csi-d1" bank="E" index="5"  function="2"/>
+			<select name="csi-d2" bank="E" index="6"  function="2"/>
+			<select name="csi-d3" bank="E" index="7"  function="2"/>
+			<select name="csi-d4" bank="E" index="8"  function="2"/>
+			<select name="csi-d5" bank="E" index="9"  function="2"/>
+			<select name="csi-d6" bank="E" index="10" function="2"/>
+			<select name="csi-d7" bank="E" index="11" function="2"/>
+
+			<out    name="csi-sck" bank="E" index="12"/>
+			<in     name="csi-sck" bank="E" index="12"/>
+			<out    name="csi-sda" bank="E" index="13"/>
+			<in     name="csi-sda" bank="E" index="13"/>
+
+			<out    name="gc2145-reset"     bank="E" index="16"/>
+			<out    name="gc2145-powerdown" bank="E" index="17"/>
+
+			<out    name="ov5460-powerdown" bank="C" index="0"/>
+			<out    name="ov5460-reset"     bank="D" index="3"/>
+			<in     name="ov5460-reset"     bank="D" index="3"/>
+
+			<policy label="runtime -> camera -> PC0"  pin="ov5460-powerdown"/>
+			<policy label="runtime -> camera -> PD3"  pin="ov5460-reset"/>
+
+			<policy label="runtime -> camera -> PE12" pin="csi-sck"/>
+			<policy label="runtime -> camera -> PE13" pin="csi-sda"/>
+
+			<policy label="runtime -> camera -> PE16" pin="gc2145-reset"/>
+			<policy label="runtime -> camera -> PE17" pin="gc2145-powerdown"/>
 		</config>
 	</start>
 
