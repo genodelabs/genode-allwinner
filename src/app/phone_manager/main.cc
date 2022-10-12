@@ -25,6 +25,8 @@
 #include <event_session/event_session.h>
 #include <capture_session/capture_session.h>
 #include <gpu_session/gpu_session.h>
+#include <pin_state_session/pin_state_session.h>
+#include <pin_control_session/pin_control_session.h>
 
 /* local includes */
 #include <model/runtime_state.h>
@@ -1475,6 +1477,8 @@ void Sculpt::Main::_generate_runtime_config(Xml_generator &xml) const
 		gen_parent_service<Event::Session>(xml);
 		gen_parent_service<Capture::Session>(xml);
 		gen_parent_service<Gpu::Session>(xml);
+		gen_parent_service<Pin_state::Session>(xml);
+		gen_parent_service<Pin_control::Session>(xml);
 	});
 
 	xml.node("affinity-space", [&] () {
