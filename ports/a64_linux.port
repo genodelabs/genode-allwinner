@@ -1,10 +1,11 @@
 LICENSE   := GPLv2
-VERSION   := 5.14.1
+VERSION   := git
 DOWNLOADS := a64_linux.archive
 
-URL(a64_linux) := https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-$(VERSION).tar.xz
-SHA(a64_linux) := 005bc52a847b7a372a687d536847adb1e1fe0ee571817008632c6e1706d008c7
+REV(a64_linux) := orange-pi-5.14-20211103-1304
+URL(a64_linux) := https://github.com/megous/linux/archive/${REV(a64_linux)}.tar.gz
+SHA(a64_linux) := 8722d06938f59d4eb81fddd2a1f50eebf526c4085e310a1e48bc6ef24332ad1f
 DIR(a64_linux) := src/linux
 
-PATCHES := src/a64_linux/rsb_timeout.patch
-
+PATCHES := src/a64_linux/rsb_timeout.patch \
+           src/a64_linux/remove_usbphy_role_switch.patch

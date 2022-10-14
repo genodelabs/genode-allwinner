@@ -51,6 +51,7 @@ include/linux/usb/of.h
 include/linux/usb/otg.h
 include/linux/usb/phy.h
 include/linux/usb/quirks.h
+include/linux/usb/role.h
 include/uapi/linux/kcov.h
 include/uapi/linux/usb/audio.h
 include/uapi/linux/usb/cdc.h

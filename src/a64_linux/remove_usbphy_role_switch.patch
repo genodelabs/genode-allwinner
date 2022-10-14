@@ -1,0 +1,38 @@
+Remove usb-role-switch declaration as it leads to problems with
+the 'dts/extract' tool where a broken .dts file is created.
+
+Adding the 'axp803' node leads to a .dts file that does not work,
+i.e., the USB host driver will not find any devices. Since for now
+only the modem's USB ethernet device is used on the PinePhone we
+may remove the declaration. This also breaks the HDMI feature
+available via the USB-C port.
+
+--- src/linux/arch/arm64/boot/dts/allwinner/sun50i-a64-pinephone-1.2.dts
++++ src/linux/arch/arm64/boot/dts/allwinner/sun50i-a64-pinephone-1.2.dts
+@@ -74,12 +74,6 @@
+ 		 */
+ 		vbus-supply = <&reg_usb_5v>;
+ 		vbus_in-supply = <&usb_power_supply>;
+-
+-		port {
+-			typec0_dr_sw: endpoint {
+-				remote-endpoint = <&usb0_drd_sw>;
+-			};
+-		};
+ 	};
+ };
+ 
+@@ -115,13 +109,3 @@
+ 		quectel,qdai = "1,1,0,1,0,0,1,1";
+ 	};
+ };
+-
+-&usbphy {
+-	usb-role-switch;
+-
+-	port {
+-		usb0_drd_sw: endpoint {
+-			remote-endpoint = <&typec0_dr_sw>;
+-		};
+-	};
+-};

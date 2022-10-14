@@ -159,3 +159,16 @@ struct regulator * devm_regulator_get_optional(struct device * dev,const char * 
 {
 	return ERR_PTR(-ENODEV);
 }
+
+
+#include <linux/regulator/consumer.h>
+#include <linux/regulator/driver.h>
+#include <../drivers/regulator/internal.h>
+
+struct regulator * devm_regulator_get(struct device * dev,const char * id)
+{
+	static struct regulator dummy = { };
+	return &dummy;
+}
+
+

@@ -74,7 +74,7 @@ install_config {
 				<clock name="pll-de"/>
 				<clock name="pll-video0"/>
 			</device>
-			<device name="r_pwm" type="allwinner,sun5i-a13-pwm">
+			<device name="r_pwm" type="allwinner,sun50i-a64-pwm">
 				<io_mem address="0x01f03800" size="0x400"/>
 				<clock name="osc24M" driver_name="mod"/>
 				<clock name="osc24M" driver_name="bus"/>

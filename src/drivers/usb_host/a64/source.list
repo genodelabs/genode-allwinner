@@ -52,6 +52,7 @@ drivers/usb/core/usb.c
 drivers/usb/host/ehci-hcd.c
 drivers/usb/host/ehci-platform.c
 drivers/usb/phy/of.c
+drivers/usb/roles/class.c
 fs/nls/nls_base.c
 kernel/irq/chip.c
 kernel/irq/devres.c

@@ -557,7 +557,6 @@ int lx_drm_ioctl_lima_gem_create(void *lx_drm_prv,
 		.size   = size,
 		.flags  = 0, // XXX check flags
 		.handle = 0,
-		.pad    = 0,
 	};
 
 	err = lx_drm_ioctl(lx_drm_prv, DRM_IOCTL_LIMA_GEM_CREATE,

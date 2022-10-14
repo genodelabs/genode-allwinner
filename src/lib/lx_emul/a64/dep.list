@@ -222,6 +222,7 @@ include/dt-bindings/reset/sun50i-a64-ccu.h
 include/dt-bindings/reset/sun8i-de2.h
 include/dt-bindings/reset/sun8i-r-ccu.h
 include/dt-bindings/thermal/thermal.h
+include/dt-bindings/usb/pd.h
 include/linux/acpi.h
 include/linux/alarmtimer.h
 include/linux/align.h

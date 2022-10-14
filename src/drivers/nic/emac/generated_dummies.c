@@ -909,14 +909,6 @@ int regulator_disable(struct regulator * regulator)
 }
 
 
-#include <linux/regulator/consumer.h>
-
-int regulator_enable(struct regulator * regulator)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
 #include <linux/ioport.h>
 
 int release_resource(struct resource * old)

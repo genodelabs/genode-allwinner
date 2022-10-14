@@ -366,3 +366,12 @@ void __init wait_bit_init(void)
 {
 	lx_emul_trace(__func__);
 }
+
+
+#include <linux/regulator/consumer.h>
+
+int regulator_enable(struct regulator * regulator)
+{
+	lx_emul_trace(__func__);
+	return 0;
+}
