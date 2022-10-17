@@ -1,0 +1,26 @@
+<config arch="">
+
+	<common_routes>
+		<service name="ROM" label_last="ld.lib.so"> <parent/> </service>
+		<service name="ROM" label_last="init">      <parent/> </service>
+		<service name="CPU">   <parent/> </service>
+		<service name="PD">    <parent/> </service>
+		<service name="LOG">   <parent/> </service>
+		<service name="Timer"> <parent/> </service>
+	</common_routes>
+
+	<start name="gpu_drv" pkg="a64_lima_gpu_drv-pinephone">
+		<route>
+			<service name="Platform"> <parent label="gpu"/> </service>
+		</route>
+	</start>
+
+	<start name="mesa_gears" pkg="mesa_gears">
+		<route>
+			<service name="Gui"> <parent label="focus"/> </service>
+			<service name="Gpu"> <child name="gpu_drv"/> </service>
+			<service name="ROM" label="mesa_gpu_drv.lib.so"> <parent label="mesa_gpu-lima.lib.so"/> </service>
+		</route>
+	</start>
+
+</config>

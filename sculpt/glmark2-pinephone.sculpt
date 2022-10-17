@@ -1,0 +1,15 @@
+drivers:      pinephone
+leitzentrale: phone
+nitpicker:    phone
+fonts:        phone-720px
+event_filter: phone
+build:        app/phone_manager server/nitpicker app/menu_view server/wm
+build:        drivers/modem/pinephone drivers/uart/ns16550
+build:        drivers/audio_control/pinephone drivers/usb_net
+build:        server/event_filter server/nic_router
+import:       pkg/drivers_interactive-pinephone
+import:       src/terminal_crosslink src/a64_usb_host_drv
+import:       raw/pinephone-devices
+import:       src/a64_lima_gpu_drv src/mesa src/glmark2 pkg/glmark2
+deploy:       glmark2
+ram_fs:       depot
