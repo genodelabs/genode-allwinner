@@ -1,0 +1,135 @@
+build {
+	core init timer
+	drivers/platform/a64
+	drivers/usb_host/a64
+	drivers/usb_block
+	server/report_rom
+	app/block_tester
+}
+
+create_boot_directory
+
+install_config {
+	<config verbose="yes">
+		<parent-provides>
+			<service name="LOG"/>
+			<service name="PD"/>
+			<service name="CPU"/>
+			<service name="ROM"/>
+			<service name="IO_MEM"/>
+			<service name="IRQ"/>
+		</parent-provides>
+
+		<default caps="100"/>
+
+		<start name="timer">
+			<resource name="RAM" quantum="1M"/>
+			<route> <any-service> <parent/> </any-service> </route>
+			<provides> <service name="Timer"/> </provides>
+		</start>
+
+		<start name="report_rom">
+			<resource name="RAM" quantum="1M"/>
+			<provides> <service name="Report"/> <service name="ROM"/> </provides>
+			<config verbose="yes">
+				<default-policy report="usb_drv -> usb_drv -> devices"/>
+			</config>
+			<route>
+				<any-service> <parent/> </any-service>
+			</route>
+		</start>
+
+		<start name="platform_drv" caps="150" managing_system="yes">
+			<binary name="a64_platform_drv"/>
+			<resource name="RAM" quantum="1M"/>
+			<provides> <service name="Platform"/> <service name="Scp"/> </provides>
+			<config devices_rom="config">
+				<device name="usb_phy">
+					<io_mem address="0x01c19400" size="0x14"/>
+					<io_mem address="0x01c1a800" size="0x4"/>
+					<io_mem address="0x01c1b800" size="0x4"/>
+					<clock name="usb-phy1"/>
+					<reset-domain name="usb-phy1"/>
+				</device>
+				<device name="ehci1">
+					<io_mem address="0x01c1b000" size="0x100"/>
+					<irq number="106"/>
+					<clock name="bus-ohci1"/>
+					<clock name="bus-ehci1"/>
+					<clock name="ohci1"/>
+					<reset-domain name="ehci1"/>
+					<reset-domain name="ohci1"/>
+				</device>
+				<policy label="usb_host_drv -> " info="yes">
+					<device name="ehci1"/>
+					<device name="usb_phy"/>
+				</policy>
+			</config>
+			<route>
+				<service name="Timer"> <child name="timer"/> </service>
+				<any-service> <parent/> </any-service>
+			</route>
+		</start>
+
+		<start name="usb_host_drv" caps="200">
+			<binary name="a64_usb_host_drv"/>
+			<resource name="RAM" quantum="16M"/>
+			<provides> <service name="Usb"/> </provides>
+			<config>
+				<report devices="yes"/>
+				<default-policy class="0x8"/>
+			</config>
+			<route>
+				<service name="Timer"> <child name="timer"/> </service>
+				<service name="Report"> <child name="report_rom"/> </service>
+				<service name="Platform"> <child name="platform_drv"/> </service>
+				<service name="ROM" label="dtb">
+					<parent label="usb-} [board] {.dtb"/> </service>
+				<any-service> <parent/> </any-service>
+			</route>
+		</start>
+
+		<start name="usb_block_drv">
+			<resource name="RAM" quantum="4M"/>
+			<provides> <service name="Block"/> </provides>
+			<!-- XXX the label is probably only valid when a USB storage device
+			         is plugged in directly to the second port of the LTS board -->
+			<config report="yes" writeable="no" label="usb-1-2"/>
+			<route>
+				<service name="Usb"> <child name="usb_host_drv"/> </service>
+				<service name="Report"> <child name="report_rom"/> </service>
+				<any-service> <parent/> <any-child/> </any-service>
+			</route>
+		</start>
+
+		<start name="block_tester">
+			<resource name="RAM" quantum="64M" />
+			<config verbose="no" report="no" log="yes" stop_on_error="no">
+				<tests>
+					<sequential length="256M" write="no" size="1M" io_buffer="8M" batch="4"/>
+				</tests>
+			</config>
+			<route>
+				<service name="ROM"> <parent/> </service>
+				<service name="PD">  <parent/> </service>
+				<service name="RM">  <parent/> </service>
+				<service name="CPU"> <parent/> </service>
+				<service name="LOG"> <parent/> </service>
+				<any-service> <any-child/> </any-service>
+			</route>
+		</start>
+
+	</config>
+}
+
+set build_components {
+	core ld.lib.so init timer report_rom a64_platform_drv
+	a64_usb_host_drv usb_block_drv block_tester
+}
+
+lappend_if [have_board pine_a64lts] build_components usb-pine_a64lts.dtb
+lappend_if [have_board pinephone]   build_components usb-pinephone.dtb
+
+build_boot_image $build_components
+
+run_genode_until {.*child "block_tester" exited with exit value 0.*} 60
