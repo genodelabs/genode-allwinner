@@ -30,6 +30,9 @@ struct Main : private Entrypoint::Io_progress_handler
 {
 	Env                  & env;
 	Attached_rom_dataspace dtb_rom        { env, "dtb"           };
+	Attached_rom_dataspace config         { env, "config"        };
+	Signal_handler<Main>   config_handler { env.ep(), *this,
+	                                        &Main::handle_config };
 	Signal_handler<Main>   signal_handler { env.ep(), *this,
 	                                        &Main::handle_signal };
 	Sliced_heap            sliced_heap    { env.ram(), env.rm()  };
@@ -42,6 +45,13 @@ struct Main : private Entrypoint::Io_progress_handler
 		genode_block_notify_peers();
 	}
 
+	void handle_config()
+	{
+		config.update();
+		genode_block_apply_config(config.xml());
+	}
+
+
 	void handle_signal()
 	{
 		lx_user_handle_io();
@@ -50,6 +60,8 @@ struct Main : private Entrypoint::Io_progress_handler
 
 	Main(Env & env) : env(env)
 	{
+		config.sigh(config_handler);
+
 		Lx_kit::initialize(env);
 		env.exec_static_constructors();
 
@@ -58,6 +70,8 @@ struct Main : private Entrypoint::Io_progress_handler
 		                  genode_signal_handler_ptr(signal_handler),
 		                  lx_emul_shared_dma_buffer_allocate,
 		                  lx_emul_shared_dma_buffer_free);
+
+		handle_config();
 
 		lx_emul_start_kernel(dtb_rom.local_addr<void>());
 
