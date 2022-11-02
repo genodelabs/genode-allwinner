@@ -16,38 +16,45 @@
 
 #include <os/attached_mmio.h>
 #include <power.h>
-#include <rsb.h>
+#include <scp.h>
 
 namespace Driver { struct Pmic; }
 
 
 struct Driver::Pmic : private Noncopyable
 {
-	Genode::Env &_env;
-	Powers      &_powers;
+	Scp::Local_connection &_scp;
 
-	Rsb _rsb;
+	Powers &_powers;
 
-	struct Gpio_ldo : Power
+	struct Power : Driver::Power
 	{
-		Rsb &_rsb;
+		Scp::Local_connection &_scp;
 
-		Rsb::Reg const _reg;
+		/* noncopyable */
+		Power(Power const &);
+		void operator = (Power const &);
 
-		Gpio_ldo(Powers &powers, Power::Name const &name, Rsb &rsb, Rsb::Reg reg)
+		char const *_scp_on;
+		char const *_scp_off;
+
+		Power(Powers &powers, Power::Name const &name, Scp::Local_connection &scp,
+		      char const *scp_on, char const *scp_off)
 		:
-			Power(powers, name), _rsb(rsb), _reg(reg)
+			Driver::Power(powers, name), _scp(scp), _scp_on(scp_on), _scp_off(scp_off)
 		{ }
 
-		void _on()  override { _rsb.write_byte(_reg, 3); }
-		void _off() override { _rsb.write_byte(_reg, 7); }
+		void _on()  override { _scp.execute(_scp_on);  }
+		void _off() override { _scp.execute(_scp_off); }
 	};
 
-	Gpio_ldo gpio0_ldo { _powers, "pmic-gpio0", _rsb, Rsb::Reg { 0x90 } };
+	Power gpio0_ldo { _powers, "pmic-gpio0", _scp,
+	                  "3 90 pmic!",
+	                  "7 90 pmic!" };
 
-	Pmic(Genode::Env &env, Powers &powers)
+	Pmic(Scp::Local_connection &scp, Powers &powers)
 	:
-		_env(env), _powers(powers), _rsb(env)
+		_scp(scp), _powers(powers)
 	{ }
 };
 
