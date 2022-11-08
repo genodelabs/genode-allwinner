@@ -1,0 +1,16 @@
+<runtime ram="1M" caps="100" binary="a64_audio_drv">
+
+	<requires>
+		<timer/>
+		<platform label="audio"/>
+	</requires>
+
+	<provides> <audio_out/> <audio_in/> </provides>
+
+	<config/>
+
+	<content>
+		<rom label="a64_audio_drv"/>
+	</content>
+
+</runtime>
