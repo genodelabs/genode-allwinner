@@ -86,6 +86,11 @@
 				<device name="csi"/>
 			</policy>
 
+			<policy label="runtime -> audio_drv" info="yes">
+				<device name="audio_interface"/>
+				<device name="dma_controller"/>
+			</policy>
+
 		</config>
 		<route> <any-service> <parent/> </any-service> </route>
 	</start>
