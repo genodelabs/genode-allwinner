@@ -301,6 +301,17 @@
 		</route>
 	</start>
 
+	<start name="power">
+		<resource name="RAM" quantum="1M"/>
+		<binary name="pinephone_power_drv"/>
+		<route>
+			<service name="Scp"> <child name="platform_drv"/> </service>
+			<service name="Report"> <parent label="power"/> </service>
+			<any-service> <parent/> </any-service>
+		</route>
+		<config period_ms="10000"/>
+	</start>
+
 	<start name="dynamic_config">
 		<binary name="rom_filter"/>
 		<resource name="RAM" quantum="1M"/>

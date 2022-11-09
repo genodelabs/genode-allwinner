@@ -414,13 +414,15 @@ struct Sculpt::Main : Input_event_handler,
 
 	Dialed_number _dialed_number { };
 
+	Power_state _power_state { };
+
 	Registry<Registered<Section_dialog> > _section_dialogs { };
 
 	/*
 	 * Device section
 	 */
 
-	Device_section_dialog _device_section_dialog { _section_dialogs };
+	Device_section_dialog _device_section_dialog { _section_dialogs, _power_state };
 
 	/*
 	 * Phone section
@@ -495,23 +497,26 @@ struct Sculpt::Main : Input_event_handler,
 		xml.node("vbox", [&] {
 			_device_section_dialog.generate(xml);
 
-			_phone_section_dialog.generate(xml);
-			_modem_power_dialog.generate_conditional(xml, _phone_section_dialog.selected());
-			_pin_dialog.generate_conditional(xml, _phone_section_dialog.selected()
-			                                   && _modem_state.ready()
-			                                   && _modem_state.pin_required());
+			if (_power_state.modem_present()) {
 
-			_outbound_dialog.generate_conditional(xml, _phone_section_dialog.selected()
-			                                        && _modem_state.ready()
-			                                        && _modem_state.pin_ok());
+				_phone_section_dialog.generate(xml);
+				_modem_power_dialog.generate_conditional(xml, _phone_section_dialog.selected());
+				_pin_dialog.generate_conditional(xml, _phone_section_dialog.selected()
+				                                   && _modem_state.ready()
+				                                   && _modem_state.pin_required());
 
-			_dialpad_dialog.generate_conditional(xml, _phone_section_dialog.selected()
-			                                       && _modem_state.ready()
-			                                       && _modem_state.pin_ok());
+				_outbound_dialog.generate_conditional(xml, _phone_section_dialog.selected()
+				                                        && _modem_state.ready()
+				                                        && _modem_state.pin_ok());
 
-			_current_call_dialog.generate_conditional(xml, _phone_section_dialog.selected()
-			                                            && _modem_state.ready()
-			                                            && _modem_state.pin_ok());
+				_dialpad_dialog.generate_conditional(xml, _phone_section_dialog.selected()
+				                                       && _modem_state.ready()
+				                                       && _modem_state.pin_ok());
+
+				_current_call_dialog.generate_conditional(xml, _phone_section_dialog.selected()
+				                                            && _modem_state.ready()
+				                                            && _modem_state.pin_ok());
+			}
 
 			_storage_section_dialog.generate(xml);
 
@@ -1037,6 +1042,45 @@ struct Sculpt::Main : Input_event_handler,
 	}
 
 
+	/**********************
+	 ** Device functions **
+	 **********************/
+
+	Attached_rom_dataspace _power_rom { _env, "report -> drivers/power" };
+
+	Signal_handler<Main> _power_handler {
+		_env.ep(), *this, &Main::_handle_power };
+
+	void _handle_power()
+	{
+		_power_rom.update();
+
+		Power_state const orig_power_state = _power_state;
+		_power_state = Power_state::from_xml(_power_rom.xml());
+
+		bool regenerate_dialog = false;
+
+		/* mobile data connectivity depends on the presence of a battery */
+		if (_power_state.modem_present() != _pci_info.modem_present) {
+
+			/* update condition for the "Mobile data" network option */
+			_pci_info.modem_present = _power_state.modem_present()
+			                       && _modem_state.ready();
+
+			regenerate_dialog = true;
+		}
+
+		if (orig_power_state.summary() != _power_state.summary())
+			regenerate_dialog = true;
+
+		if (_device_section_dialog.selected())
+			regenerate_dialog = true;
+
+		if (regenerate_dialog)
+			generate_dialog();
+	}
+
+
 	/***********
 	 ** Phone **
 	 ***********/
@@ -1103,7 +1147,18 @@ struct Sculpt::Main : Input_event_handler,
 
 		Modem_state const orig_modem_state = _modem_state;
 
+		bool regenerate_dialog = false;
+
 		_modem_state = Modem_state::from_xml(_modem_state_rom.xml());
+
+		/* update condition of "Mobile data" network option */
+		{
+			bool const orig_mobile_data_ready = _pci_info.modem_present;
+			_pci_info.modem_present = _power_state.modem_present()
+			                       && _modem_state.ready();
+			if (orig_mobile_data_ready != _pci_info.modem_present)
+				regenerate_dialog = true;
+		}
 
 		_current_call.update(_modem_state);
 
@@ -1117,8 +1172,11 @@ struct Sculpt::Main : Input_event_handler,
 
 		if (configured_current_call_out_of_date || modem_state_changed) {
 			_generate_modem_config();
-			generate_dialog();
+			regenerate_dialog = true;
 		}
+
+		if (regenerate_dialog)
+			generate_dialog();
 	}
 
 	void _generate_modem_config()
@@ -1288,6 +1346,7 @@ struct Sculpt::Main : Input_event_handler,
 		_decorator_margins.sigh(_decorator_margins_handler);
 		_modem_state_rom  .sigh(_modem_state_handler);
 		_blueprint_rom    .sigh(_blueprint_handler);
+		_power_rom        .sigh(_power_handler);
 
 		/*
 		 * Import initial report content

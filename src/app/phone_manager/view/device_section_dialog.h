@@ -14,6 +14,7 @@
 #ifndef _VIEW__DEVICE_SECTION_DIALOG_H_
 #define _VIEW__DEVICE_SECTION_DIALOG_H_
 
+#include <model/power_state.h>
 #include <view/section_dialog.h>
 #include <view/layout_helper.h>
 #include <view/conditional_float_dialog.h>
@@ -24,6 +25,8 @@ namespace Sculpt { struct Device_section_dialog; }
 
 struct Sculpt::Device_section_dialog : Registered<Section_dialog>
 {
+	Power_state const &_power_state;
+
 	void generate(Xml_generator &xml) const override
 	{
 		_gen_frame(xml, [&] {
@@ -36,7 +39,7 @@ struct Sculpt::Device_section_dialog : Registered<Section_dialog>
 				},
 				[&] {
 					xml.node("label", [&] {
-						xml.attribute("text", " ");
+						xml.attribute("text", _power_state.summary());
 						_gen_status_attr(xml);
 					});
 				}
@@ -44,9 +47,11 @@ struct Sculpt::Device_section_dialog : Registered<Section_dialog>
 		});
 	}
 
-	Device_section_dialog(Registry<Registered<Section_dialog> > &dialogs)
+	Device_section_dialog(Registry<Registered<Section_dialog> > &dialogs,
+	                      Power_state const &power_state)
 	:
-		Registered<Section_dialog>(dialogs, "device")
+		Registered<Section_dialog>(dialogs, "device"),
+		_power_state(power_state)
 	{ }
 };
 
