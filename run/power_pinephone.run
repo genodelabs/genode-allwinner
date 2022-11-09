@@ -1,0 +1,54 @@
+build { core init timer server/report_rom drivers/platform/a64 drivers/power/pinephone }
+
+create_boot_directory
+
+install_config {
+	<config>
+		<parent-provides>
+			<service name="LOG"/>
+			<service name="PD"/>
+			<service name="CPU"/>
+			<service name="ROM"/>
+			<service name="IO_MEM"/>
+			<service name="IRQ"/>
+		</parent-provides>
+
+		<default caps="100"/>
+
+		<start name="timer">
+			<resource name="RAM" quantum="1M"/>
+			<route> <any-service> <parent/> </any-service> </route>
+			<provides> <service name="Timer"/> </provides>
+		</start>
+
+		<start name="report_rom">
+			<resource name="RAM" quantum="1M"/>
+			<route> <any-service> <parent/> </any-service> </route>
+			<provides> <service name="Report"/> <service name="ROM"/> </provides>
+			<config verbose="yes"/>
+		</start>
+
+		<start name="a64_platform_drv" caps="150" managing_system="yes">
+			<resource name="RAM" quantum="1M"/>
+			<provides> <service name="Platform"/> <service name="Scp"/> </provides>
+			<route> <any-service> <parent/> </any-service> </route>
+			<config devices_rom="config"/>
+		</start>
+
+		<start name="pinephone_power_drv">
+			<resource name="RAM" quantum="1M"/>
+			<route>
+				<service name="Timer">  <child name="timer"/>            </service>
+				<service name="Scp">    <child name="a64_platform_drv"/> </service>
+				<service name="Report"> <child name="report_rom"/>       </service>
+				<any-service> <parent/> </any-service>
+			</route>
+			<config period_ms="1000"/>
+		</start>
+
+	</config>
+}
+
+build_boot_image [build_artifacts]
+
+run_genode_until forever
