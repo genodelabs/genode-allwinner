@@ -23,7 +23,7 @@ namespace Hw::Pine_a64lts_board {
 
 	enum {
 		RAM_BASE   = 0x40000000,
-		RAM_SIZE   = 0x7e000000,
+		RAM_SIZE   = 0xbe000000,
 
 		UART_BASE  = 0x1c28000,
 		UART_SIZE  = 0x1000,
