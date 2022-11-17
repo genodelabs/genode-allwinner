@@ -186,14 +186,14 @@
 			<out    name="ov5460-reset"     bank="D" index="3"/>
 			<in     name="ov5460-reset"     bank="D" index="3"/>
 
-			<policy label="runtime -> camera -> PC0"  pin="ov5460-powerdown"/>
-			<policy label="runtime -> camera -> PD3"  pin="ov5460-reset"/>
+			<policy label_suffix="-> camera -> PC0"  pin="ov5460-powerdown"/>
+			<policy label_suffix="-> camera -> PD3"  pin="ov5460-reset"/>
 
-			<policy label="runtime -> camera -> PE12" pin="csi-sck"/>
-			<policy label="runtime -> camera -> PE13" pin="csi-sda"/>
+			<policy label_suffix="-> camera -> PE12" pin="csi-sck"/>
+			<policy label_suffix="-> camera -> PE13" pin="csi-sda"/>
 
-			<policy label="runtime -> camera -> PE16" pin="gc2145-reset"/>
-			<policy label="runtime -> camera -> PE17" pin="gc2145-powerdown"/>
+			<policy label_suffix="-> camera -> PE16" pin="gc2145-reset"/>
+			<policy label_suffix="-> camera -> PE17" pin="gc2145-powerdown"/>
 		</config>
 	</start>
 
