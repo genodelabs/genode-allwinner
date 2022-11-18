@@ -41,9 +41,11 @@ install_config {
 				<service name="Timer">  <child name="timer"/>            </service>
 				<service name="Scp">    <child name="a64_platform_drv"/> </service>
 				<service name="Report"> <child name="report_rom"/>       </service>
+				<service name="ROM" label="system"> <parent label="config"/> </service>
 				<any-service> <parent/> </any-service>
 			</route>
-			<config period_ms="1000"/>
+			<!-- supported 'state' attribute values are 'reset', 'poweroff' -->
+			<config period_ms="1000" system_rom="config" state=""/>
 		</start>
 
 	</config>

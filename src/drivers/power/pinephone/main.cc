@@ -158,6 +158,14 @@ struct Power::Main
 
 	Attached_rom_dataspace _config { _env, "config" };
 
+	using System_rom_label = String<64>;
+	using Power_profile    = String<32>;
+
+	System_rom_label _system_rom_label { };
+	Power_profile    _power_profile    { };
+
+	Constructible<Attached_rom_dataspace> _system { };
+
 	Scp _scp { _env };
 
 	Expanding_reporter _reporter { _env, "power", "power" };
@@ -176,7 +184,12 @@ struct Power::Main
 		_pmic_info = Pmic_info::from_scp(_scp);
 
 		_reporter.generate([&] (Xml_generator &xml) {
-			_pmic_info.generate(xml); });
+
+			if (_power_profile.length() > 1)
+				xml.attribute("power_profile", _power_profile);
+
+			_pmic_info.generate(xml);
+		});
 
 		/*
 		 * When connecting a charger, increase the charge current limit from
@@ -198,11 +211,79 @@ struct Power::Main
 	Signal_handler<Main> _config_handler {
 		_env.ep(), *this, &Main::_handle_config };
 
+	void _apply_system(Xml_node const &system)
+	{
+		using State = String<32>;
+		State const state = system.attribute_value("state", State());
+
+		log("system: ", system);
+
+		if (state == "reset") {
+
+			/* set bit 6 (soft power restart) in PMIC register 0x31 */
+			_scp.execute("31 dup pmic@  40 or  swap pmic!");
+		}
+
+		if (state == "poweroff") {
+
+			/* set bit 7 (power disable control) in PMIC register 0x32 */
+			_scp.execute("32 dup pmic@  80 or  swap pmic!");
+		}
+
+		Power_profile const orig_power_profile = _power_profile;
+		_power_profile = system.attribute_value("power_profile", Power_profile());
+
+		if (orig_power_profile != _power_profile) {
+
+			log("switch to power profile: ", _power_profile);
+
+			/* 1296 MHz with increased DCDC2/3 voltages (PMIC registers 0x21, 0x22) */
+			if (_power_profile == "performance") {
+				_scp.execute("70 dup 21 pmic! 22 pmic! "
+				             "40 udelay "
+				             "1a pllcpuxn bf! "
+				             "40 udelay"
+				);
+			}
+
+			/* 816 MHz at reduced DCDC2/3 voltages */
+			if (_power_profile == "economic") {
+				_scp.execute("10 pllcpuxn bf! "
+				             "40 udelay "
+				             "3c dup 21 pmic! 22 pmic! "
+				             "40 udelay "
+				             "30 dup 21 pmic! 22 pmic! "
+				             "40 udelay"
+				);
+			}
+		}
+	}
+
 	void _handle_config()
 	{
 		_config.update();
 
 		Xml_node const config = _config.xml();
+
+		/*
+		 * Request system ROM depending on the configured 'system_rom' label
+		 */
+		System_rom_label const orig_system_rom_label = _system_rom_label;
+		_system_rom_label = config.attribute_value("system_rom", System_rom_label());
+
+		if (orig_system_rom_label != _system_rom_label) {
+			if (_system_rom_label.length() > 1) {
+				_system.construct(_env, _system_rom_label.string());
+				_system->sigh(_config_handler);
+			} else {
+				_system.destruct();
+			}
+		}
+
+		if (_system.constructed()) {
+			_system->update();
+			_apply_system(_system->xml());
+		}
 
 		uint64_t const period_ms = config.attribute_value("period_ms", 5000UL);
 
@@ -237,6 +318,9 @@ struct Power::Main
 			"  7c pmic@ 10 * 7d pmic@ + .decimal " /* discharge current */
 			"  b9 pmic@ 7f and .decimal "          /* battery capacity (percent) */
 			"; "
+
+			/* bit field for factor N in PLL-CPUX control register */
+			": pllcpuxn 1c20000 8 4 ; "
 		);
 
 		/*
