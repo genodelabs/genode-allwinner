@@ -29,7 +29,7 @@
 	<service name="Pin_state">
 		<default-policy> <child name="a64_pio_drv"/> </default-policy> </service>
 
-	<start name="platform_drv" caps="200" managing_system="yes">
+	<start name="platform_drv" caps="250" managing_system="yes">
 		<resource name="RAM" quantum="3M"/>
 		<binary name="a64_platform_drv"/>
 		<provides> <service name="Platform"/> <service name="Scp"/> </provides>
