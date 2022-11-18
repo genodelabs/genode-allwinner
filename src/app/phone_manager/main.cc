@@ -68,6 +68,7 @@ struct Sculpt::Main : Input_event_handler,
                       Dialog,
                       Depot_query,
                       Menu_view::Hover_update_handler,
+                      Device_power_dialog::Action,
                       Modem_power_dialog::Action,
                       Pin_dialog::Action,
                       Dialpad_dialog::Action,
@@ -109,11 +110,21 @@ struct Sculpt::Main : Input_event_handler,
 		bool usb;
 		bool storage;
 
+		using State = String<32>;
+
+		State state;
+
+		using Power_profile = String<32>;
+
+		Power_profile power_profile;
+
 		static System from_xml(Xml_node const &node)
 		{
 			return System {
-				.usb     = node.attribute_value("usb",     false),
-				.storage = node.attribute_value("storage", false)
+				.usb           = node.attribute_value("usb",     false),
+				.storage       = node.attribute_value("storage", false),
+				.state         = node.attribute_value("state",   State()),
+				.power_profile = node.attribute_value("power_profile", Power_profile())
 			};
 		}
 
@@ -121,11 +132,20 @@ struct Sculpt::Main : Input_event_handler,
 		{
 			if (usb)     xml.attribute("usb",     "yes");
 			if (storage) xml.attribute("storage", "yes");
+
+			if (state.length() > 1)
+				xml.attribute("state", state);
+
+			if (power_profile.length() > 1)
+				xml.attribute("power_profile", power_profile);
 		}
 
 		bool operator != (System const &other) const
 		{
-			return (other.usb != usb) || (other.storage != storage);
+			return (other.usb           != usb)
+			    || (other.storage       != storage)
+			    || (other.state         != state)
+			    || (other.power_profile != power_profile);
 		}
 
 	} _system { };
@@ -426,7 +446,7 @@ struct Sculpt::Main : Input_event_handler,
 	Device_section_dialog _device_section_dialog { _section_dialogs, _power_state };
 
 	Conditional_float_dialog<Device_power_dialog>
-		_device_power_dialog { "devicepower", _power_state };
+		_device_power_dialog { "devicepower", _power_state, *this };
 
 	/*
 	 * Phone section
@@ -684,6 +704,9 @@ struct Sculpt::Main : Input_event_handler,
 			if (clicked_ptr)
 				_section_enabled(*clicked_ptr, !clicked_ptr->selected());
 
+			if (_device_power_dialog.hovered())
+				_device_power_dialog.click();
+
 			if (_modem_power_dialog.hovered())
 				_modem_power_dialog.click();
 
@@ -728,6 +751,7 @@ struct Sculpt::Main : Input_event_handler,
 
 		if (_main_menu_view.hovered(seq)) {
 
+			_device_power_dialog.clack();
 			_pin_dialog.clack();
 			_dialpad_dialog.clack();
 			_current_call_dialog.clack();
@@ -1087,6 +1111,30 @@ struct Sculpt::Main : Input_event_handler,
 			generate_dialog();
 	}
 
+	void activate_performance_power_profile() override
+	{
+		_system.power_profile = "performance";
+		_update_managed_system_config();
+	}
+
+	void activate_economic_power_profile() override
+	{
+		_system.power_profile = "economic";
+		_update_managed_system_config();
+	}
+
+	void trigger_device_reboot() override
+	{
+		_system.state = "reset";
+		_update_managed_system_config();
+	}
+
+	void trigger_device_off() override
+	{
+		_system.state = "poweroff";
+		_update_managed_system_config();
+	}
+
 
 	/***********
 	 ** Phone **
@@ -1365,6 +1413,9 @@ struct Sculpt::Main : Input_event_handler,
 		_handle_runtime_config();
 		_handle_modem_state();
 
+		_system_config.with_manual_config([&] (Xml_node const &system) {
+			_system = System::from_xml(system); });
+
 		/*
 		 * Read static platform information
 		 */
@@ -1482,6 +1533,7 @@ Sculpt::Dialog::Hover_result Sculpt::Main::hover(Xml_node hover)
 			result = any_hover_changed(result, dialog.hover(vbox)); });
 
 		result = any_hover_changed(result,
+			_device_power_dialog    .hover(vbox),
 			_modem_power_dialog     .hover(vbox),
 			_pin_dialog             .hover(vbox),
 			_dialpad_dialog         .hover(vbox),

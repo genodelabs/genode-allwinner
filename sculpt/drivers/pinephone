@@ -307,9 +307,10 @@
 		<route>
 			<service name="Scp"> <child name="platform_drv"/> </service>
 			<service name="Report"> <parent label="power"/> </service>
+			<service name="ROM" label="system"> <parent label="system"/> </service>
 			<any-service> <parent/> </any-service>
 		</route>
-		<config period_ms="10000"/>
+		<config period_ms="10000" system_rom="system"/>
 	</start>
 
 	<start name="dynamic_config">

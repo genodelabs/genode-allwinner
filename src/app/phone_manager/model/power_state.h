@@ -43,6 +43,10 @@ struct Sculpt::Power_state
 
 	Battery battery;
 
+	enum class Profile { UNKNOWN, PERFORMANCE, ECONOMIC };
+
+	Profile profile;
+
 	static Power_state from_xml(Xml_node const &node)
 	{
 		Battery battery { };
@@ -51,12 +55,23 @@ struct Sculpt::Power_state
 			battery = Battery::from_xml(node);
 		});
 
+		auto profile_from_xml = [] (Xml_node const &node)
+		{
+			auto value = node.attribute_value("power_profile", String<64>());
+
+			if (value == "performance") return Profile::PERFORMANCE;
+			if (value == "economic")    return Profile::ECONOMIC;
+
+			return Profile::UNKNOWN;
+		};
+
 		return Power_state {
 			.ac_present      = node.attribute_value("ac_present", false),
 			.battery_present = node.has_sub_node("battery"),
 			.charging        = node.attribute_value("charging", false),
 			.voltage         = node.attribute_value("voltage", 0.0),
-			.battery         = battery
+			.battery         = battery,
+			.profile         = profile_from_xml(node),
 		};
 	}
 

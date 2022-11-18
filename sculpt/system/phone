@@ -1,3 +1,3 @@
-<system state="" usb="no" storage="no" />
+<system state="" usb="no" storage="no" power_profile="performance"/>
 <!-- the start of the USB and storage drivers is triggered by
      the phone_manager not before the GUI is ready -->
