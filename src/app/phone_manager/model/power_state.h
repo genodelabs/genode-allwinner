@@ -27,15 +27,15 @@ struct Sculpt::Power_state
 
 	struct Battery
 	{
-		double charge_current, discharge_current;
+		double charge_current, power_draw;
 
 		unsigned remaining_capacity;
 
 		static Battery from_xml(Xml_node const &battery)
 		{
 			return Battery {
-				.charge_current     = battery.attribute_value("charge_current",    0.0),
-				.discharge_current  = battery.attribute_value("discharge_current", 0.0),
+				.charge_current     = battery.attribute_value("charge_current", 0.0),
+				.power_draw         = battery.attribute_value("power_draw", 0.0),
 				.remaining_capacity = battery.attribute_value("remaining_capacity", 0u)
 			};
 		}

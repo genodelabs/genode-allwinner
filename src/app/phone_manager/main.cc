@@ -41,6 +41,7 @@
 #include <deploy.h>
 #include <graph.h>
 #include <view/device_section_dialog.h>
+#include <view/device_power_dialog.h>
 #include <view/phone_section_dialog.h>
 #include <view/modem_power_dialog.h>
 #include <view/pin_dialog.h>
@@ -424,6 +425,9 @@ struct Sculpt::Main : Input_event_handler,
 
 	Device_section_dialog _device_section_dialog { _section_dialogs, _power_state };
 
+	Conditional_float_dialog<Device_power_dialog>
+		_device_power_dialog { "devicepower", _power_state };
+
 	/*
 	 * Phone section
 	 */
@@ -495,7 +499,10 @@ struct Sculpt::Main : Input_event_handler,
 	void generate(Xml_generator &xml) const override
 	{
 		xml.node("vbox", [&] {
+
 			_device_section_dialog.generate(xml);
+
+			_device_power_dialog.generate_conditional(xml, _device_section_dialog.selected());
 
 			if (_power_state.modem_present()) {
 
