@@ -15,9 +15,14 @@
 #define _SESSION_H_
 
 #include <base/allocator.h>
+#include <audio_in_session/audio_in_session.h>
+#include <audio_out_session/audio_out_session.h>
 
 namespace Audio {
 	struct Session;
+
+	/* make sure the periods match as 'Packet' is used by both */
+	static_assert(Audio_out::PERIOD == Audio_in::PERIOD);
 }
 
 struct Audio::Session
@@ -25,7 +30,7 @@ struct Audio::Session
 	struct Packet
 	{
 		Genode::int16_t *data { nullptr };
-		Genode::size_t   size { 2048 };
+		Genode::size_t   size { Audio_out::PERIOD * sizeof(short) * 2 };
 
 		bool valid() const { return data != nullptr; }
 	};
