@@ -41,6 +41,7 @@
 #include <deploy.h>
 #include <graph.h>
 #include <view/device_section_dialog.h>
+#include <view/device_controls_dialog.h>
 #include <view/device_power_dialog.h>
 #include <view/phone_section_dialog.h>
 #include <view/modem_power_dialog.h>
@@ -68,6 +69,7 @@ struct Sculpt::Main : Input_event_handler,
                       Dialog,
                       Depot_query,
                       Menu_view::Hover_update_handler,
+                      Device_controls_dialog::Action,
                       Device_power_dialog::Action,
                       Modem_power_dialog::Action,
                       Pin_dialog::Action,
@@ -118,13 +120,16 @@ struct Sculpt::Main : Input_event_handler,
 
 		Power_profile power_profile;
 
+		unsigned brightness;
+
 		static System from_xml(Xml_node const &node)
 		{
 			return System {
 				.usb           = node.attribute_value("usb",     false),
 				.storage       = node.attribute_value("storage", false),
 				.state         = node.attribute_value("state",   State()),
-				.power_profile = node.attribute_value("power_profile", Power_profile())
+				.power_profile = node.attribute_value("power_profile", Power_profile()),
+				.brightness    = node.attribute_value("brightness", 0u)
 			};
 		}
 
@@ -138,6 +143,8 @@ struct Sculpt::Main : Input_event_handler,
 
 			if (power_profile.length() > 1)
 				xml.attribute("power_profile", power_profile);
+
+			xml.attribute("brightness", brightness);
 		}
 
 		bool operator != (System const &other) const
@@ -145,7 +152,8 @@ struct Sculpt::Main : Input_event_handler,
 			return (other.usb           != usb)
 			    || (other.storage       != storage)
 			    || (other.state         != state)
-			    || (other.power_profile != power_profile);
+			    || (other.power_profile != power_profile)
+			    || (other.brightness    != brightness);
 		}
 
 	} _system { };
@@ -445,6 +453,9 @@ struct Sculpt::Main : Input_event_handler,
 
 	Device_section_dialog _device_section_dialog { _section_dialogs, _power_state };
 
+	Conditional_float_dialog<Device_controls_dialog>
+		_device_controls_dialog { "devicecontrols", _power_state, *this };
+
 	Conditional_float_dialog<Device_power_dialog>
 		_device_power_dialog { "devicepower", _power_state, *this };
 
@@ -521,6 +532,8 @@ struct Sculpt::Main : Input_event_handler,
 		xml.node("vbox", [&] {
 
 			_device_section_dialog.generate(xml);
+
+			_device_controls_dialog.generate_conditional(xml, _device_section_dialog.selected());
 
 			_device_power_dialog.generate_conditional(xml, _device_section_dialog.selected());
 
@@ -704,6 +717,9 @@ struct Sculpt::Main : Input_event_handler,
 			if (clicked_ptr)
 				_section_enabled(*clicked_ptr, !clicked_ptr->selected());
 
+			if (_device_controls_dialog.hovered())
+				_device_controls_dialog.click();
+
 			if (_device_power_dialog.hovered())
 				_device_power_dialog.click();
 
@@ -751,6 +767,7 @@ struct Sculpt::Main : Input_event_handler,
 
 		if (_main_menu_view.hovered(seq)) {
 
+			_device_controls_dialog.clack();
 			_device_power_dialog.clack();
 			_pin_dialog.clack();
 			_dialpad_dialog.clack();
@@ -1111,24 +1128,45 @@ struct Sculpt::Main : Input_event_handler,
 			generate_dialog();
 	}
 
+	/**
+	 * Device_controls_dialog::Action interface
+	 */
+	void select_brightness_level(unsigned level) override
+	{
+		_system.brightness = level;
+		_update_managed_system_config();
+	}
+
+	/**
+	 * Device_power_dialog::Action interface
+	 */
 	void activate_performance_power_profile() override
 	{
 		_system.power_profile = "performance";
 		_update_managed_system_config();
 	}
 
+	/**
+	 * Device_power_dialog::Action interface
+	 */
 	void activate_economic_power_profile() override
 	{
 		_system.power_profile = "economic";
 		_update_managed_system_config();
 	}
 
+	/**
+	 * Device_power_dialog::Action interface
+	 */
 	void trigger_device_reboot() override
 	{
 		_system.state = "reset";
 		_update_managed_system_config();
 	}
 
+	/**
+	 * Device_power_dialog::Action interface
+	 */
 	void trigger_device_off() override
 	{
 		_system.state = "poweroff";
@@ -1533,6 +1571,7 @@ Sculpt::Dialog::Hover_result Sculpt::Main::hover(Xml_node hover)
 			result = any_hover_changed(result, dialog.hover(vbox)); });
 
 		result = any_hover_changed(result,
+			_device_controls_dialog .hover(vbox),
 			_device_power_dialog    .hover(vbox),
 			_modem_power_dialog     .hover(vbox),
 			_pin_dialog             .hover(vbox),

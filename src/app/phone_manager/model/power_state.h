@@ -47,6 +47,8 @@ struct Sculpt::Power_state
 
 	Profile profile;
 
+	unsigned brightness;
+
 	static Power_state from_xml(Xml_node const &node)
 	{
 		Battery battery { };
@@ -72,6 +74,7 @@ struct Sculpt::Power_state
 			.voltage         = node.attribute_value("voltage", 0.0),
 			.battery         = battery,
 			.profile         = profile_from_xml(node),
+			.brightness      = node.attribute_value("brightness", 0u),
 		};
 	}
 
