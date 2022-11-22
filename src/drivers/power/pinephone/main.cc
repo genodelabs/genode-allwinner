@@ -25,6 +25,8 @@ namespace Power {
 	struct Scp;
 	struct Pmic_info;
 	struct Main;
+
+	using Token = Genode::Token<Scanner_policy_identifier_with_underline>;
 }
 
 
@@ -111,8 +113,6 @@ struct Power::Pmic_info
 	{
 		Scp::Response const response = scp.execute("power_info");
 
-		using Token = Genode::Token<Scanner_policy_identifier_with_underline>;
-
 		Token t { response.string() };
 
 		unsigned numbers[6] { };
@@ -161,8 +161,10 @@ struct Power::Main
 	using System_rom_label = String<64>;
 	using Power_profile    = String<32>;
 
+	uint64_t         _period_ms = 0;
 	System_rom_label _system_rom_label { };
 	Power_profile    _power_profile    { };
+	unsigned         _brightness       { };
 
 	Constructible<Attached_rom_dataspace> _system { };
 
@@ -177,19 +179,41 @@ struct Power::Main
 
 	Pmic_info _pmic_info { };
 
-	void _handle_timer()
+	void _update_power_report()
 	{
-		Pmic_info orig_pmic_info = _pmic_info;
+		auto brightness_from_scp = [&]
+		{
+			Scp::Response const response = _scp.execute("rpwmphase bf@ .decimal");
 
-		_pmic_info = Pmic_info::from_scp(_scp);
+			unsigned result = 0;
+
+			/* parse number following the leading whitespace of the response */
+			Token t { response.string() };
+			t = t.eat_whitespace();
+			ascii_to(t.start(), result);
+
+			/* scale value range from (0...1023) to (0...99) */
+			return (result*100)/1024;
+		};
 
 		_reporter.generate([&] (Xml_generator &xml) {
+
+			xml.attribute("brightness", brightness_from_scp());
 
 			if (_power_profile.length() > 1)
 				xml.attribute("power_profile", _power_profile);
 
 			_pmic_info.generate(xml);
 		});
+	}
+
+	void _handle_timer()
+	{
+		Pmic_info orig_pmic_info = _pmic_info;
+
+		_pmic_info = Pmic_info::from_scp(_scp);
+
+		_update_power_report();
 
 		/*
 		 * When connecting a charger, increase the charge current limit from
@@ -216,8 +240,6 @@ struct Power::Main
 		using State = String<32>;
 		State const state = system.attribute_value("state", State());
 
-		log("system: ", system);
-
 		if (state == "reset") {
 
 			/* set bit 6 (soft power restart) in PMIC register 0x31 */
@@ -234,8 +256,6 @@ struct Power::Main
 		_power_profile = system.attribute_value("power_profile", Power_profile());
 
 		if (orig_power_profile != _power_profile) {
-
-			log("switch to power profile: ", _power_profile);
 
 			/* 1296 MHz with increased DCDC2/3 voltages (PMIC registers 0x21, 0x22) */
 			if (_power_profile == "performance") {
@@ -256,6 +276,19 @@ struct Power::Main
 				             "40 udelay"
 				);
 			}
+		}
+
+		/* apply brightness setting */
+		unsigned const orig_brightness = _brightness;
+		_brightness = system.attribute_value("brightness", 0u);
+		if (orig_brightness != _brightness) {
+			unsigned const pwm_phase = (_brightness*1023)/100;
+			String<128> const
+				command(Hex(pwm_phase, Hex::OMIT_PREFIX), " 1f03804 0 10 bf!");
+			_scp.execute(command.string());
+
+			/* reflect change immediately */
+			_update_power_report();
 		}
 	}
 
@@ -285,9 +318,10 @@ struct Power::Main
 			_apply_system(_system->xml());
 		}
 
-		uint64_t const period_ms = config.attribute_value("period_ms", 5000UL);
-
-		_timer.trigger_periodic(1000*period_ms);
+		uint64_t const orig_period_ms = _period_ms;
+		_period_ms = config.attribute_value("period_ms", 5000UL);
+		if (orig_period_ms != _period_ms)
+			_timer.trigger_periodic(1000*_period_ms);
 	}
 
 	Main(Env &env) : _env(env)
@@ -309,6 +343,18 @@ struct Power::Main
 			/* print decimal number */
 			": .decimal  base @ decimal swap . base ! ; "
 
+			/*
+			 * bit field for the active phase in the R_PWM device
+			 *
+			 * The PWM for the backlight is configured for a total phase of
+			 * 1024 cycles. Hence the value for the active phase must be
+			 * in the range of 0...1023.
+			 */
+			": rpwmphase  1f03804 0 10 ; "
+
+			/* bit field for factor N in PLL-CPUX control register */
+			": pllcpuxn 1c20000 8 4 ; "
+
 			/* print power information */
 			": power_info "
 			"  0  pmic@ .decimal "                 /* power-source stats */
@@ -318,9 +364,6 @@ struct Power::Main
 			"  7c pmic@ 10 * 7d pmic@ + .decimal " /* discharge current */
 			"  b9 pmic@ 7f and .decimal "          /* battery capacity (percent) */
 			"; "
-
-			/* bit field for factor N in PLL-CPUX control register */
-			": pllcpuxn 1c20000 8 4 ; "
 		);
 
 		/*
