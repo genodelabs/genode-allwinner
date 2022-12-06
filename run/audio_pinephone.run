@@ -10,6 +10,9 @@ build {
 	drivers/audio/a64
 	server/report_rom
 	test/audio_in
+
+	lib/vfs_oss
+	test/oss
 }
 
 create_boot_directory
@@ -113,9 +116,29 @@ install_config {
 			</route>
 		</start>
 
+		<start name="test-oss">
+			<resource name="RAM" quantum="10M"/>
+			<config>
+				<vfs>
+					<dir name="dev">
+						<log/>
+						<oss name="dsp"/>
+					</dir>
+				</vfs>
+				<libc stdout="/dev/log" stderr="/dev/log"/>
+			</config>
+			<route>
+				<service name="Audio_in"> <child name="audio_drv"/> </service>
+				<service name="Audio_out"> <child name="audio_drv"/> </service>
+				<any-service> <parent/> <any-child/> </any-service>
+			</route>
+		</start>
+
+<!--
 		<start name="test-audio_in">
 			<resource name="RAM" quantum="8M"/>
 		</start>
+-->
 	</config>
 }
 
@@ -126,6 +149,10 @@ build_boot_image {
 	a64_platform_drv a64_pio_drv
 	a64_audio_drv pinephone_audio_control
 	test-audio_in
+
+	libc.lib.so vfs.lib.so libm.lib.so
+	posix.lib.so vfs_oss.lib.so
+	test-oss
 }
 
 run_genode_until forever
