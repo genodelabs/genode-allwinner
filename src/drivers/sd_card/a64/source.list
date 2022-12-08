@@ -1,5 +1,7 @@
 arch/arm64/lib/memchr.S
 arch/arm64/lib/memcmp.S
+arch/arm64/lib/memcpy.S
+arch/arm64/lib/memset.S
 arch/arm64/lib/strchr.S
 arch/arm64/lib/strcmp.S
 arch/arm64/lib/strlen.S
