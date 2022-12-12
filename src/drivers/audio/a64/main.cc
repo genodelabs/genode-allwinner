@@ -217,6 +217,12 @@ class Audio::Dma_engine : Platform::Device::Mmio
 
 	public:
 
+		/*
+		 * This descriptor itself is stored in an uncached DMA page and
+		 * 'dma_addr' is used to chain the descriptors together. The
+		 * actual payload data is stored in the cached DMA buffer '_data'.
+		 */
+
 		class Descriptor : private Platform::Dma_buffer,
 		                   private Genode::Mmio,
 		                   public  Fifo<Descriptor>::Element
@@ -309,6 +315,8 @@ class Audio::Dma_engine : Platform::Device::Mmio
 						cache_invalidate_data(data(), length());
 				}
 
+				addr_t data_dma_addr() const { return _data.dma_addr(); }
+
 				addr_t data()     const { return addr_t(_data.local_addr<addr_t>()); }
 				addr_t dma_addr() const { return Dma_buffer::dma_addr();             }
 				size_t length()   const { return read<Length>();                     }
@@ -328,6 +336,10 @@ class Audio::Dma_engine : Platform::Device::Mmio
 
 				/* two byte aligend */
 				struct Descr_phys_addr : Register<0x8, 32> { };
+
+				struct Dma_cur_src   : Register<0x10, 32> { };
+				struct Dma_cur_dest  : Register<0x14, 32> { };
+				struct Dma_bcnt_left : Register<0x18, 32> { };
 
 			public:
 
@@ -360,6 +372,10 @@ class Audio::Dma_engine : Platform::Device::Mmio
 
 				void descr_dma(addr_t addr) { write<Descr_phys_addr>(uint32_t(addr)); }
 
+				uint32_t cur_src()   const { return read<Dma_cur_src>(); }
+				uint32_t cur_dest()  const { return read<Dma_cur_dest>(); }
+				uint32_t bcnt_left() const { return read<Dma_bcnt_left>(); }
+
 				/* queue handling */
 				bool empty() const { return _queue.empty(); }
 
@@ -371,6 +387,9 @@ class Audio::Dma_engine : Platform::Device::Mmio
 
 				template <typename FUNC>
 				void dequeue(FUNC const &func) { _queue.dequeue(func); }
+
+				template <typename FUNC>
+				void head(FUNC const &func) { _queue.head(func); }
 		};
 
 	private:
@@ -445,7 +464,7 @@ struct Audio::Main
 		}
 
 		_tx.descr_dma(_tx_descr[0]->dma_addr());
-		_tx.irq_enable(Dma_engine::Channel::HALF_PACKET);
+		_tx.irq_enable(Dma_engine::Channel::FULL_PACKET);
 
 		/* setup rx channel */
 		for (unsigned i = 0; i < RX; i++)
@@ -506,6 +525,10 @@ struct Audio::Main
 	{
 		if (_tx.empty()) {
 			fill(_tx_descr[0]->data());
+			/*
+			 * Store in reverse so that the last descr is used first
+			 * as the first one is currently played.
+			 */
 			for (int i = TX - 1; i >= 0; i--) {
 				_tx.enqueue(*_tx_descr[i]);
 			}
@@ -536,8 +559,17 @@ struct Audio::Main
 
 	void handle_dma_irq()
 	{
-		if (_tx.irq_pending(Dma_engine::Channel::HALF_PACKET))
-			tx();
+		if (_tx.irq_pending(Dma_engine::Channel::FULL_PACKET))
+
+			/*
+			 * This check is only necessary to cover any spurious
+			 * interrupt that might occur.
+			 */
+			_tx.head([&] (Dma_engine::Descriptor &descr) {
+				addr_t const cur = _tx.cur_src() & 0xfffff000u;
+				if (cur != descr.data_dma_addr())
+					tx();
+			});
 
 		if (_rx.irq_pending(Dma_engine::Channel::FULL_PACKET))
 			rx();
