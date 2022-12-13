@@ -1,0 +1,14 @@
+Since Genode's custom SCP firmware does not implement PSCI, the handshake of
+the ATZ with the AR100 alwayse times out. This patch reduces the timeout for
+100ms to 10us to speed up the boot.
+
++++ arm_trusted_firmware/drivers/allwinner/sunxi_msgbox.c
+@@ -36,7 +36,7 @@
+ #define MHU_MAX_SLOT_ID		31
+ 
+ #define MHU_TIMEOUT_DELAY	10
+-#define MHU_TIMEOUT_ITERS	10000
++#define MHU_TIMEOUT_ITERS	1
+ 
+ static DEFINE_BAKERY_LOCK(mhu_secure_message_lock);
+ 

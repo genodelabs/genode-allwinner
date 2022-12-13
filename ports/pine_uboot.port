@@ -7,7 +7,9 @@ REV(uboot) := v2021.07
 URL(uboot) := https://github.com/u-boot/u-boot.git \
               --branch ${REV(uboot)} --depth 1 --no-checkout
 DIR(uboot) := uboot
-PATCHES    := $(addprefix src/u-boot/pine/,fastboot.patch bootm_len.patch)
+PATCHES    := $(addprefix src/u-boot/pine/,fastboot.patch \
+                                           bootm_len.patch \
+                                           skip_scp_handshake.patch)
 
 REV(arm_trusted_firmware) := v2.5
 URL(arm_trusted_firmware) := https://github.com/ARM-software/arm-trusted-firmware.git \

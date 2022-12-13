@@ -30,13 +30,13 @@ unexport .SHELLFLAGS
 
 ARM_TRUSTED_FIRMWARE_DIR := $(call select_from_ports,pine_uboot)/arm_trusted_firmware
 
-BL31_BIN_FILE = $(PWD)/$(PRG_REL_DIR)/arm_trusted_firmware/sun50i_a64/debug/bl31.bin
+BL31_BIN_FILE = $(PWD)/$(PRG_REL_DIR)/arm_trusted_firmware/sun50i_a64/release/bl31.bin
 
 $(BL31_BIN_FILE):
 	$(VERBOSE) $(MAKE) $(VERBOSE_DIR) -C $(ARM_TRUSTED_FIRMWARE_DIR) \
 	                   CROSS_COMPILE=$(CROSS_DEV_PREFIX) \
 	                   BUILD_BASE=$(PWD)/$(PRG_REL_DIR)/arm_trusted_firmware \
-	                   PLAT=sun50i_a64 DEBUG=1 \
+	                   PLAT=sun50i_a64 DEBUG=0 LOG_LEVEL=0 \
 	                   bl31
 
 
