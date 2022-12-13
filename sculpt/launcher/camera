@@ -1,0 +1,9 @@
+<launcher pkg="camera-pinephone">
+	<affinity xpos="3" width="1"/>
+	<route>
+		<service name="Timer">       <parent/> </service>
+		<service name="Platform">    <parent label="camera"/> </service>
+		<service name="Pin_state">   <parent/> </service>
+		<service name="Pin_control"> <parent/> </service>
+	</route>
+</launcher>
