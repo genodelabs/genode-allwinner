@@ -11,3 +11,4 @@ _/pkg/sticks_blue_backdrop
 _/pkg/system_clock-dummy
 _/pkg/test-camera-pinephone
 _/pkg/camera-pinephone
+_/pkg/glmark2
