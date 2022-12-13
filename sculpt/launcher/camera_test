@@ -1,0 +1,16 @@
+<launcher pkg="test-camera-pinephone">
+	<route>
+		<service name="Gui">      <parent label="camera"/> </service>
+		<service name="Timer">    <parent/> </service>
+		<service name="Platform"> <parent label="camera"/> </service>
+		<service name="Pin_state"   label="PD3">  <parent label="camera -> PD3"/>  </service>
+		<service name="Pin_state"   label="PE12"> <parent label="camera -> PE12"/> </service>
+		<service name="Pin_state"   label="PE13"> <parent label="camera -> PE13"/> </service>
+		<service name="Pin_control" label="PC0">  <parent label="camera -> PC0"/>  </service>
+		<service name="Pin_control" label="PD3">  <parent label="camera -> PD3"/>  </service>
+		<service name="Pin_control" label="PE12"> <parent label="camera -> PE12"/> </service>
+		<service name="Pin_control" label="PE13"> <parent label="camera -> PE13"/> </service>
+		<service name="Pin_control" label="PE16"> <parent label="camera -> PE16"/> </service>
+		<service name="Pin_control" label="PE17"> <parent label="camera -> PE17"/> </service>
+	</route>
+</launcher>
