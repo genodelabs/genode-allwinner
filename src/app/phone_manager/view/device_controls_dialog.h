@@ -17,44 +17,63 @@
 #include <view/dialog.h>
 #include <view/hoverable_item.h>
 #include <model/power_state.h>
+#include <model/mic_state.h>
+#include <model/audio_volume.h>
 
 namespace Sculpt { struct Device_controls_dialog; }
 
 
 struct Sculpt::Device_controls_dialog
 {
-	Power_state const &_power_state;
+	Power_state  const &_power_state;
+	Mic_state    const &_mic_state;
+	Audio_volume const &_audio_volume;
 
 	struct Action : Interface
 	{
 		virtual void select_brightness_level(unsigned) = 0;
+
+		virtual void select_volume_level(unsigned) = 0;
+
+		virtual void select_mic_policy(Mic_state const &) = 0;
 	};
 
 	Action &_action;
 
-	Device_controls_dialog(Power_state const &power_state, Action &action)
+	Device_controls_dialog(Power_state  const &power_state,
+	                       Mic_state    const &mic_state,
+	                       Audio_volume const &audio_volume,
+	                       Action &action)
 	:
-		_power_state(power_state), _action(action)
+		_power_state(power_state), _mic_state(mic_state),
+		_audio_volume(audio_volume),_action(action)
 	{ }
 
 	using Hover_result = Hoverable_item::Hover_result;
 
 	using Id = Hoverable_item::Id;
 
-	Hoverable_item _choice { };
+
+	/**********************************
+	 ** Brightness and volume levels **
+	 **********************************/
+
+	Hoverable_item _control { };
+	Hoverable_item _level { };
 
 	bool _dragged = false;
 
-	void _gen_brightness(Xml_generator &xml) const
+	void _gen_level(Xml_generator &xml, unsigned const percent,
+	                char const *control_id, char const *text) const
 	{
-		gen_named_node(xml, "frame", "brightness", [&] {
+		gen_named_node(xml, "frame", control_id, [&] {
 
 			xml.attribute("style", "important");
 
 			gen_named_node(xml, "float", "label", [&] {
 				xml.attribute("west", "yes");
 				gen_named_node(xml, "label", "label", [&] {
-					xml.attribute("text", "  Brightness");
+					xml.attribute("text", String<30>("  ", text));
 					xml.attribute("min_ex", "15");
 				});
 			});
@@ -67,7 +86,7 @@ struct Sculpt::Device_controls_dialog
 
 						gen_named_node(xml, "button", Id(i), [&] {
 
-							if (i*10 <= _power_state.brightness)
+							if (i*10 <= percent)
 								xml.attribute("selected", "yes");
 							else
 								xml.attribute("style", "unimportant");
@@ -81,36 +100,113 @@ struct Sculpt::Device_controls_dialog
 		});
 	}
 
-	void _select_brightness_level()
+	void _select_brightness_or_volume_level()
 	{
 		unsigned value = 0;
-		if (ascii_to(_choice._hovered.string(), value))
-			_action.select_brightness_level(value*10 + 9);
+		if (!ascii_to(_level._hovered.string(), value))
+			return;
+
+		unsigned const percent = min(100u, value*10 + 9);
+
+		if (_control.hovered("brightness"))
+			_action.select_brightness_level(percent);
+
+		if (_control.hovered("volume"))
+			_action.select_volume_level(percent);
 	}
+
+
+	/****************
+	 ** Mic policy **
+	 ****************/
+
+	Hoverable_item _mic_choice { };
+
+	void _gen_mic_policy(Xml_generator &xml) const
+	{
+		gen_named_node(xml, "frame", "mic", [&] {
+
+			xml.attribute("style", "important");
+
+			gen_named_node(xml, "float", "label", [&] {
+				xml.attribute("west", "yes");
+				gen_named_node(xml, "label", "label", [&] {
+					xml.attribute("text", "  Microphone");
+					xml.attribute("min_ex", "15");
+				});
+			});
+
+			gen_named_node(xml, "float", "onoff", [&] {
+				xml.attribute("east", "yes");
+				gen_named_node(xml, "hbox", "onoff", [&] {
+
+					auto gen_option = [&] (auto id, bool selected, auto text)
+					{
+						gen_named_node(xml, "button", id, [&] {
+
+							if (selected)
+								xml.attribute("selected", "yes");
+
+							xml.node("label", [&] {
+								xml.attribute("text", text); });
+						});
+					};
+
+					gen_option("off",   (_mic_state == Mic_state::OFF),   "  Off  ");
+					gen_option("phone", (_mic_state == Mic_state::PHONE), "  Phone  ");
+					gen_option("on",    (_mic_state == Mic_state::ON),    "  On  ");
+				});
+			});
+		});
+	}
+
 
 	void generate(Xml_generator &xml) const
 	{
+		auto gen_space = [&] (auto const &id)
+		{
+			gen_named_node(xml, "label", id, [&] {
+				xml.attribute("text", " "); });
+		};
+
 		gen_named_node(xml, "vbox", "vbox", [&] {
-			_gen_brightness(xml); });
+			_gen_level(xml, _power_state.brightness, "brightness", "Brightness");
+			gen_space("below brightness");
+			_gen_level(xml, _audio_volume.value,     "volume",     "Volume");
+			gen_space("below volume");
+			_gen_mic_policy(xml);
+		});
 	}
 
 	Hover_result hover(Xml_node hover)
 	{
-		Hover_result const result =
-			_choice.match(hover, "vbox", "frame", "float", "hbox", "button", "name");
+		Hover_result const level_result =
+			_level.match(hover, "vbox", "frame", "float", "hbox", "button", "name");
+
+		Hover_result const control_result =
+			_control.match(hover, "vbox", "frame", "name");
+
+		Hover_result const mic_result =
+			_mic_choice.match(hover, "vbox", "frame", "float", "hbox", "button", "name");
 
 		if (_dragged)
-			_select_brightness_level();
+			_select_brightness_or_volume_level();
 
-		return result;
+		return Dialog::any_hover_changed(level_result, control_result, mic_result);
 	}
 
-	bool hovered() const { return _choice._hovered.valid(); }
+	bool hovered() const { return _level._hovered.valid(); }
 
 	void click()
 	{
 		_dragged = true;
-		_select_brightness_level();
+		_select_brightness_or_volume_level();
+
+		if (_control.hovered("mic")) {
+			if (_mic_choice.hovered("off"))   _action.select_mic_policy(Mic_state::OFF);
+			if (_mic_choice.hovered("phone")) _action.select_mic_policy(Mic_state::PHONE);
+			if (_mic_choice.hovered("on"))    _action.select_mic_policy(Mic_state::ON);
+		}
 	}
 
 	void clack()

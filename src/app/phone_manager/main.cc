@@ -454,7 +454,8 @@ struct Sculpt::Main : Input_event_handler,
 	Device_section_dialog _device_section_dialog { _section_dialogs, _power_state };
 
 	Conditional_float_dialog<Device_controls_dialog>
-		_device_controls_dialog { "devicecontrols", _power_state, *this };
+		_device_controls_dialog { "devicecontrols", _power_state, _mic_state,
+		                          _audio_volume, *this };
 
 	Conditional_float_dialog<Device_power_dialog>
 		_device_power_dialog { "devicepower", _power_state, *this };
@@ -1033,18 +1034,25 @@ struct Sculpt::Main : Input_event_handler,
 	 ** Audio **
 	 ***********/
 
+	Mic_state _mic_state = Mic_state::PHONE;
+
+	Audio_volume _audio_volume { .value = 75 };
+
 	Expanding_reporter _audio_config { _env, "config", "audio_config" };
 
 	struct Audio_config
 	{
 		bool earpiece, speaker, mic, modem;
 
+		Audio_volume audio_volume;
+
 		bool operator != (Audio_config const &other) const
 		{
-			return (earpiece != other.earpiece)
-			    || (speaker  != other.speaker)
-			    || (mic      != other.mic)
-			    || (modem    != other.modem);
+			return (earpiece           != other.earpiece)
+			    || (speaker            != other.speaker)
+			    || (mic                != other.mic)
+			    || (modem              != other.modem)
+			    || (audio_volume.value != other.audio_volume.value);
 		}
 
 		void generate(Xml_generator &xml) const
@@ -1053,7 +1061,7 @@ struct Sculpt::Main : Input_event_handler,
 				xml.attribute("volume", earpiece ? 100 : 0);
 			});
 			xml.node("speaker", [&] () {
-				xml.attribute("volume", speaker ? 100 : 0);
+				xml.attribute("volume", speaker  ? audio_volume.value : 0);
 			});
 			xml.node("mic", [&] () {
 				xml.attribute("volume", mic ? 80 : 0);
@@ -1068,6 +1076,16 @@ struct Sculpt::Main : Input_event_handler,
 
 	void _generate_audio_config()
 	{
+		auto mic_enabled = [&]
+		{
+			switch (_mic_state) {
+			case Mic_state::OFF:   return false;
+			case Mic_state::PHONE: return _current_call.active();
+			case Mic_state::ON:    return true;
+			}
+			return false;
+		};
+
 		Audio_config const new_config {
 
 			.earpiece = true,
@@ -1076,10 +1094,12 @@ struct Sculpt::Main : Input_event_handler,
 			.speaker  = !_current_call.active() || _current_call.speaker,
 
 			/* enable microphone during call */
-			.mic = _current_call.active(),
+			.mic = mic_enabled(),
 
 			/* set codec target during call */
-			.modem = _current_call.active()
+			.modem = _current_call.active(),
+
+			.audio_volume = _audio_volume
 		};
 
 		if (new_config != _curr_audio_config) {
@@ -1087,6 +1107,24 @@ struct Sculpt::Main : Input_event_handler,
 			_audio_config.generate([&] (Xml_generator &xml) {
 				_curr_audio_config.generate(xml); });
 		}
+	}
+
+	/**
+	 * Device_controls_dialog::Action interface
+	 */
+	void select_volume_level(unsigned level) override
+	{
+		_audio_volume.value = level;
+		_generate_audio_config();
+	}
+
+	/**
+	 * Device_controls_dialog::Action interface
+	 */
+	void select_mic_policy(Mic_state const &policy) override
+	{
+		_mic_state = policy;
+		_generate_audio_config();
 	}
 
 
