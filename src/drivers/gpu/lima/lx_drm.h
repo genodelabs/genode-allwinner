@@ -36,7 +36,7 @@ int lx_drm_ioctl_syncobj_wait(void *, unsigned int);
 
 int lx_drm_ioctl_lima_ctx_create(void *, unsigned int *);
 int lx_drm_ioctl_lima_ctx_free(void *, unsigned int);
-int lx_drm_ioctl_lima_gem_create(void *, unsigned long, unsigned int *);
+int lx_drm_ioctl_lima_gem_create(void *, unsigned, unsigned long, unsigned int *);
 int lx_drm_ioctl_lima_gem_info(void *, unsigned int, unsigned int *, unsigned long long *);
 int lx_drm_ioctl_lima_gem_param(void *, unsigned char, unsigned long long*);
 int lx_drm_ioctl_lima_gem_wait(void *, unsigned int, unsigned int);

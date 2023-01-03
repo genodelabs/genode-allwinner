@@ -549,14 +549,16 @@ int lx_drm_ioctl_lima_gem_wait(void *lx_drm_prv, unsigned int handle,
 
 
 int lx_drm_ioctl_lima_gem_create(void *lx_drm_prv,
+                                 unsigned va,
                                  unsigned long size,
                                  unsigned int *handle)
 {
 	int err;
 	struct drm_lima_gem_create req = {
 		.size   = size,
-		.flags  = 0, // XXX check flags
+		.flags  = LIMA_BO_FLAG_FORCE_VA, // FORCE va
 		.handle = 0,
+		.va     = va,
 	};
 
 	err = lx_drm_ioctl(lx_drm_prv, DRM_IOCTL_LIMA_GEM_CREATE,

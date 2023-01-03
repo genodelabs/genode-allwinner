@@ -63,7 +63,12 @@ namespace Gpu {
 	struct Ctx_id;
 	struct Syncobj_id;
 
+	struct Buffer;
+	using Buffer_id = Vram_id;
+
 } /* namespace Gpu */
+
+struct Gpu::Vram { };
 
 
 struct Gpu::Ctx_id
@@ -96,6 +101,7 @@ struct Gpu::Operation
 	Type type;
 
 	uint32_t           size;
+	uint32_t           va;
 	Buffer_id          id;
 	Sequence_number    seqno;
 
@@ -164,6 +170,7 @@ struct Gpu::Request
 			.operation = Operation {
 				.type = type,
 				.size = 0,
+				.va = 0,
 				.id = Buffer_id { .value = 0 },
 				.seqno = Sequence_number { .value = 0 },
 				.ctx_id = Ctx_id { .value = 0 },
@@ -193,9 +200,9 @@ struct Gpu::Local_request
 };
 
 
-struct Gpu::Buffer
+struct Gpu::Buffer : Vram
 {
-	Genode::Id_space<Gpu::Buffer>::Element const _elem;
+	Vram_id_space::Element const _elem;
 
 	uint32_t             const handle;
 	Dataspace_capability const cap;
@@ -203,7 +210,7 @@ struct Gpu::Buffer
 
 	uint32_t const va;
 
-	Buffer(Genode::Id_space<Gpu::Buffer> &space,
+	Buffer(Gpu::Vram_id_space  &space,
 	       Gpu::Buffer_id       id,
 	       uint32_t             handle,
 	       uint32_t             va,
@@ -223,7 +230,7 @@ struct Gpu::Buffer
 extern "C" void lx_emul_mem_cache_clean_invalidate(const void * addr,
                                                    unsigned long size);
 
-struct Gpu::Buffer_space : Genode::Id_space<Buffer>
+struct Gpu::Buffer_space : Vram_id_space
 {
 	Allocator &_alloc;
 
@@ -289,9 +296,11 @@ struct Gpu::Buffer_space : Genode::Id_space<Buffer>
 	Dataspace_capability lookup_buffer(Gpu::Buffer_id id)
 	{
 		Dataspace_capability cap { };
-		apply<Buffer>(id, [&] (Buffer const &b) {
-			cap = b.cap;
-		});
+		try {
+			apply<Buffer>(id, [&] (Buffer const &b) {
+				cap = b.cap;
+			});
+		} catch (Vram_id_space::Unknown_id) { }
 		return cap;
 	}
 
@@ -546,20 +555,27 @@ extern "C" int run_lx_user_task(void *p)
 			case OP::ALLOC:
 			{
 				uint32_t const size = r.operation.size;
+				uint32_t va = r.operation.va;
 				uint32_t handle;
 
 				int err =
-					lx_drm_ioctl_lima_gem_create(args.drm, size, &handle);
+					lx_drm_ioctl_lima_gem_create(args.drm, va, size, &handle);
 				if (err) {
 					error("lx_drm_ioctl_lima_gem_create failed: ", err);
 					break;
 				}
 
-				unsigned int       va;
+				unsigned int       va_allocated;
 				unsigned long long offset;
-				err = lx_drm_ioctl_lima_gem_info(args.drm, handle, &va, &offset);
+				err = lx_drm_ioctl_lima_gem_info(args.drm, handle, &va_allocated, &offset);
 				if (err) {
 					error("lx_drm_ioctl_lima_gem_info failed: ", err);
+					lx_drm_ioctl_gem_close(args.drm, handle);
+					break;
+				}
+
+				if (va != va_allocated) {
+					error("va wrong ", Hex(va), " != ", Hex(va_allocated));
 					lx_drm_ioctl_gem_close(args.drm, handle);
 					break;
 				}
@@ -920,8 +936,8 @@ struct Gpu::Session_component : public Genode::Session_object<Gpu::Session>
 			return _info_dataspace.cap();
 		}
 
-		Gpu::Sequence_number exec_buffer(Gpu::Buffer_id id,
-		                                 Genode::size_t) override
+		Gpu::Sequence_number execute(Gpu::Vram_id id,
+		                                 Genode::off_t) override
 		{
 			Gpu::Request r = Gpu::Request::create(Gpu::Operation::Type::EXEC);
 			r.operation.id = id;
@@ -990,30 +1006,61 @@ struct Gpu::Session_component : public Genode::Session_object<Gpu::Session>
 			_completion_sigh = sigh;
 		}
 
-		Genode::Dataspace_capability alloc_buffer(Gpu::Buffer_id id,
-		                                          Genode::size_t size) override
+		Genode::Dataspace_capability alloc_vram(Gpu::Vram_id,
+		                                        Genode::size_t) override
+		{
+			Genode::warning(__func__, ": not implemented");
+			return Dataspace_capability();
+		}
+
+		void free_vram(Gpu::Vram_id) override
+		{
+			Genode::warning(__func__, ": not implemented");
+		}
+
+		Genode::Dataspace_capability map_cpu(Gpu::Vram_id id,
+		                                        Gpu::Mapping_attributes) override
+		{
+			return _buffers.lookup_buffer(id);
+		}
+
+		void unmap_cpu(Vram_id) override
+		{
+			Genode::warning(__func__, ": not implemented");
+		}
+
+		bool map_gpu(Vram_id id, Genode::size_t size, Genode::off_t,
+		             Virtual_address va) override
 		{
 			Genode::Dataspace_capability cap { };
 
+			cap = _buffers.lookup_buffer(id);
+			if (cap.valid()) {
+				error("Duplicate 'map_gpu' called for ", id.value);
+				return false;
+			}
+
 			if (size > ~0U) {
 				error("Allocation of buffers > 4G not supported!");
-				return cap;
+				return false;
 			}
 
 			Gpu::Request r = Gpu::Request::create(Gpu::Operation::Type::ALLOC);
 			r.operation.id   = id;
+			r.operation.va   = (uint32_t) va.va;
 			r.operation.size = (uint32_t) size;
 
-			auto success = [&] (Gpu::Request const &request) {
-				cap = _buffers.lookup_buffer(request.operation.id);
+			bool ret = false;
+			auto success = [&] (Gpu::Request const &) {
+				ret = true;
 			};
 			auto fail = [&] () { };
 			_schedule_request(r, success, fail);
 
-			return cap;
+			return ret;
 		}
 
-		void free_buffer(Gpu::Buffer_id id) override
+		void unmap_gpu(Vram_id id, Genode::off_t, Virtual_address) override
 		{
 			Gpu::Request r = Gpu::Request::create(Gpu::Operation::Type::FREE);
 			r.operation.id = id;
@@ -1023,41 +1070,7 @@ struct Gpu::Session_component : public Genode::Session_object<Gpu::Session>
 			_schedule_request(r, success, fail);
 		}
 
-		Genode::Dataspace_capability map_buffer(Gpu::Buffer_id,
-		                                        bool /* aperture */,
-		                                        Gpu::Mapping_attributes) override
-		{
-			Genode::warning(__func__, ": not implemented");
-			return Genode::Dataspace_capability();
-		}
-
-		void unmap_buffer(Gpu::Buffer_id) override
-		{
-			Genode::warning(__func__, ": not implemented");
-		}
-
-		bool map_buffer_ppgtt(Gpu::Buffer_id, Gpu::addr_t) override
-		{
-			Genode::warning(__func__, ": not implemented");
-			return false;
-		}
-
-		void unmap_buffer_ppgtt(Gpu::Buffer_id, Gpu::addr_t) override
-		{
-			Genode::warning(__func__, ": not implemented");
-		}
-
-		Gpu::addr_t query_buffer_ppgtt(Gpu::Buffer_id id) override
-		{
-			Gpu::addr_t result = (Gpu::addr_t)-1;
-
-			_buffers.with_va(id, [&] (unsigned va) {
-				result = va; });
-
-			return result;
-		}
-
-		bool set_tiling(Gpu::Buffer_id id, unsigned mode) override
+		bool set_tiling_gpu(Gpu::Buffer_id id, Genode::off_t,  unsigned mode) override
 		{
 			if (_pending_wait) {
 				Gpu::Request *pr = _lx_task_args.pending_request;
@@ -1090,13 +1103,13 @@ struct Gpu::Session_component : public Genode::Session_object<Gpu::Session>
 			return completed;
 		}
 
-		Gpu::Buffer_capability export_buffer(Gpu::Buffer_id) override
+		Gpu::Vram_capability export_vram(Gpu::Vram_id) override
 		{
 			Genode::warning(__func__, ": not implemented");
-			return Gpu::Buffer_capability();
+			return Gpu::Vram_capability();
 		}
 
-		void import_buffer(Gpu::Buffer_capability, Gpu::Buffer_id) override
+		void import_vram(Gpu::Vram_capability, Gpu::Vram_id) override
 		{
 			Genode::warning(__func__, ": not implemented");
 		}
