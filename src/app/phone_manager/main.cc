@@ -33,6 +33,7 @@
 #include <model/child_exit_state.h>
 #include <model/sculpt_version.h>
 #include <model/file_operation_queue.h>
+#include <model/presets.h>
 #include <menu_view.h>
 #include <managed_config.h>
 #include <gui.h>
@@ -389,21 +390,26 @@ struct Sculpt::Main : Input_event_handler,
 		_env, "report -> /runtime/launcher_query/listing" };
 
 	Launchers _launchers { _heap };
+	Presets   _presets   { _heap };
 
-	Signal_handler<Main> _launcher_listing_handler {
-		_env.ep(), *this, &Main::_handle_launcher_listing };
+	Signal_handler<Main> _launcher_and_preset_listing_handler {
+		_env.ep(), *this, &Main::_handle_launcher_and_preset_listing };
 
-	void _handle_launcher_listing()
+	void _handle_launcher_and_preset_listing()
 	{
 		_launcher_listing_rom.update();
 
-		Xml_node listing = _launcher_listing_rom.xml();
-		if (listing.has_sub_node("dir")) {
-			Xml_node dir = listing.sub_node("dir");
+		Xml_node const listing = _launcher_listing_rom.xml();
+		listing.for_each_sub_node("dir", [&] (Xml_node const &dir) {
 
-			/* let 'update_from_xml' iterate over <file> nodes */
-			_launchers.update_from_xml(dir);
-		}
+			Path const dir_path = dir.attribute_value("path", Path());
+
+			if (dir_path == "/launcher")
+				_launchers.update_from_xml(dir); /* iterate over <file> nodes */
+
+			if (dir_path == "/presets")
+				_presets.update_from_xml(dir);   /* iterate over <file> nodes */
+		});
 
 		generate_dialog();
 		_deploy._handle_managed_deploy();
@@ -1468,7 +1474,7 @@ struct Sculpt::Main : Input_event_handler,
 		_runtime_config_rom.sigh(_runtime_config_handler);
 		_gui.input()->sigh(_input_handler);
 		_gui.mode_sigh(_gui_mode_handler);
-		_launcher_listing_rom.sigh(_launcher_listing_handler);
+		_launcher_listing_rom.sigh(_launcher_and_preset_listing_handler);
 
 		/*
 		 * Subscribe to reports
