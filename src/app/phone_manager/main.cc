@@ -418,7 +418,8 @@ struct Sculpt::Main : Input_event_handler,
 	{
 		_runtime_state.reset_abandoned_and_launched_children();
 		_manual_deploy_rom.update();
-		_deploy.update_managed_deploy_config(_manual_deploy_rom.xml());
+		_deploy.use_as_deploy_template(_manual_deploy_rom.xml());
+		_deploy.update_managed_deploy_config();
 	}
 
 	Signal_handler<Main> _manual_deploy_handler {
@@ -909,7 +910,7 @@ struct Sculpt::Main : Input_event_handler,
 		_runtime_state.abandon(name);
 
 		/* update config/managed/deploy with the component 'name' removed */
-		_deploy.update_managed_deploy_config(_manual_deploy_rom.xml());
+		_deploy.update_managed_deploy_config();
 	}
 
 	/*
@@ -937,7 +938,7 @@ struct Sculpt::Main : Input_event_handler,
 			_runtime_state.restart(name);
 
 			/* update config/managed/deploy with the component 'name' removed */
-			_deploy.update_managed_deploy_config(_manual_deploy_rom.xml());
+			_deploy.update_managed_deploy_config();
 		}
 	}
 
@@ -1015,7 +1016,7 @@ struct Sculpt::Main : Input_event_handler,
 		_runtime_state.launch(launcher, launcher);
 
 		/* trigger change of the deployment */
-		_deploy.update_managed_deploy_config(_manual_deploy_rom.xml());
+		_deploy.update_managed_deploy_config();
 	}
 
 	/**
@@ -1026,7 +1027,7 @@ struct Sculpt::Main : Input_event_handler,
 		_runtime_state.abandon(launcher);
 
 		/* update config/managed/deploy with the component 'name' removed */
-		_deploy.update_managed_deploy_config(_manual_deploy_rom.xml());
+		_deploy.update_managed_deploy_config();
 	}
 
 
