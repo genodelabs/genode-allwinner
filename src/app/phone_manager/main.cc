@@ -54,6 +54,7 @@
 #include <view/network_section_dialog.h>
 #include <view/software_section_dialog.h>
 #include <view/software_tabs_dialog.h>
+#include <view/software_presets_dialog.h>
 #include <view/software_options_dialog.h>
 #include <view/software_status_dialog.h>
 #include <view/download_status.h>
@@ -77,6 +78,7 @@ struct Sculpt::Main : Input_event_handler,
                       Dialpad_dialog::Action,
                       Current_call_dialog::Action,
                       Outbound_dialog::Action,
+                      Software_presets_dialog::Action,
                       Software_options_dialog::Action,
                       Software_status_dialog::Status_generator
 {
@@ -511,7 +513,10 @@ struct Sculpt::Main : Input_event_handler,
 	Software_section_dialog _software_section_dialog { _section_dialogs };
 
 	Conditional_float_dialog<Software_tabs_dialog>
-		_software_tabs_dialog { "software_tabs" };
+		_software_tabs_dialog { "software_tabs", _storage._sculpt_partition, _presets };
+
+	Conditional_float_dialog<Software_presets_dialog>
+		_software_presets_dialog { "software_presets", _presets, *this };
 
 	Conditional_float_dialog<Software_options_dialog>
 		_software_options_dialog { "software_options", _runtime_state, _launchers, *this };
@@ -598,8 +603,13 @@ struct Sculpt::Main : Input_event_handler,
 			_graph.generate_conditional(xml, _software_section_dialog.selected()
 			                              && _software_tabs_dialog.dialog.runtime_selected());
 
+			_software_presets_dialog.generate_conditional(xml, _software_section_dialog.selected()
+			                                                && _software_tabs_dialog.dialog.presets_selected()
+			                                                && _storage._sculpt_partition.valid());
+
 			_software_options_dialog.generate_conditional(xml, _software_section_dialog.selected()
-			                                                && _software_tabs_dialog.dialog.options_selected());
+			                                                && _software_tabs_dialog.dialog.options_selected()
+			                                                && _storage._sculpt_partition.valid());
 
 			_software_status_dialog.generate_conditional(xml, _software_section_dialog.selected()
 			                                               && _software_tabs_dialog.dialog.status_selected());
@@ -758,6 +768,9 @@ struct Sculpt::Main : Input_event_handler,
 			if (_graph.hovered())
 				_graph.dialog.click(*this);
 
+			if (_software_presets_dialog.hovered())
+				_software_presets_dialog.click();
+
 			if (_software_options_dialog.hovered())
 				_software_options_dialog.click();
 
@@ -780,6 +793,7 @@ struct Sculpt::Main : Input_event_handler,
 			_pin_dialog.clack();
 			_dialpad_dialog.clack();
 			_current_call_dialog.clack();
+			_software_presets_dialog.clack();
 
 			if (_storage_dialog.hovered)
 				_storage_dialog.clack(*this);
@@ -1013,6 +1027,28 @@ struct Sculpt::Main : Input_event_handler,
 		});
 	}
 
+
+	/**
+	 * Software_presets_dialog::Action interface
+	 */
+	void load_deploy_preset(Presets::Info::Name const &name) override
+	{
+		Xml_node const listing = _launcher_listing_rom.xml();
+
+		listing.for_each_sub_node("dir", [&] (Xml_node const &dir) {
+			if (dir.attribute_value("path", Path()) == "/presets") {
+				dir.for_each_sub_node("file", [&] (Xml_node const &file) {
+					if (file.attribute_value("name", Presets::Info::Name()) == name) {
+						file.with_optional_sub_node("config", [&] (Xml_node const &config) {
+							_runtime_state.reset_abandoned_and_launched_children();
+							_deploy.use_as_deploy_template(config);
+							_deploy.update_managed_deploy_config();
+						});
+					}
+				});
+			}
+		});
+	}
 
 	/**
 	 * Software_options_dialog::Action interface
@@ -1625,6 +1661,7 @@ Sculpt::Dialog::Hover_result Sculpt::Main::hover(Xml_node hover)
 			_outbound_dialog        .hover(vbox),
 			_graph                  .hover(vbox),
 			_software_tabs_dialog   .hover(vbox),
+			_software_presets_dialog.hover(vbox),
 			_software_options_dialog.hover(vbox),
 			_storage_dialog.match_sub_dialog(vbox, "float", "frame", "vbox"),
 			_network.dialog.match_sub_dialog(vbox, "float")

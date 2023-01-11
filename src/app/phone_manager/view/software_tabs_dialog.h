@@ -15,6 +15,7 @@
 #define _VIEW__SOFTWARE_TABS_DIALOG_H_
 
 #include <view/dialog.h>
+#include <model/presets.h>
 
 namespace Sculpt { struct Software_tabs_dialog; }
 
@@ -23,7 +24,10 @@ struct Sculpt::Software_tabs_dialog
 {
 	using Hover_result = Hoverable_item::Hover_result;
 
-	enum class Choice { RUNTIME, OPTIONS, STATUS };
+	Storage_target const &_storage_target;
+	Presets        const &_presets;
+
+	enum class Choice { PRESETS, RUNTIME, OPTIONS, STATUS };
 
 	Choice _choice { Choice::RUNTIME };
 
@@ -31,32 +35,47 @@ struct Sculpt::Software_tabs_dialog
 
 	Choice _hovered_choice() const
 	{
+		if (_tab.hovered("presets")) return Choice::PRESETS;
 		if (_tab.hovered("runtime")) return Choice::RUNTIME;
 		if (_tab.hovered("options")) return Choice::OPTIONS;
 		if (_tab.hovered("status"))  return Choice::STATUS;
 		return Choice::RUNTIME;
 	}
 
-	Software_tabs_dialog() { }
+	Software_tabs_dialog(Storage_target const &storage_target,
+	                     Presets        const &presets)
+	:
+		_storage_target(storage_target), _presets(presets)
+	{ }
 
 	void generate(Xml_generator &xml) const
 	{
+		bool const presets_avail = _storage_target.valid() && _presets.available();
+		bool const options_avail = _storage_target.valid();
+
 		gen_named_node(xml, "frame", "software_tabs", [&] {
 
-				xml.node("hbox", [&] {
+			xml.node("hbox", [&] {
 
-				auto gen_tab = [&] (auto id, Choice choice, auto label)
+				auto gen_tab = [&] (auto id, Choice choice, auto label, bool avail)
 				{
 					gen_named_node(xml, "button", id, [&] {
+
 						if (_choice == choice)
 							xml.attribute("selected", "yes");
+
+						if (!avail)
+							xml.attribute("style", "unimportant");
+
 						xml.node("label", [&] {
-							xml.attribute("text", label); }); });
+							xml.attribute("text", label); });
+					});
 				};
 
-				gen_tab("runtime", Choice::RUNTIME, "Runtime");
-				gen_tab("options", Choice::OPTIONS, "Options");
-				gen_tab("status",  Choice::STATUS,  "Status");
+				gen_tab("presets", Choice::PRESETS, "Presets", presets_avail);
+				gen_tab("runtime", Choice::RUNTIME, "Runtime", true);
+				gen_tab("options", Choice::OPTIONS, "Options", options_avail);
+				gen_tab("status",  Choice::STATUS,  "Status",  true);
 			});
 		});
 	}
@@ -70,6 +89,7 @@ struct Sculpt::Software_tabs_dialog
 
 	void click() { _choice = _hovered_choice(); }
 
+	bool presets_selected() const { return _choice == Choice::PRESETS; }
 	bool runtime_selected() const { return _choice == Choice::RUNTIME; }
 	bool options_selected() const { return _choice == Choice::OPTIONS; }
 	bool status_selected()  const { return _choice == Choice::STATUS; }
