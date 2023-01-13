@@ -16,13 +16,15 @@
 
 #include <view/section_dialog.h>
 #include <view/layout_helper.h>
-
+#include <model/software_status.h>
 
 namespace Sculpt { struct Software_section_dialog; }
 
 
 struct Sculpt::Software_section_dialog : Registered<Section_dialog>
 {
+	Software_status const &_status;
+
 	void generate(Xml_generator &xml) const override
 	{
 		_gen_frame(xml, [&] {
@@ -35,7 +37,7 @@ struct Sculpt::Software_section_dialog : Registered<Section_dialog>
 				},
 				[&] {
 					xml.node("label", [&] {
-						xml.attribute("text", " ");
+						xml.attribute("text", _status.software_status_message());
 						_gen_status_attr(xml);
 					});
 				}
@@ -43,9 +45,11 @@ struct Sculpt::Software_section_dialog : Registered<Section_dialog>
 		});
 	}
 
-	Software_section_dialog(Registry<Registered<Section_dialog> > &dialogs)
+	Software_section_dialog(Registry<Registered<Section_dialog> > &dialogs,
+	                        Software_status const &status)
 	:
-		Registered<Section_dialog>(dialogs, "software")
+		Registered<Section_dialog>(dialogs, "software"),
+		_status(status)
 	{ }
 };
 

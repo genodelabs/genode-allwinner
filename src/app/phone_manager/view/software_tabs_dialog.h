@@ -24,8 +24,9 @@ struct Sculpt::Software_tabs_dialog
 {
 	using Hover_result = Hoverable_item::Hover_result;
 
-	Storage_target const &_storage_target;
-	Presets        const &_presets;
+	Storage_target  const &_storage_target;
+	Presets         const &_presets;
+	Software_status const &_status;
 
 	enum class Choice { PRESETS, RUNTIME, OPTIONS, STATUS };
 
@@ -42,16 +43,18 @@ struct Sculpt::Software_tabs_dialog
 		return Choice::RUNTIME;
 	}
 
-	Software_tabs_dialog(Storage_target const &storage_target,
-	                     Presets        const &presets)
+	Software_tabs_dialog(Storage_target  const &storage_target,
+	                     Presets         const &presets,
+	                     Software_status const &status)
 	:
-		_storage_target(storage_target), _presets(presets)
+		_storage_target(storage_target), _presets(presets), _status(status)
 	{ }
 
 	void generate(Xml_generator &xml) const
 	{
 		bool const presets_avail = _storage_target.valid() && _presets.available();
 		bool const options_avail = _storage_target.valid();
+		bool const status_avail  = _status.software_status_available();
 
 		gen_named_node(xml, "frame", "software_tabs", [&] {
 
@@ -75,7 +78,7 @@ struct Sculpt::Software_tabs_dialog
 				gen_tab("presets", Choice::PRESETS, "Presets", presets_avail);
 				gen_tab("runtime", Choice::RUNTIME, "Runtime", true);
 				gen_tab("options", Choice::OPTIONS, "Options", options_avail);
-				gen_tab("status",  Choice::STATUS,  "Status",  true);
+				gen_tab("status",  Choice::STATUS,  "Status",  status_avail);
 			});
 		});
 	}

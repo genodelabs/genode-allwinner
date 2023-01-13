@@ -21,20 +21,14 @@ namespace Sculpt { struct Software_status_dialog; }
 
 struct Sculpt::Software_status_dialog
 {
-	struct Status_generator : Interface
-	{
-		virtual void generate_status(Xml_generator &) const = 0;
-	};
+	Software_status const &_status;
 
-	Status_generator const &_status_generator;
-
-	Software_status_dialog(Status_generator const &status_generator)
-	: _status_generator(status_generator) { }
+	Software_status_dialog(Software_status const &status) : _status(status) { }
 
 	void generate(Xml_generator &xml) const
 	{
 		gen_named_node(xml, "float", "software_status", [&] {
-			_status_generator.generate_status(xml); });
+			_status.generate_software_status(xml); });
 	}
 };
 

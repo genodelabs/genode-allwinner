@@ -80,7 +80,7 @@ struct Sculpt::Main : Input_event_handler,
                       Outbound_dialog::Action,
                       Software_presets_dialog::Action,
                       Software_options_dialog::Action,
-                      Software_status_dialog::Status_generator
+                      Software_status
 {
 	Env &_env;
 
@@ -510,10 +510,11 @@ struct Sculpt::Main : Input_event_handler,
 	 * Software section
 	 */
 
-	Software_section_dialog _software_section_dialog { _section_dialogs };
+	Software_section_dialog _software_section_dialog { _section_dialogs, *this };
 
 	Conditional_float_dialog<Software_tabs_dialog>
-		_software_tabs_dialog { "software_tabs", _storage._sculpt_partition, _presets };
+		_software_tabs_dialog { "software_tabs", _storage._sculpt_partition,
+		                        _presets, *this };
 
 	Conditional_float_dialog<Software_presets_dialog>
 		_software_presets_dialog { "software_presets", _presets, *this };
@@ -967,10 +968,38 @@ struct Sculpt::Main : Input_event_handler,
 	 */
 	void toggle_launcher_selector(Rect) override { }
 
+	bool _network_missing() const {
+		return _deploy.update_needed() && !_network._nic_state.ready(); }
+
+	bool _diagnostics_available() const {
+		return _deploy.any_unsatisfied_child() || _network_missing(); }
+
 	/**
-	 * Software_tabs_dialog::Status_generator interface
+	 * Software_status interface
 	 */
-	void generate_status(Xml_generator &xml) const override
+	bool software_status_available() const override
+	{
+		return _diagnostics_available() || _update_running();
+	}
+
+	/**
+	 * Software_status interface
+	 */
+	Software_status::Message software_status_message() const override
+	{
+		if (_update_running())
+			return "install ...";
+
+		if (_diagnostics_available())
+			return "!";
+
+		return " ";
+	}
+
+	/**
+	 * Software_status interface
+	 */
+	void generate_software_status(Xml_generator &xml) const override
 	{
 		xml.node("vbox", [&] () {
 			if (_manually_managed_runtime)
