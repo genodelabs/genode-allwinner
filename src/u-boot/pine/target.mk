@@ -19,6 +19,9 @@ UBOOT_OPTION(pinephone)   += ENV_EXT4_DEVICE_AND_PART="0:1"
 UBOOT_ENABLE_COMMON       += ENV_IS_IN_EXT4 CMD_EXT4_WRITE
 UBOOT_DISABLE_COMMON      += ENV_IS_IN_FAT
 
+# find mkfs.ext2 on Debian
+PATH := /usr/sbin:$(PATH)
+
 unexport BOARD
 unexport MAKEFLAGS
 unexport .SHELLFLAGS

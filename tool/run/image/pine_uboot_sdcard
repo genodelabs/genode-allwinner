@@ -67,6 +67,10 @@ proc run_image { } {
 
 	exec dd if=/dev/zero of=$img_file bs=1K count=$disk_size_kb 2> /dev/null
 
+	# find mkfs.ext2 on Debian
+	global env
+	append ::env(PATH) ":/usr/sbin"
+
 	# create ext2 file system with content copied from [run_dir]/ext2
 	exec mkfs.ext2 -q -F -L 'GENODE' -N 0 -E offset=$part_start_bytes \
 	               -m 5 -r 1 -t ext2 -d [run_dir]/ext2 \
