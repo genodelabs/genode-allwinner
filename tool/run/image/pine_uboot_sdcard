@@ -73,8 +73,8 @@ proc run_image { } {
 	               $img_file ${part_size_kb}K
 
 	# create GPT partition table
-	exec $sgdisk -z $img_file
-	exec $sgdisk -j $gpt_start_blocks $img_file
+	exec $sgdisk -z $img_file 2>@1
+	exec $sgdisk -j $gpt_start_blocks $img_file 2>@1
 	exec $sgdisk --new=1:$part_first_block:$part_last_block $img_file
 	exec $sgdisk --change-name=1:GENODE $img_file
 	exec $sgdisk --hybrid $img_file
