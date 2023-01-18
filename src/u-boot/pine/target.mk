@@ -14,8 +14,12 @@ UBOOT_OPTION(pinephone) := USBNET_DEVADDR="02:ba:fe:7b:59:37" \
 # read boot config from SD-card
 UBOOT_OPTION(pine_a64lts) += ENV_EXT4_INTERFACE="mmc"
 UBOOT_OPTION(pine_a64lts) += ENV_EXT4_DEVICE_AND_PART="0:1"
+UBOOT_OPTION(pine_a64lts) += ENV_EXT4_FILE="/boot/uboot.env"
+
 UBOOT_OPTION(pinephone)   += ENV_EXT4_INTERFACE="mmc"
 UBOOT_OPTION(pinephone)   += ENV_EXT4_DEVICE_AND_PART="0:1"
+UBOOT_OPTION(pinephone)   += ENV_EXT4_FILE="/boot/uboot.env"
+
 UBOOT_ENABLE_COMMON       += ENV_IS_IN_EXT4 CMD_EXT4_WRITE
 UBOOT_DISABLE_COMMON      += ENV_IS_IN_FAT
 

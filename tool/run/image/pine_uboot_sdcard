@@ -27,7 +27,7 @@ proc run_image { } {
 	               grep -m 1 "LOAD"]
 	set load_addr [lindex [regexp -inline -all -- {\S+} $load_addr] 3]
 
-	exec mkdir -p [run_dir]/ext2
+	exec mkdir -p [file join [run_dir] ext2 boot]
 	exec [cross_dev_prefix]objcopy -O binary $elf_img $bin_img
 	exec gzip --best --force $bin_img
 	exec mkimage -A arm64 -O linux -T kernel -C gzip -a $load_addr \
@@ -45,7 +45,7 @@ proc run_image { } {
 
 	exec echo "bootcmd=ext2load mmc 0:1 $image_load_addr /uImage; bootm $image_load_addr\n" \
 	          "bootdelay=0" \
-	   | $mkenvimage -s 0x20000 -o [run_dir]/ext2/uboot.env -
+	   | $mkenvimage -s 0x20000 -o [file join [run_dir] ext2 boot uboot.env] -
 
 	#
 	# Create GPT partitioning scheme with an ext2 file system in partition 1
