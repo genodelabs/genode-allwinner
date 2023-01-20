@@ -1047,7 +1047,7 @@ struct Gpu::Session_component : public Genode::Session_object<Gpu::Session>
 
 			Gpu::Request r = Gpu::Request::create(Gpu::Operation::Type::ALLOC);
 			r.operation.id   = id;
-			r.operation.va   = (uint32_t) va.va;
+			r.operation.va   = (uint32_t) va.value;
 			r.operation.size = (uint32_t) size;
 
 			bool ret = false;
