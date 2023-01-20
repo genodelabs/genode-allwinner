@@ -881,6 +881,12 @@ struct Sculpt::Main : Input_event_handler,
 
 	Expanding_reporter _window_layout { _env, "window_layout", "window_layout" };
 
+	void _reset_storage_dialog_operation()
+	{
+		_graph.dialog.reset_storage_operation();
+		_storage_dialog.reset_operation();
+	}
+
 	/*
 	 * Fs_dialog::Action interface
 	 */
@@ -899,7 +905,7 @@ struct Sculpt::Main : Input_event_handler,
 	void cancel_format(Storage_target const &target) override
 	{
 		_storage.cancel_format(target);
-		_graph.dialog.reset_storage_operation();
+		_reset_storage_dialog_operation();
 	}
 
 	void expand(Storage_target const &target) override
@@ -910,7 +916,7 @@ struct Sculpt::Main : Input_event_handler,
 	void cancel_expand(Storage_target const &target) override
 	{
 		_storage.cancel_expand(target);
-		_graph.dialog.reset_storage_operation();
+		_reset_storage_dialog_operation();
 	}
 
 	void check(Storage_target const &target) override
@@ -1760,8 +1766,7 @@ void Sculpt::Main::_handle_runtime_state()
 
 					partition.check_in_progress = 0;
 					reconfigure_runtime = true;
-					_storage.dialog.reset_operation();
-					_graph.dialog.reset_storage_operation();
+					_reset_storage_dialog_operation();
 				}
 			}
 
@@ -1780,8 +1785,7 @@ void Sculpt::Main::_handle_runtime_state()
 						device.rediscover();
 
 					reconfigure_runtime = true;
-					_storage.dialog.reset_operation();
-					_graph.dialog.reset_storage_operation();
+					_reset_storage_dialog_operation();
 				}
 			}
 
@@ -1792,8 +1796,7 @@ void Sculpt::Main::_handle_runtime_state()
 					partition.fs_resize_in_progress = false;
 					reconfigure_runtime = true;
 					device.rediscover();
-					_storage.dialog.reset_operation();
-					_graph.dialog.reset_storage_operation();
+					_reset_storage_dialog_operation();
 				}
 			}
 
@@ -1815,8 +1818,7 @@ void Sculpt::Main::_handle_runtime_state()
 			if (exit_state.exited) {
 				device.rediscover();
 				reconfigure_runtime = true;
-				_storage.dialog.reset_operation();
-				_graph.dialog.reset_storage_operation();
+				_reset_storage_dialog_operation();
 			}
 		}
 
@@ -1834,8 +1836,7 @@ void Sculpt::Main::_handle_runtime_state()
 				});
 
 				reconfigure_runtime = true;
-				_storage.dialog.reset_operation();
-				_graph.dialog.reset_storage_operation();
+				_reset_storage_dialog_operation();
 			}
 		}
 
