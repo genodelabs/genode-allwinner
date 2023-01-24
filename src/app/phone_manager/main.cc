@@ -33,6 +33,7 @@
 #include <model/child_exit_state.h>
 #include <model/sculpt_version.h>
 #include <model/file_operation_queue.h>
+#include <model/index_update_queue.h>
 #include <model/presets.h>
 #include <menu_view.h>
 #include <managed_config.h>
@@ -56,6 +57,8 @@
 #include <view/software_tabs_dialog.h>
 #include <view/software_presets_dialog.h>
 #include <view/software_options_dialog.h>
+#include <view/software_update_dialog.h>
+#include <view/software_version_dialog.h>
 #include <view/software_status_dialog.h>
 #include <view/download_status.h>
 
@@ -80,6 +83,7 @@ struct Sculpt::Main : Input_event_handler,
                       Outbound_dialog::Action,
                       Software_presets_dialog::Action,
                       Software_options_dialog::Action,
+                      Software_update_dialog::Action,
                       Software_status
 {
 	Env &_env;
@@ -87,6 +91,9 @@ struct Sculpt::Main : Input_event_handler,
 	Heap _heap { _env.ram(), _env.rm() };
 
 	Sculpt_version const _sculpt_version { _env };
+
+	Build_info const _build_info =
+		Build_info::from_xml(Attached_rom_dataspace(_env, "build_info").xml());
 
 	Registry<Child_state> _child_states { };
 
@@ -301,12 +308,17 @@ struct Sculpt::Main : Input_event_handler,
 
 	Fs_tool_version _fs_tool_version { 0 };
 
+	Index_update_queue _index_update_queue {
+		_heap, _file_operation_queue, _download_queue };
+
 
 	/*****************
 	 ** Depot query **
 	 *****************/
 
 	Depot_query::Version _query_version { 0 };
+
+	Depot::Archive::User _image_index_user = _build_info.depot_user;
 
 	Expanding_reporter _depot_query_reporter { _env, "query", "depot_query"};
 
@@ -323,6 +335,12 @@ struct Sculpt::Main : Input_event_handler,
 	Timer::One_shot_timeout<Main> _deferred_depot_query_handler {
 		_timer, *this, &Main::_handle_deferred_depot_query };
 
+	bool _software_update_watches_depot()
+	{
+		return _software_section_dialog.selected()
+		    && _software_tabs_dialog.dialog.update_selected();
+	}
+
 	void _handle_deferred_depot_query(Duration)
 	{
 		if (_deploy._arch.valid()) {
@@ -330,6 +348,17 @@ struct Sculpt::Main : Input_event_handler,
 			_depot_query_reporter.generate([&] (Xml_generator &xml) {
 				xml.attribute("arch",    _deploy._arch);
 				xml.attribute("version", _query_version.value);
+
+				if (_software_update_watches_depot() || _scan_rom.xml().has_type("empty"))
+					xml.node("scan", [&] () {
+						xml.attribute("users", "yes"); });
+
+				if (_software_update_watches_depot() || _image_index_rom.xml().has_type("empty"))
+					xml.node("image_index", [&] () {
+						xml.attribute("os",    "sculpt");
+						xml.attribute("board", _build_info.board);
+						xml.attribute("user",  _image_index_user);
+					});
 
 				/* update query for blueprints of all unconfigured start nodes */
 				_deploy.gen_depot_query(xml);
@@ -387,6 +416,26 @@ struct Sculpt::Main : Input_event_handler,
 	 ************/
 
 	Deploy::Prio_levels const _prio_levels { 4 };
+
+	Attached_rom_dataspace _scan_rom { _env, "report -> runtime/depot_query/scan" };
+
+	Signal_handler<Main> _scan_handler { _env.ep(), *this, &Main::_handle_scan };
+
+	void _handle_scan()
+	{
+		_scan_rom.update();
+		generate_dialog();
+	}
+
+	Attached_rom_dataspace _image_index_rom { _env, "report -> runtime/depot_query/image_index" };
+
+	Signal_handler<Main> _image_index_handler { _env.ep(), *this, &Main::_handle_image_index };
+
+	void _handle_image_index()
+	{
+		_image_index_rom.update();
+		generate_dialog();
+	}
 
 	Attached_rom_dataspace _launcher_listing_rom {
 		_env, "report -> /runtime/launcher_query/listing" };
@@ -522,6 +571,14 @@ struct Sculpt::Main : Input_event_handler,
 	Conditional_float_dialog<Software_options_dialog>
 		_software_options_dialog { "software_options", _runtime_state, _launchers, *this };
 
+	Conditional_float_dialog<Software_update_dialog>
+		_software_update_dialog { "software_update", _build_info, _download_queue,
+		                          _index_update_queue, _file_operation_queue,
+		                          _scan_rom, _image_index_rom, *this };
+
+	Conditional_float_dialog<Software_version_dialog>
+		_software_version_dialog { "software_version", _build_info };
+
 	Conditional_float_dialog<Software_status_dialog>
 		_software_status_dialog { "software_status", *this };
 
@@ -611,6 +668,13 @@ struct Sculpt::Main : Input_event_handler,
 			_software_options_dialog.generate_conditional(xml, _software_section_dialog.selected()
 			                                                && _software_tabs_dialog.dialog.options_selected()
 			                                                && _storage._sculpt_partition.valid());
+
+			_software_update_dialog.generate_conditional(xml, _software_section_dialog.selected()
+			                                               && _software_tabs_dialog.dialog.update_selected()
+			                                               && _storage._sculpt_partition.valid());
+
+			_software_version_dialog.generate_conditional(xml, _software_section_dialog.selected()
+			                                                && _software_tabs_dialog.dialog.update_selected());
 
 			_software_status_dialog.generate_conditional(xml, _software_section_dialog.selected()
 			                                               && _software_tabs_dialog.dialog.status_selected());
@@ -763,8 +827,12 @@ struct Sculpt::Main : Input_event_handler,
 			if (_network.dialog.hovered)
 				_network.dialog.click(_network);
 
-			if (_software_tabs_dialog.hovered())
+			if (_software_tabs_dialog.hovered()) {
 				_software_tabs_dialog.click();
+
+				/* refresh list of depot users */
+				trigger_depot_query();
+			}
 
 			if (_graph.hovered())
 				_graph.dialog.click(*this);
@@ -774,6 +842,9 @@ struct Sculpt::Main : Input_event_handler,
 
 			if (_software_options_dialog.hovered())
 				_software_options_dialog.click();
+
+			if (_software_update_dialog.hovered())
+				_software_update_dialog.click();
 
 			_main_menu_view.generate();
 			_clicked_seq_number.destruct();
@@ -795,6 +866,7 @@ struct Sculpt::Main : Input_event_handler,
 			_dialpad_dialog.clack();
 			_current_call_dialog.clack();
 			_software_presets_dialog.clack();
+			_software_update_dialog.clack();
 
 			if (_storage_dialog.hovered)
 				_storage_dialog.clack(*this);
@@ -1105,6 +1177,50 @@ struct Sculpt::Main : Input_event_handler,
 
 		/* update config/managed/deploy with the component 'name' removed */
 		_deploy.update_managed_deploy_config();
+	}
+
+	/**
+	 * Software_update_dialog::Action interface
+	 */
+	void query_image_index(Depot::Archive::User const &user) override
+	{
+		_image_index_user = user;
+		trigger_depot_query();
+	}
+
+	/**
+	 * Software_update_dialog::Action interface
+	 */
+	void trigger_image_download(Path const &path) override
+	{
+		_download_queue.remove_inactive_downloads();
+		_download_queue.add(path);
+		_deploy.update_installation();
+		generate_runtime_config();
+	}
+
+	/**
+	 * Software_update_dialog::Action interface
+	 */
+	void update_image_index(Depot::Archive::User const &user) override
+	{
+		_download_queue.remove_inactive_downloads();
+		_index_update_queue.remove_inactive_updates();
+		_index_update_queue.add(Path(user, "/image/index"));
+		generate_runtime_config();
+	}
+
+	/**
+	 * Software_update_dialog::Action interface
+	 */
+	void install_boot_image(Path const &path) override
+	{
+		_file_operation_queue.copy_all_files(Path("/rw/depot/", path), "/rw/boot");
+
+		if (!_file_operation_queue.any_operation_in_progress())
+			_file_operation_queue.schedule_next_operations();
+
+		generate_runtime_config();
 	}
 
 
@@ -1545,17 +1661,19 @@ struct Sculpt::Main : Input_event_handler,
 		_runtime_config_rom.sigh(_runtime_config_handler);
 		_gui.input()->sigh(_input_handler);
 		_gui.mode_sigh(_gui_mode_handler);
-		_launcher_listing_rom.sigh(_launcher_and_preset_listing_handler);
 
 		/*
 		 * Subscribe to reports
 		 */
-		_update_state_rom .sigh(_update_state_handler);
-		_window_list      .sigh(_window_list_handler);
-		_decorator_margins.sigh(_decorator_margins_handler);
-		_modem_state_rom  .sigh(_modem_state_handler);
-		_blueprint_rom    .sigh(_blueprint_handler);
-		_power_rom        .sigh(_power_handler);
+		_update_state_rom    .sigh(_update_state_handler);
+		_window_list         .sigh(_window_list_handler);
+		_decorator_margins   .sigh(_decorator_margins_handler);
+		_scan_rom            .sigh(_scan_handler);
+		_launcher_listing_rom.sigh(_launcher_and_preset_listing_handler);
+		_blueprint_rom       .sigh(_blueprint_handler);
+		_image_index_rom     .sigh(_image_index_handler);
+		_power_rom           .sigh(_power_handler);
+		_modem_state_rom     .sigh(_modem_state_handler);
 
 		/*
 		 * Import initial report content
@@ -1698,6 +1816,7 @@ Sculpt::Dialog::Hover_result Sculpt::Main::hover(Xml_node hover)
 			_software_tabs_dialog   .hover(vbox),
 			_software_presets_dialog.hover(vbox),
 			_software_options_dialog.hover(vbox),
+			_software_update_dialog .hover(vbox),
 			_storage_dialog.match_sub_dialog(vbox, "float", "frame", "vbox"),
 			_network.dialog.match_sub_dialog(vbox, "float")
 		);
@@ -1710,15 +1829,14 @@ Sculpt::Dialog::Hover_result Sculpt::Main::hover(Xml_node hover)
 void Sculpt::Main::_handle_update_state()
 {
 	_update_state_rom.update();
-	generate_dialog();
 
 	Xml_node const update_state = _update_state_rom.xml();
 
-	if (update_state.num_sub_nodes() == 0)
-		return;
-
 	_download_queue.apply_update_state(update_state);
-	_download_queue.remove_inactive_downloads();
+	bool const any_completed_download = _download_queue.any_completed_download();
+	_download_queue.remove_completed_downloads();
+
+	_index_update_queue.apply_update_state(update_state);
 
 	bool const installation_complete =
 		!update_state.attribute_value("progress", false);
@@ -1727,12 +1845,15 @@ void Sculpt::Main::_handle_update_state()
 
 		Xml_node const blueprint = _blueprint_rom.xml();
 		bool const new_depot_query_needed = blueprint_any_missing(blueprint)
-		                                 || blueprint_any_rom_missing(blueprint);
+		                                 || blueprint_any_rom_missing(blueprint)
+		                                 || any_completed_download;
 		if (new_depot_query_needed)
 			trigger_depot_query();
 
 		_deploy.reattempt_after_installation();
 	}
+
+	generate_dialog();
 }
 
 
@@ -1877,6 +1998,12 @@ void Sculpt::Main::_handle_runtime_state()
 				_file_operation_queue.schedule_next_operations();
 				_fs_tool_version.value++;
 				reconfigure_runtime = true;
+
+				/* try to proceed after the first step of an depot-index update */
+				unsigned const orig_download_count = _index_update_queue.download_count;
+				_index_update_queue.try_schedule_downloads();
+				if (_index_update_queue.download_count != orig_download_count)
+					_deploy.update_installation();
 			}
 		}
 	}
