@@ -77,8 +77,8 @@ proc run_image { } {
 	append ::env(PATH) ":/usr/sbin"
 
 	# create ext2 file system with content copied from [run_dir]/ext2
-	exec mkfs.ext2 -q -F -L 'GENODE' -N 0 -E offset=$part_start_bytes \
-	               -m 5 -r 1 -t ext2 -d [run_dir]/ext2 \
+	exec mkfs.ext2 -q -F -L 'GENODE' -T default -E offset=$part_start_bytes \
+	               -t ext2 -d [run_dir]/ext2 \
 	               $img_file ${part_size_kb}K
 
 	# create GPT partition table
