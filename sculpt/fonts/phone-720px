@@ -13,7 +13,7 @@
 				<ttf name="regular" path="/Vera.ttf" size_px="28" cache="256K"/>
 			</dir>
 			<dir name="monospace">
-				<ttf name="regular" path="/VeraMono.ttf" size_px="33" cache="256K"/>
+				<ttf name="regular" path="/VeraMono.ttf" size_px="24" cache="256K"/>
 			</dir>
 		</dir>
 	</vfs>
