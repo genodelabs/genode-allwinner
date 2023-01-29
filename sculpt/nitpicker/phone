@@ -3,6 +3,8 @@
 	<report hover="yes" focus="yes" clicked="yes" keystate="no"/>
 	<background color="#000000"/>
 
+	<domain name="overlay"        layer="0" label="no" hover="always" focus="transient" content="client"/>
+	<domain name="pointer"        layer="0" content="client" label="no" origin="pointer" />
 	<domain name="invisible"      layer="1" xpos="10000" />
 	<domain name="leitzentrale"   layer="1" label="no" hover="always" focus="transient" content="client"/>
 	<domain name="touch_keyboard" layer="2" ypos="960" label="no" hover="always" content="client" focus="transient" />
@@ -16,6 +18,7 @@
 	<policy label_prefix="runtime -> touch_keyboard"    domain="touch_keyboard"/>
 	<policy label_prefix="runtime -> direct_nano3d -> " domain="nano3d"/>
 	<policy label_prefix="runtime -> camera"            domain="camera"/>
+	<policy label_prefix="runtime -> overlay"           domain="overlay"/>
 	<policy label_prefix="backdrop"                     domain="background"/>
 	<default-policy domain="default"/>
 
