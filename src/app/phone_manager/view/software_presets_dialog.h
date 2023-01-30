@@ -49,7 +49,7 @@ struct Sculpt::Software_presets_dialog
 	void _gen_horizontal_spacer(Xml_generator &xml) const
 	{
 		gen_named_node(xml, "label", "spacer", [&] {
-			xml.attribute("min_ex", 55); });
+			xml.attribute("min_ex", 35); });
 	}
 
 	void _gen_preset(Xml_generator &xml, Presets::Info const &preset) const
