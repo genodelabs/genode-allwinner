@@ -1,0 +1,31 @@
+<config arch="" info="simple oscilloscope for audio input">
+
+	<common_routes>
+		<service name="ROM" label_last="ld.lib.so"> <parent/> </service>
+		<service name="ROM" label_last="init">      <parent/> </service>
+		<service name="CPU">   <parent/> </service>
+		<service name="PD">    <parent/> </service>
+		<service name="LOG">   <parent/> </service>
+		<service name="Timer"> <parent/> </service>
+	</common_routes>
+
+	<start name="audio_drv" pkg="a64_audio_drv" priority="0" cpu="40">
+		<resource name="CPU" quantum="40"/>
+		<affinity xpos="0" ypos="0" width="1" height="1"/>
+		<route>
+			<service name="Platform"> <parent label="audio_drv"/> </service>
+		</route>
+	</start>
+
+	<start ram="16M" name="osci" pkg="osci">
+		<affinity xpos="2" width="1"/>
+		<config xpos="0" ypos="360" width="720" height="720"
+		        background="#1a2831" color="#ffefdf"/>
+		<route>
+			<service name="Gui"> <parent/> </service>
+			<service name="Audio_in"> <child name="audio_drv"/> </service>
+			<config/>
+		</route>
+	</start>
+
+</config>
