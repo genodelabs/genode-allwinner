@@ -1,0 +1,13 @@
+Reduces debug noise when starting the camera driver
+
+--- src/linux/drivers/media/i2c/gc2145.c
++++ src/linux/drivers/media/i2c/gc2145.c
+@@ -8,8 +8,6 @@
+  * (at your option) any later version.
+  */
+ 
+-#define DEBUG
+-
+ #include <asm/div64.h>
+ #include <linux/clk.h>
+ #include <linux/clk-provider.h>

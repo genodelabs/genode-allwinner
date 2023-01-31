@@ -8,4 +8,5 @@ SHA(a64_linux) := 8722d06938f59d4eb81fddd2a1f50eebf526c4085e310a1e48bc6ef24332ad
 DIR(a64_linux) := src/linux
 
 PATCHES := src/a64_linux/rsb_timeout.patch \
+           src/a64_linux/gc2145_no_debug.patch \
            src/a64_linux/remove_usbphy_role_switch.patch
