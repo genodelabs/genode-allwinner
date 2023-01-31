@@ -1,0 +1,9 @@
+<launcher name="screenshot" pkg="nfeske/pkg/screenshot/2023-02-01" priority="-2">
+	<route>
+		<service name="Gui" label="trigger"> <parent label="overlay"/> </service>
+		<service name="Gui"> <parent/> </service>
+		<service name="Event">   <parent label="global"/>  </service>
+		<service name="Capture"> <parent label="global"/>  </service>
+		<service name="File_system" label="target"> <child name="default_fs_rw"/> </service>
+	</route>
+</launcher>
