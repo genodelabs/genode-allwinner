@@ -1,0 +1,43 @@
+<config arch="" info="command-line interface to the system">
+
+	<common_routes>
+		<service name="ROM" label_last="ld.lib.so"> <parent/> </service>
+		<service name="ROM" label_last="init">      <parent/> </service>
+		<service name="CPU">   <parent/> </service>
+		<service name="PD">    <parent/> </service>
+		<service name="LOG">   <parent/> </service>
+		<service name="Timer"> <parent/> </service>
+	</common_routes>
+
+	<start name="fonts_fs" pkg="fonts_fs">
+		<route>
+			<service name="ROM" label="config">
+				<parent label="config -> managed/fonts"/> </service>
+		</route>
+	</start>
+
+	<start name="system_shell" pkg="system_shell">
+		<route>
+			<service name="Gui">                        <parent label="focus"/>           </service>
+			<service name="File_system" label="fonts">  <child name="fonts_fs"/>          </service>
+			<service name="File_system" label="target"> <child name="default_fs_rw"/>     </service>
+			<service name="File_system" label="config"> <parent label="config"/>          </service>
+			<service name="File_system" label="report"> <parent label="report"/>          </service>
+			<service name="Report" label="clipboard">   <parent label="clipboard"/>       </service>
+			<service name="ROM"    label="clipboard">   <parent label="clipboard"/>       </service>
+			<service name="ROM"    label="vimrc">       <parent label="config -> vimrc"/> </service>
+			<service name="ROM" label_last="cached_fs_rom">
+				<parent label="cached_fs_rom"/> </service>
+			<service name="RM"> <parent/> </service>
+		</route>
+	</start>
+
+	<start name="touch_keyboard" pkg="touch_keyboard">
+		<route>
+			<service name="Gui"> <parent label="touch_keyboard"/> </service>
+			<service name="Event"> <parent label="global"/> </service>
+			<service name="File_system" label="fonts"> <child name="fonts_fs"/> </service>
+		</route>
+	</start>
+
+</config>
