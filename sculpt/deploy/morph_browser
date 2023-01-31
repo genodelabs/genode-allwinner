@@ -1,0 +1,137 @@
+<config arch="" info="Chromium-based Morph web browser">
+
+	<common_routes>
+		<service name="ROM" label_last="ld.lib.so"> <parent/> </service>
+		<service name="ROM" label_last="init">      <parent/> </service>
+		<service name="CPU">   <parent/> </service>
+		<service name="PD">    <parent/> </service>
+		<service name="LOG">   <parent/> </service>
+		<service name="Timer"> <parent/> </service>
+	</common_routes>
+
+	<start ram="16M" name="log_terminal" pkg="terminal">
+		<config>
+			<initial width="720" initial_height="960"/>
+			<palette>
+				<color index="0" value="#171c29"/>
+				<color index="8" value="#171c29"/>
+			</palette>
+			<vfs>
+				<rom name="VeraMono.ttf"/>
+				<dir name="fonts">
+					<dir name="monospace">
+						<ttf name="regular" path="/VeraMono.ttf" size_px="10"/>
+					</dir>
+				</dir>
+			</vfs>
+		</config>
+		<route>
+			<service name="ROM" label_last="VeraMono.ttf"> <parent/> </service>
+			<service name="Gui"> <parent/> </service>
+		</route>
+	</start>
+
+	<start name="log" pkg="stdin2out">
+		<config>
+			<libc stdin="/report/log" stdout="/dev/terminal"/>
+			<vfs>
+				<dir name="dev"> <terminal/> </dir>
+				<dir name="report"> <fs label="report"/> </dir>
+			</vfs>
+		</config>
+		<route>
+			<service name="File_system"> <parent label="report"/> </service>
+			<service name="Terminal"> <child name="log_terminal"/> </service>
+		</route>
+	</start>
+
+	<start name="fonts_fs" pkg="fonts_fs">
+		<route>
+			<service name="ROM" label="config">
+				<parent label="config -> managed/fonts"/> </service>
+		</route>
+	</start>
+
+	<start name="sntp_dummy_rtc" pkg="sntp_dummy_rtc">
+		<route>
+			<service name="Nic"> <child name="nic_router"/> </service>
+		</route>
+	</start>
+
+	<start name="gpu_drv" version="morph" caps="1000" pkg="a64_lima_gpu_drv-pinephone">
+		<affinity xpos="0" width="1"/>
+		<route>
+			<service name="Platform"> <parent label="gpu"/> </service>
+		</route>
+	</start>
+
+	<start name="audio_drv" pkg="a64_audio_drv" priority="0" cpu="40">
+		<resource name="CPU" quantum="40"/>
+		<affinity xpos="0" ypos="0" width="1" height="1"/>
+		<route>
+			<service name="Platform"> <parent label="audio_drv"/> </service>
+		</route>
+	</start>
+
+	<start name="black_hole" pkg="black_hole">
+		<config> <audio_in/> <audio_out/> <capture/> <report/> </config>
+	</start>
+
+	<start name="touch_keyboard" pkg="touch_keyboard">
+		<route>
+			<service name="Gui"> <parent label="touch_keyboard"/> </service>
+			<service name="Event"> <parent label="global"/> </service>
+			<service name="File_system" label="fonts"> <child name="fonts_fs"/> </service>
+		</route>
+	</start>
+
+	<start name="mesa_gpu-lima" pkg="mesa_gpu-lima">
+		<route> <service name="RM"> <parent/> </service> </route>
+	</start>
+
+	<start name="morph_browser" ram="1350M" pkg="cproc/pkg/morph_browser_pinephone-jemalloc/2023-02-01">
+		<affinity xpos="1" width="2"/>
+		<route>
+			<service name="Nic">
+				<child name="nic_router"/>
+			</service>
+			<service name="File_system" label="config">
+				<child name="ram_fs"/>
+			</service>
+			<service name="File_system" label="downloads">
+				<child name="ram_fs"/>
+			</service>
+			<service name="Gui">
+				<parent label="focus"/>
+			</service>
+			<service name="Report" label_last="shape">
+				<parent label="shape"/>
+			</service>
+			<service name="Report" label="clipboard">
+				<parent/>
+			</service>
+			<service name="ROM" label="clipboard">
+				<parent/>
+			</service>
+			<service name="Rtc">
+				<child name="sntp_dummy_rtc"/>
+			</service>
+			<service name="Audio_out">
+				<child name="audio_drv"/>
+			</service>
+			<service name="Audio_in">
+				<child name="black_hole"/>
+			</service>
+			<service name="Capture">
+				<child name="black_hole"/>
+			</service>
+			<service name="Gpu">
+				<child name="gpu_drv"/>
+			</service>
+			<service name="ROM" label="mesa_gpu_drv.lib.so">
+				<child name="mesa_gpu-lima"/>
+			</service>
+		</route>
+	</start>
+
+</config>
