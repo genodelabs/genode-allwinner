@@ -12,3 +12,10 @@ _/pkg/system_clock-dummy
 _/pkg/test-camera-pinephone
 _/pkg/camera-pinephone
 _/pkg/glmark2
+_/pkg/dynamic_rom
+_/pkg/osci
+_/pkg/report_dump
+_/pkg/screenshot_trigger
+_/pkg/sntp_dummy_rtc
+_/pkg/stdin2out
+_/pkg/terminal
