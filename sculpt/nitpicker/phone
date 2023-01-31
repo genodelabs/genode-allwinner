@@ -23,4 +23,5 @@
 	<default-policy domain="default"/>
 
 	<global-key name="KEY_DASHBOARD" label="global_keys_handler -> input" />
+	<global-key name="KEY_PRINT"     label="runtime -> screenshot -> keys -> input" />
 </config>
