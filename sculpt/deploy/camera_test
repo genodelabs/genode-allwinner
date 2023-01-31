@@ -1,0 +1,30 @@
+<config arch="" info="test-driving the front and rear cameras">
+
+	<common_routes>
+		<service name="ROM" label_last="ld.lib.so"> <parent/> </service>
+		<service name="ROM" label_last="init">      <parent/> </service>
+		<service name="CPU">   <parent/> </service>
+		<service name="PD">    <parent/> </service>
+		<service name="LOG">   <parent/> </service>
+		<service name="Timer"> <parent/> </service>
+	</common_routes>
+
+	<start name="test-camera" pkg="test-camera-pinephone">
+		<affinity xpos="3" width="1"/>
+		<route>
+			<service name="Gui">      <parent label="camera"/> </service>
+			<service name="Timer">    <parent/> </service>
+			<service name="Platform"> <parent label="camera"/> </service>
+			<service name="Pin_state"   label="PD3">  <parent label="camera -> PD3"/>  </service>
+			<service name="Pin_state"   label="PE12"> <parent label="camera -> PE12"/> </service>
+			<service name="Pin_state"   label="PE13"> <parent label="camera -> PE13"/> </service>
+			<service name="Pin_control" label="PC0">  <parent label="camera -> PC0"/>  </service>
+			<service name="Pin_control" label="PD3">  <parent label="camera -> PD3"/>  </service>
+			<service name="Pin_control" label="PE12"> <parent label="camera -> PE12"/> </service>
+			<service name="Pin_control" label="PE13"> <parent label="camera -> PE13"/> </service>
+			<service name="Pin_control" label="PE16"> <parent label="camera -> PE16"/> </service>
+			<service name="Pin_control" label="PE17"> <parent label="camera -> PE17"/> </service>
+		</route>
+	</start>
+
+</config>
