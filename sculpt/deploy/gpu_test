@@ -1,0 +1,36 @@
+<config arch="" info="GLMark2 OpenGL demo using the GPU">
+
+	<common_routes>
+		<service name="ROM" label_last="ld.lib.so"> <parent/> </service>
+		<service name="ROM" label_last="init">      <parent/> </service>
+		<service name="CPU">   <parent/> </service>
+		<service name="PD">    <parent/> </service>
+		<service name="LOG">   <parent/> </service>
+		<service name="Timer"> <parent/> </service>
+	</common_routes>
+
+	<start name="gpu_drv" version="gpu_test" caps="1000" pkg="a64_lima_gpu_drv-pinephone">
+		<affinity xpos="0" width="1"/>
+		<route>
+			<service name="Platform"> <parent label="gpu"/> </service>
+		</route>
+	</start>
+
+	<start name="mesa_gpu-lima" pkg="mesa_gpu-lima">
+		<route>
+			<service name="RM"> <parent/> </service>
+		</route>
+	</start>
+
+	<start name="glmark2" pkg="glmark2">
+		<affinity xpos="1" width="1"/>
+		<route>
+			<service name="Gui"> <parent/> </service>
+			<service name="Gpu"> <child name="gpu_drv"/> </service>
+			<service name="ROM" label="mesa_gpu_drv.lib.so">
+				<child name="mesa_gpu-lima"/>
+			</service>
+		</route>
+	</start>
+
+</config>
