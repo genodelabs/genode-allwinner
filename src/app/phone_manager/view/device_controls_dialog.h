@@ -106,7 +106,7 @@ struct Sculpt::Device_controls_dialog
 		if (!ascii_to(_level._hovered.string(), value))
 			return;
 
-		unsigned const percent = min(100u, value*10 + 9);
+		unsigned const percent = max(10u, min(100u, value*10 + 9));
 
 		if (_control.hovered("brightness"))
 			_action.select_brightness_level(percent);
