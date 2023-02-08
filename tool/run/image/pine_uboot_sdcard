@@ -29,8 +29,8 @@ proc run_image { } {
 
 	exec [cross_dev_prefix]objcopy -O binary $elf_img $bin_img
 	exec gzip --best --force $bin_img
-	exec mkimage -A arm64 -O linux -T kernel -C gzip -a $load_addr \
-	              -e $entrypoint -d $bin_img.gz $uboot_img
+	exec [installed_command mkimage] -A arm64 -O linux -T kernel -C gzip \
+	     -a $load_addr -e $entrypoint -d $bin_img.gz $uboot_img
 	exec rm -rf $bin_img.gz $elf_img
 
 	#
@@ -72,14 +72,11 @@ proc run_image { } {
 
 	exec dd if=/dev/zero of=$img_file bs=1K count=$disk_size_kb 2> /dev/null
 
-	# find mkfs.ext2 on Debian
-	global env
-	append ::env(PATH) ":/usr/sbin"
-
 	# create ext2 file system with content copied from [run_dir]/ext2
-	exec mkfs.ext2 -q -F -L 'GENODE' -T default -E offset=$part_start_bytes \
-	               -t ext2 -d [run_dir]/ext2 \
-	               $img_file ${part_size_kb}K
+	exec [installed_command mkfs.ext2] \
+	     -q -F -L 'GENODE' -T default -E offset=$part_start_bytes \
+	     -t ext2 -d [run_dir]/ext2 \
+	     $img_file ${part_size_kb}K
 
 	# create GPT partition table
 	exec $sgdisk -z $img_file 2>@1
