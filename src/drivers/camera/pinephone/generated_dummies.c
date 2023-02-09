@@ -489,14 +489,6 @@ bool is_software_node(const struct fwnode_handle * fwnode)
 struct kobject *kernel_kobj;
 
 
-#include <linux/slab.h>
-
-void * kmalloc_order(size_t size,gfp_t flags,unsigned int order)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
 #include <linux/kobject.h>
 
 int kobject_synth_uevent(struct kobject * kobj,const char * buf,size_t count)

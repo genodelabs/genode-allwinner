@@ -414,14 +414,6 @@ void kick_process(struct task_struct * p)
 }
 
 
-#include <linux/slab.h>
-
-void * kmalloc_order(size_t size,gfp_t flags,unsigned int order)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
 #include <linux/kmsg_dump.h>
 
 void kmsg_dump(enum kmsg_dump_reason reason)
