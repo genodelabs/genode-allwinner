@@ -28,6 +28,8 @@ namespace Hw::Pine_a64lts_board {
 		UART_BASE  = 0x1c28000,
 		UART_SIZE  = 0x1000,
 		UART_CLOCK = 0,
+
+		NR_OF_CPUS = 4,
 	};
 
 	namespace Cpu_mmio {
