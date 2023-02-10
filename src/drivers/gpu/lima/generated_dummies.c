@@ -94,14 +94,6 @@ int add_uevent_var(struct kobj_uevent_env * env,const char * format,...)
 }
 
 
-#include <linux/file.h>
-
-struct file * alloc_file_pseudo(struct inode * inode,struct vfsmount * mnt,const char * name,int flags,const struct file_operations * fops)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
 #include <linux/amba/bus.h>
 
 int amba_device_add(struct amba_device * dev,struct resource * parent)
@@ -319,22 +311,6 @@ void emergency_restart(void)
 }
 
 
-#include <linux/file.h>
-
-void fd_install(unsigned int fd,struct file * file)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/file.h>
-
-struct file * fget(unsigned int fd)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
 #include <linux/kobject.h>
 
 struct kobject *firmware_kobj;
@@ -356,14 +332,6 @@ void fwnode_remove_software_node(struct fwnode_handle * fwnode)
 }
 
 
-#include <linux/file.h>
-
-int get_unused_fd_flags(unsigned flags)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
 #include <linux/uuid.h>
 
 const u8 guid_index[16] = {};
@@ -380,14 +348,6 @@ struct pseudo_fs_context * init_pseudo(struct fs_context * fc,unsigned long magi
 #include <linux/init.h>
 
 bool initcall_debug;
-
-
-#include <linux/fs.h>
-
-void inode_set_bytes(struct inode * inode,loff_t bytes)
-{
-	lx_emul_trace_and_stop(__func__);
-}
 
 
 #include <linux/ioport.h>

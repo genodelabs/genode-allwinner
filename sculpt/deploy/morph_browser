@@ -58,7 +58,7 @@
 		</route>
 	</start>
 
-	<start name="gpu_drv" version="morph" caps="1000" pkg="a64_lima_gpu_drv-pinephone">
+	<start name="gpu_drv" version="morph" caps="2000" pkg="a64_lima_gpu_drv-pinephone">
 		<affinity xpos="0" width="1"/>
 		<route>
 			<service name="Platform"> <parent label="gpu"/> </service>

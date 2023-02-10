@@ -18,27 +18,36 @@
 #include <linux/sched/task.h>
 
 
-struct task_struct * _lx_user_task;
-void *lx_user_task_args;
-extern int run_lx_user_task(void *p);
+struct task_struct * lx_user_task;
+void               * lx_user_task_args;
+
+extern int lx_user_task_func(void *p);
 
 
 void lx_user_handle_io(void) { }
 
-
 void lx_user_init(void)
 {
-	int pid = kernel_thread(run_lx_user_task, lx_user_task_args,
+	int pid = kernel_thread(lx_user_task_func, lx_user_task_args,
 	                        CLONE_FS | CLONE_FILES);
-	_lx_user_task = find_task_by_pid_ns(pid, NULL);
+	lx_user_task = find_task_by_pid_ns(pid, NULL);
 }
 
 
-extern int gpu_task_function(void *p);
-
-struct task_struct *lx_user_new_gpu_task(void *args)
+struct task_struct *lx_user_new_gpu_task(int (*func)(void*), void *args)
 {
-	int pid = kernel_thread(gpu_task_function, args,
-	                        CLONE_FS | CLONE_FILES);
+	int pid = kernel_thread(func, args, CLONE_FS | CLONE_FILES);
 	return find_task_by_pid_ns(pid, NULL);
+}
+
+
+void lx_user_destroy_gpu_task(struct task_struct *task)
+{
+	if (task != current) {
+		printk("%s: task: %px is not current: %px\n", __func__,
+		       task, current);
+		return;
+	}
+
+	do_exit(0);
 }

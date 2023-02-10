@@ -14,6 +14,7 @@
 /* Genode includes */
 #include <base/attached_dataspace.h>
 #include <base/attached_ram_dataspace.h>
+#include <base/id_space.h>
 #include <base/registry.h>
 #include <dataspace/client.h>
 #include <util/list.h>
@@ -24,8 +25,6 @@
 
 /* local includes */
 #include "emul.h"
-
-using size_t = Genode::size_t;
 
 
 void *emul_alloc_shmem_file_buffer(unsigned long size)

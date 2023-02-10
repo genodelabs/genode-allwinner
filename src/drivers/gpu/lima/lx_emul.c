@@ -74,6 +74,75 @@ struct inode *alloc_anon_inode(struct super_block *s)
 }
 
 
+void inode_set_bytes(struct inode *inode, loff_t bytes)
+{
+	if (!inode)
+		return;
+
+	// inode->i_blocks = bytes >> 9;
+	// inode->i_bytes = bytes & 511;
+	inode->i_bytes = bytes;
+}
+
+
+#include <linux/file.h>
+
+struct file * alloc_file_pseudo(struct inode * inode,
+                                struct vfsmount * mnt,
+                                const char * name,
+                                int flags,
+                                const struct file_operations * fops)
+{
+	struct file *file;
+	struct dentry *dentry;
+
+	file = kzalloc(sizeof(struct file), 0);
+	if (!file)
+		goto err_file;
+
+	dentry = kzalloc(sizeof(struct dentry), 0);
+	if (!dentry)
+		goto err_dentry;
+
+	atomic_long_set(&file->f_count, 1);
+	file->f_op    = fops;
+	file->f_inode = inode;
+	file->f_path.dentry = dentry;
+	return file;
+
+err_dentry:
+	kfree(file);
+err_file:
+	return (struct file*)ERR_PTR(-ENOMEM);
+}
+
+
+int get_unused_fd_flags(unsigned flags)
+{
+	lx_emul_trace_and_stop(__func__);
+	return -1;
+}
+
+
+void fd_install(unsigned int fd,struct file * file)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+struct file * fget(unsigned int fd)
+{
+	lx_emul_trace_and_stop(__func__);
+	return NULL;
+}
+
+
+void lx_emul_fput(unsigned int fd)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
 #include <linux/dma-mapping.h>
 
 int dma_supported(struct device *dev, u64 mask)
@@ -382,20 +451,6 @@ int lx_drm_ioctl(void *p, unsigned int cmd, unsigned long arg)
 }
 
 
-int lx_drm_close_handle(void *p, unsigned int handle)
-{
-	struct lx_drm_private *lx_drm_prv;
-
-	struct drm_gem_close arg = {
-		.handle = handle
-	};
-
-	lx_drm_prv = (struct lx_drm_private*)p;
-
-	return drm_ioctl(lx_drm_prv->file, DRM_IOCTL_GEM_CLOSE, (unsigned long)&arg);
-}
-
-
 int lx_drm_ioctl_syncobj_create(void *p , unsigned int *handle)
 {
 	int err;
@@ -594,7 +649,7 @@ int lx_drm_ioctl_lima_gem_info(void *lx_drm_prv,
 }
 
 
-int lx_drm_ioctl_gem_close(void *lx_drm_prv, unsigned int handle)
+int lx_drm_gem_close(void *lx_drm_prv, unsigned int handle)
 {
 	int err;
 	struct drm_gem_close req = {
@@ -605,6 +660,45 @@ int lx_drm_ioctl_gem_close(void *lx_drm_prv, unsigned int handle)
 	if (err) {
 		return -1;
 	}
+
+	return 0;
+}
+
+
+int lx_drm_gem_flink(void *lx_drm_prv, unsigned int handle,
+                          unsigned int *name)
+{
+	int err;
+	struct drm_gem_flink req = {
+		.handle = handle,
+	};
+
+	err = lx_drm_ioctl(lx_drm_prv, DRM_IOCTL_GEM_FLINK, (unsigned long)&req);
+	if (err) {
+		return -1;
+	}
+
+	*name = req.name;
+
+	return 0;
+}
+
+
+int lx_drm_gem_open(void *lx_drm_prv, unsigned int name,
+                     unsigned int *handle, unsigned long long *size)
+{
+	int err;
+	struct drm_gem_open req = {
+		.name = name,
+	};
+
+	err = lx_drm_ioctl(lx_drm_prv, DRM_IOCTL_GEM_OPEN, (unsigned long)&req);
+	if (err) {
+		return -1;
+	}
+
+	*handle = req.handle;
+	*size   = req.size;
 
 	return 0;
 }
@@ -720,13 +814,17 @@ static void _free_file(struct file *file)
 
 	mapping      = file->f_mapping;
 	inode        = file->f_inode;
-	private_data = mapping->private_data;
 
-	lx_emul_forget_pages(private_data->addr, mapping->nrpages << 12);
-	emul_free_shmem_file_buffer(private_data->addr);
+	if (mapping) {
+		private_data = mapping->private_data;
 
-	kfree(private_data);
-	kfree(mapping);
+		lx_emul_forget_pages(private_data->addr, mapping->nrpages << 12);
+		emul_free_shmem_file_buffer(private_data->addr);
+
+		kfree(private_data);
+		kfree(mapping);
+	}
+
 	kfree(inode);
 	kfree(file->f_path.dentry);
 	kfree(file);
@@ -735,8 +833,12 @@ static void _free_file(struct file *file)
 
 void fput(struct file *file)
 {
+	if (!file)
+		return;
+
 	if (atomic_long_sub_and_test(1, &file->f_count)) {
 		_free_file(file);
+		return;
 	}
 }
 

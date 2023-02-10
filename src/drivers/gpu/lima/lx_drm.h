@@ -29,7 +29,13 @@ bool      lx_drm_gem_submit_bo_read(void *, unsigned);
 unsigned  lx_drm_gem_submit_out_sync(void const *);
 unsigned  lx_drm_gem_submit_pipe(void const *);
 
-int lx_drm_ioctl_gem_close(void *, unsigned int);
+int lx_drm_gem_close(void *, unsigned int);
+int lx_drm_gem_flink(void *, unsigned int, unsigned int *);
+int lx_drm_gem_open(void *, unsigned int, unsigned int *, unsigned long long *);
+
+int lx_drm_gem_prime_handle_to_fd(void *, unsigned int, int *);
+int lx_drm_gem_prime_fd_to_handle(void *, int, unsigned int *);
+
 int lx_drm_ioctl_syncobj_create(void *, unsigned int *);
 int lx_drm_ioctl_syncobj_destroy(void *, unsigned int);
 int lx_drm_ioctl_syncobj_wait(void *, unsigned int);

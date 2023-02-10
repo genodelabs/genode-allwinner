@@ -9,7 +9,7 @@
 		<service name="Timer"> <parent/> </service>
 	</common_routes>
 
-	<start name="gpu_drv" pkg="a64_lima_gpu_drv-pinephone">
+	<start name="gpu_drv" caps="1500" pkg="a64_lima_gpu_drv-pinephone">
 		<route>
 			<service name="Platform"> <parent label="gpu"/> </service>
 		</route>

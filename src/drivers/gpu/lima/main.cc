@@ -46,29 +46,19 @@ namespace Gpu {
 	using Session_space = Genode::Id_space<Session_component>;
 	struct Root;
 
-	/*
-	 * Allow multiple clients are allowed the driver must currently only used by one
-	 * client at a time. The client, however, may open multiple connections as those
-	 * implicitly provide a new context and sync objects.
-	 */
 	using Root_component = Genode::Root_component<Session_component, Genode::Multiple_clients>;
 
 	struct Operation;
 	struct Request;
 	struct Local_request;
 
-	struct Buffer_space;
 	struct Worker_args;
 
 	struct Ctx_id;
 	struct Syncobj_id;
 
-	struct Buffer;
-	using Buffer_id = Vram_id;
 
 } /* namespace Gpu */
-
-struct Gpu::Vram { };
 
 
 struct Gpu::Ctx_id
@@ -86,24 +76,31 @@ struct Gpu::Syncobj_id
 struct Gpu::Operation
 {
 	enum class Type {
-		INVALID    = 0,
-		ALLOC      = 1,
-		FREE       = 2,
-		EXEC       = 5,
-		WAIT       = 6,
-		CTX_CREATE = 7,
-		CTX_FREE   = 8,
+		INVALID         = 0,
+		ALLOC           = 1,
+		FREE            = 2,
+		EXEC            = 5,
+		WAIT            = 6,
+		CTX_CREATE      = 7,
+		CTX_FREE        = 8,
 		SYNCOBJ_CREATE  = 9,
 		SYNCOBJ_DESTROY = 10,
 		SYNCOBJ_WAIT    = 11,
+		CLOSE           = 14,
+		OPEN            = 15,
+		FLINK           = 16,
 	};
 
 	Type type;
 
-	uint32_t           size;
-	uint32_t           va;
-	Buffer_id          id;
-	Sequence_number    seqno;
+	uint32_t         size;
+	uint32_t         va;
+	Vram_id          id;
+	Sequence_number  seqno;
+
+	uint32_t handle;
+
+	uint32_t name;
 
 	Ctx_id ctx_id;
 	uint32_t op;
@@ -129,6 +126,9 @@ struct Gpu::Operation
 		case Type::SYNCOBJ_CREATE:  return "SYNCOBJ_CREATE";
 		case Type::SYNCOBJ_DESTROY: return "SYNCOBJ_DESTROY";
 		case Type::SYNCOBJ_WAIT:    return "SYNCOBJ_WAIT";
+		case Type::CLOSE:           return "CLOSE";
+		case Type::OPEN:            return "OPEN";
+		case Type::FLINK:           return "FLINK";
 		}
 		return "INVALID";
 	}
@@ -136,12 +136,16 @@ struct Gpu::Operation
 	void print(Genode::Output &out) const
 	{
 		Genode::print(out, type_name(type));
+		if (type == Type::CTX_CREATE || type == Type::CTX_FREE || type == Type::EXEC)
+			Genode::print(out, " ctx_id: ", ctx_id.value);
 	}
 };
 
 
 struct Gpu::Request
 {
+	void const *session;
+
 	struct Tag { unsigned long value; };
 
 	Operation operation;
@@ -157,22 +161,26 @@ struct Gpu::Request
 
 	void print(Genode::Output &out) const
 	{
-		Genode::print(out, "tag=",       tag.value, " "
+		Genode::print(out, "session=", session, " "
+		                   "tag=",       tag.value, " "
 		                   "success=",   success,   " "
 		                   "operation=", operation);
 	}
 
-	static Gpu::Request create(Operation::Type type)
+	static Gpu::Request create(void *session, Operation::Type type)
 	{
 		static unsigned long tag_counter = 0;
 
 		return Gpu::Request {
+			.session = session,
 			.operation = Operation {
 				.type = type,
 				.size = 0,
 				.va = 0,
-				.id = Buffer_id { .value = 0 },
+				.id = Vram_id { .value = 0 },
 				.seqno = Sequence_number { .value = 0 },
+				.handle = 0,
+				.name = 0,
 				.ctx_id = Ctx_id { .value = 0 },
 				.op = 0,
 				.syncobj_id = {
@@ -200,91 +208,99 @@ struct Gpu::Local_request
 };
 
 
-struct Gpu::Buffer : Vram
+struct Buffer_object
 {
-	Vram_id_space::Element const _elem;
+	Genode::Id_space<Buffer_object>::Element const _elem;
 
-	uint32_t             const handle;
-	Dataspace_capability const cap;
-	Attached_dataspace         attached_ds;
+	Genode::uint32_t             const handle;
+	Genode::Dataspace_capability const cap;
+	Genode::Attached_dataspace         attached_ds;
 
-	uint32_t const va;
+	Genode::uint32_t const va;
 
-	Buffer(Gpu::Vram_id_space  &space,
-	       Gpu::Buffer_id       id,
-	       uint32_t             handle,
-	       uint32_t             va,
-	       Dataspace_capability cap,
-	       Region_map &rm)
+	Buffer_object(Genode::Id_space<Buffer_object> &space,
+	              Gpu::Vram_id                     id,
+	              Genode::uint32_t                 handle,
+	              Genode::uint32_t                 va,
+	              Genode::Dataspace_capability     cap,
+	              Genode::Region_map              &rm)
 	:
-		_elem       { *this, space, id },
+		_elem       { *this, space,
+		              Genode::Id_space<Buffer_object>::Id { .value = id.value } },
 		handle      { handle },
 		cap         { cap },
 		attached_ds { rm, cap },
 		va          { va }
 	{ }
-
 };
 
 
 extern "C" void lx_emul_mem_cache_clean_invalidate(const void * addr,
                                                    unsigned long size);
 
-struct Gpu::Buffer_space : Vram_id_space
+struct Buffer_object_space : Genode::Id_space<Buffer_object>
 {
-	Allocator &_alloc;
+	Genode::Allocator &_alloc;
 
-	Buffer_space(Allocator &alloc) : _alloc { alloc } { }
+	Buffer_object_space(Genode::Allocator &alloc) : _alloc { alloc } { }
 
-	~Buffer_space() { }
+	~Buffer_object_space()
+	{ }
 
-	void *local_addr(Gpu::Buffer_id id)
+	template <typename FN>
+	void _try_apply(Gpu::Vram_id id, FN const &fn)
+	{
+		try {
+			Genode::Id_space<Buffer_object>::Id buffer_id { .value = id.value };
+			apply<Buffer_object>(buffer_id, fn);
+		} catch (Buffer_object_space::Unknown_id) { }
+	}
+
+	void *local_addr(Gpu::Vram_id id)
 	{
 		void *local_addr = nullptr;
-		apply<Buffer>(id, [&] (Buffer &b) {
+		_try_apply(id, [&] (Buffer_object &b) {
 			local_addr = b.attached_ds.local_addr<void>();
 		});
-
 		return local_addr;
 	}
 
 	struct Lx_handle
 	{
-		uint32_t value;
-		bool     _valid;
+		Genode::uint32_t value;
+
+		bool _valid;
 
 		bool valid() const { return _valid; }
 	};
 
-	Lx_handle lookup_and_flush(Gpu::Buffer_id id, bool flush)
+	Lx_handle lookup_and_flush(Gpu::Vram_id id, bool flush)
 	{
 		Lx_handle result { 0, false };
 
-		apply<Buffer>(id, [&] (Buffer &b) {
-
-			if (flush)
-				lx_emul_mem_cache_clean_invalidate(b.attached_ds.local_addr<void>(),
-				                                   b.attached_ds.size());
-
-			result = { b.handle, true };
+		_try_apply(id, [&] (Buffer_object &b) {
+				if (flush)
+					lx_emul_mem_cache_clean_invalidate(b.attached_ds.local_addr<void>(),
+					                                   b.attached_ds.size());
+				result = { b.handle, true };
 		});
 
 		return result;
 	}
 
-	void insert(Gpu::Buffer_id id, uint32_t handle, uint32_t va,
-	            Dataspace_capability cap, Region_map &rm)
+	void insert(Gpu::Vram_id id, Genode::uint32_t handle, Genode::uint32_t va,
+	            Genode::Dataspace_capability cap, Genode::Region_map &rm)
 	{
 		// XXX assert id is not assosicated with other handle and
 		//     handle is not already present in registry
-		new (&_alloc) Buffer(*this, id, handle, va, cap, rm);
+		new (&_alloc) Buffer_object(*this, id, handle, va, cap, rm);
 	}
 
-	void remove(Gpu::Buffer_id id)
+	void remove(Gpu::Vram_id id)
 	{
 		bool removed = false;
-		apply<Buffer>(id, [&] (Buffer &b) {
-			destroy(_alloc, &b);
+		_try_apply(id, [&] (Buffer_object &b) {
+			Genode::destroy(_alloc, &b);
 			removed = true;
 		});
 
@@ -293,40 +309,210 @@ struct Gpu::Buffer_space : Vram_id_space
 			                " - not present in registry");
 	}
 
-	Dataspace_capability lookup_buffer(Gpu::Buffer_id id)
+	Genode::Dataspace_capability lookup_buffer(Gpu::Vram_id id)
 	{
-		Dataspace_capability cap { };
-		try {
-			apply<Buffer>(id, [&] (Buffer const &b) {
-				cap = b.cap;
-			});
-		} catch (Vram_id_space::Unknown_id) { }
+		Genode::Dataspace_capability cap { };
+		_try_apply(id, [&] (Buffer_object const &b) {
+			cap = b.cap;
+		});
 		return cap;
 	}
 
 	template <typename FN>
-	void with_va(Gpu::Buffer_id id, FN const &fn)
+	void with_handle(Gpu::Vram_id id, FN const &fn)
 	{
-		apply<Buffer>(id, [&] (Buffer const &b) {
-			fn(b.va);
-		});
-	}
-
-	template <typename FN>
-	void with_handle(Gpu::Buffer_id id, FN const &fn)
-	{
-		apply<Buffer>(id, [&] (Buffer const &b) {
+		_try_apply(id, [&] (Buffer_object const &b) {
 			fn(b.handle);
 		});
 	}
 
-	bool managed(Gpu::Buffer_id id)
+	template <typename FN>
+	void with_bo(Gpu::Vram_id id, FN const &fn)
+	{
+		_try_apply(id, [&] (Buffer_object &b) {
+			fn(b);
+		});
+	}
+
+	bool managed(Gpu::Vram_id id)
 	{
 		bool result = false;
-		apply<Buffer>(id, [&] (Buffer const &) {
-			result = true;
+		_try_apply(id, [&] (Buffer_object const &) {
+				result = true;
 		});
 		return result;
+	}
+};
+
+
+struct Gpu::Vram : Genode::Interface
+{
+	GENODE_RPC_INTERFACE();
+};
+
+
+struct Vram_owner
+{
+	Genode::Capability<Gpu::Session> const cap;
+
+	Vram_owner(Genode::Capability<Gpu::Session> cap)
+	: cap { cap } { }
+};
+
+
+struct Gpu_vram : Genode::Rpc_object<Gpu::Vram>
+{
+	Buffer_object const &bo;
+	Vram_owner    const &_owner;
+
+	struct Import_name
+	{
+		Genode::uint32_t value;
+
+		bool _valid;
+
+		bool valid() const { return _valid; }
+	};
+
+	Import_name import_name;
+
+	Gpu_vram(Buffer_object const &bo,
+	         Vram_owner    const &owner)
+	:
+		bo { bo },
+		_owner { owner },
+		import_name { 0, false }
+	{ }
+
+	bool owner(Genode::Capability<Gpu::Session> other) const
+	{
+		return _owner.cap == other;
+	}
+};
+
+
+struct Vram_local
+{
+	Genode::Id_space<Vram_local>::Element const _elem;
+
+	Gpu::Vram_capability vram_cap;
+
+	struct Import_handle
+	{
+		Genode::uint32_t  value;
+		bool             _valid;
+
+		bool valid() const { return _valid; }
+	};
+
+	struct Export_name
+	{
+		Genode::uint32_t value;
+		bool _valid;
+
+		bool valid() const { return _valid; }
+	};
+
+	Export_name   export_name   { 0, false };
+	Import_handle import_handle { 0, false };
+
+	Vram_local(Genode::Id_space<Vram_local> &space,
+	           Gpu::Vram_capability          vram_cap,
+	           Gpu::Vram_id                  vram_id)
+	:
+		_elem { *this, space,
+		        Genode::Id_space<Vram_local>::Id { .value = vram_id.value } },
+		vram_cap { vram_cap }
+	{ }
+};
+
+
+struct Vram_local_space : Genode::Id_space<Vram_local>
+{
+	Genode::Entrypoint &_ep;
+	Genode::Allocator  &_alloc;
+
+	template <typename FN>
+	void _try_apply(Gpu::Vram_id id, FN const &fn)
+	{
+		try {
+			Vram_local_space::Id vl_id { .value = id.value };
+			apply<Vram_local>(vl_id, fn);
+		} catch (Vram_local_space::Unknown_id) { }
+	}
+
+	Vram_local_space(Genode::Entrypoint &ep,
+	                 Genode::Allocator  &alloc)
+	: _ep { ep }, _alloc { alloc } { }
+
+	~Vram_local_space()
+	{ }
+
+	void remove(Gpu::Vram_id id)
+	{
+		bool removed = false;
+		_try_apply(id, [&] (Vram_local &vl) {
+			Genode::destroy(_alloc, &vl);
+			removed = true;
+		});
+
+		if (!removed)
+			Genode::warning("could not remove vram local with id: ", id.value,
+			                " - not present in space");
+	}
+
+	Gpu::Vram_capability lookup_vram_cap(Gpu::Vram_id id)
+	{
+		Gpu::Vram_capability cap { };
+		_try_apply(id, [&] (Vram_local const &vl) {
+			cap = vl.vram_cap;
+		});
+		return cap;
+	}
+
+	Vram_local::Export_name lookup_export(Gpu::Vram_id id)
+	{
+		Vram_local::Export_name export_name { 0, false };
+		_try_apply(id, [&] (Vram_local const &vl) {
+			export_name = vl.export_name;
+		});
+		return export_name;
+	}
+
+	Vram_local::Import_handle lookup_import(Gpu::Vram_id id)
+	{
+		Vram_local::Import_handle import_handle { 0, false };
+
+		_try_apply(id, [&] (Vram_local const &vl) {
+			import_handle = vl.import_handle;
+		});
+		return import_handle;
+	}
+
+	// XXX make const
+	bool contains(Gpu::Vram_id id)
+	{
+		bool found = false;
+		_try_apply(id, [&] (Vram_local &) {
+			found = true;
+		});
+		return found;
+	}
+
+	template <typename FN>
+	void with_vram_local(Gpu::Vram_id id, FN const &fn)
+	{
+		_try_apply(id, fn);
+	}
+
+	template <typename FN>
+	void with_bo(Gpu::Vram_id id, FN const &fn)
+	{
+		_try_apply(id, [&] (Vram_local &vl) {
+			_ep.rpc_ep().apply(vl.vram_cap, [&] (Gpu_vram *v) {
+				fn(v->bo);
+			});
+		});
 	}
 };
 
@@ -339,48 +525,56 @@ struct Syncobj_notifier : Genode::Interface
 
 struct Gpu::Worker_args
 {
-	Syncobj_notifier *syncobj_notifier { nullptr };
+	Region_map   &rm;
+	Buffer_object_space &buffers;
+	Vram_local_space    &vram_local_space;
 
-	void signal_syncobj_wait(void)
-	{
-		if (syncobj_notifier)
-			syncobj_notifier->notify();
-	}
+	Syncobj_notifier &_syncobj_notifier;
 
-	Region_map *rm { nullptr };
+	struct task_struct *_gpu_task { nullptr };
 
-	Gpu::Request *pending_request   { nullptr };
-	Gpu::Request *completed_request { nullptr };
-
-	Gpu::Local_request *local_request { nullptr };
+	Gpu::Request       *_pending_request   { nullptr };
+	Gpu::Request       *_completed_request { nullptr };
+	Gpu::Local_request *_local_request     { nullptr };
 
 	void *drm { nullptr };
 
-	Gpu::Info_lima *info { nullptr };
+	Gpu::Info_lima info { };
 
-	Buffer_space *buffers { nullptr };
+	Worker_args(Region_map &rm, Buffer_object_space &buffers,
+	            Vram_local_space &vram_local_space,
+	            Syncobj_notifier &notifier)
+	:
+		rm { rm }, buffers { buffers }, vram_local_space { vram_local_space },
+		_syncobj_notifier { notifier }
+	{ }
 
-	void *gem_submit { nullptr };
-
-	bool valid() const
+	void signal_syncobj_wait(void)
 	{
-		return buffers != nullptr && info != nullptr;
+		_syncobj_notifier.notify();
 	}
 
-	template <typename FN> void for_each_pending_request(FN const &fn)
+	template <typename FN> void with_local_request(FN const &fn)
 	{
-		if (!pending_request || !pending_request->valid()) {
+		if (!_local_request)
 			return;
-		}
+
+		fn(*_local_request);
+	}
+
+	template <typename FN> void with_pending_request(FN const &fn)
+	{
+		if (!_pending_request || !_pending_request->valid() || !_completed_request)
+			return;
 
 		/*
  		 * Reset first to prevent _schedule_request from picking up
 		 * unfinished requests, e.g. SYNCOBJ_WAIT.
 		 */
-		*completed_request = Gpu::Request();
+		*_completed_request = Gpu::Request();
 
-		*completed_request = fn(*pending_request);
-		*pending_request   = Gpu::Request();
+		*_completed_request = fn(*_pending_request);
+		*_pending_request   = Gpu::Request();
 	}
 };
 
@@ -410,63 +604,74 @@ static int _populate_info(void *drm, Gpu::Info_lima &info)
 }
 
 
-static Gpu::Worker_args    _worker_args;
-extern struct task_struct *_lx_user_task;
+/* implemented in 'lx_user.c' */
+extern "C" struct task_struct *lx_user_task;
+extern "C" void               *lx_user_task_args;
+extern "C" struct task_struct *lx_user_new_gpu_task(int (*func)(void*), void *args);
+extern "C" void                lx_user_destroy_gpu_task(struct task_struct*);
 
-extern "C" void *lx_user_task_args;
 
-
-extern "C" int run_lx_user_task(void *p)
+/*
+ * Function executed by each worker task that handles all
+ * request dispatching into the kernel.
+ */
+extern "C" int gpu_task_func(void *p)
 {
 	Gpu::Worker_args &args = *static_cast<Gpu::Worker_args*>(p);
 
 	using namespace Genode;
 	using OP = Gpu::Operation::Type;
 
-	int count_drm_session = 0;
-
 	while (true) {
 
-		/* wait until we have a valid session */
-		if (!args.valid()) {
-			lx_emul_task_schedule(true);
-			continue;
-		}
+		/*
+		 * 'buffers' is used for BO management (alloc/free, wait
+		 * and export) is only called by the primary session.
+		 */
+		Buffer_object_space &buffers          = args.buffers;
+		Region_map          &rm               = args.rm;
 
-		Gpu::Buffer_space &buffers = *args.buffers;
-		Region_map        &rm      = *args.rm;
+		/*
+		 * 'vram_local_space' is used for submitting and only used
+		 * by secondary sessions.
+		 */
+		Vram_local_space &vram_local_space = args.vram_local_space;
 
 		/* handle local requests first */
-		if (args.local_request) {
-			args.local_request->success = false;
-			switch (args.local_request->type) {
+		bool destroy_task = false;
+
+		args.with_local_request([&] (Gpu::Local_request &lr) {
+			lr.success = false;
+			switch (lr.type) {
 			case Gpu::Local_request::Type::OPEN:
+
 				if (!args.drm) {
 					args.drm = lx_drm_open();
-					if (!args.drm)
-						break;
-				}
+					if (args.drm) {
+						_populate_info(args.drm, args.info);
 
-				if (args.drm) {
-					++count_drm_session;
-					_populate_info(args.drm, *args.info);
-
-					args.local_request->success = true;
+						lr.success = true;
+					}
 				}
 				break;
 			case Gpu::Local_request::Type::CLOSE:
-				--count_drm_session;
-				if (count_drm_session <= 0) {
+				if (args.drm) {
 					lx_drm_close(args.drm);
 					args.drm = nullptr;
+					destroy_task = true;
+
+					lr.success = true;
 				}
-				args.local_request->success = true;
 				break;
 			case Gpu::Local_request::Type::INVALID:
 				break;
 			}
-		}
+		});
 
+		if (destroy_task)
+			break;
+
+		/* handle pending request */
 		bool notify_client = false;
 
 		auto dispatch_pending = [&] (Gpu::Request r) {
@@ -570,13 +775,13 @@ extern "C" int run_lx_user_task(void *p)
 				err = lx_drm_ioctl_lima_gem_info(args.drm, handle, &va_allocated, &offset);
 				if (err) {
 					error("lx_drm_ioctl_lima_gem_info failed: ", err);
-					lx_drm_ioctl_gem_close(args.drm, handle);
+					lx_drm_gem_close(args.drm, handle);
 					break;
 				}
 
 				if (va != va_allocated) {
 					error("va wrong ", Hex(va), " != ", Hex(va_allocated));
-					lx_drm_ioctl_gem_close(args.drm, handle);
+					lx_drm_gem_close(args.drm, handle);
 					break;
 				}
 
@@ -587,15 +792,61 @@ extern "C" int run_lx_user_task(void *p)
 				r.success = true;
 				break;
 			}
+			case OP::CLOSE:
+			{
+				int const err = lx_drm_gem_close(args.drm, r.operation.handle);
+				if (err) {
+					error("lx_drm_gem_close failed: ", err);
+					break;
+				}
+
+				r.success = true;
+				break;
+			}
+			case OP::OPEN:
+			{
+				uint32_t handle;
+				uint64_t size;
+
+				int const err = lx_drm_gem_open(args.drm, r.operation.name,
+				                                &handle, &size);
+				if (err) {
+					error("lx_drm_gem_open failed: ", err);
+					break;
+				}
+
+				r.operation.handle = handle;
+				r.operation.size   = (uint32_t)size;
+
+				r.success = true;
+				break;
+			}
+			case OP::FLINK:
+			{
+				uint32_t name;
+
+				buffers.with_handle(r.operation.id, [&] (uint32_t const handle) {
+					int const err = lx_drm_gem_flink(args.drm, handle, &name);
+					if (err) {
+						error("lx_drm_gem_flink failed: ", err);
+						return;
+					}
+
+					r.operation.name = name;
+
+					r.success = true;
+				});
+				break;
+			}
 			case OP::FREE:
 			{
-				bool found = false;
+				bool bo_found = false;
 				buffers.with_handle(r.operation.id, [&] (uint32_t const handle) {
-					(void)lx_drm_ioctl_gem_close(args.drm, handle);
-					found = true;
+					(void)lx_drm_gem_close(args.drm, handle);
+					bo_found = true;
 				});
 
-				if (found) {
+				if (bo_found) {
 					buffers.remove(r.operation.id);
 					r.success = true;
 				}
@@ -603,7 +854,10 @@ extern "C" int run_lx_user_task(void *p)
 			}
 			case OP::EXEC:
 			{
-				void *gem_submit = buffers.local_addr(r.operation.id);
+				void *gem_submit = nullptr;
+				vram_local_space.with_bo(r.operation.id, [&] (Buffer_object const &bo) {
+					gem_submit = const_cast<void*>(bo.attached_ds.local_addr<void>());
+				});
 				if (!gem_submit)
 					break;
 
@@ -618,10 +872,14 @@ extern "C" int run_lx_user_task(void *p)
 						err = -1;
 						break;
 					}
-					using LX = Gpu::Buffer_space::Lx_handle;
-					Gpu::Buffer_id id { .value = *bo_handle };
+					Gpu::Vram_id id { .value = *bo_handle };
 					/* flush only when read by the GPU */
-					LX handle = buffers.lookup_and_flush(id, bo_read);
+					vram_local_space.with_bo(id, [&] (Buffer_object const &bo) {
+						if (bo_read)
+							lx_emul_mem_cache_clean_invalidate(bo.attached_ds.local_addr<void>(),
+							                                   bo.attached_ds.size());
+					});
+					Vram_local::Import_handle const handle = vram_local_space.lookup_import(id);
 					if (!handle.valid()) {
 						error("could not look up handle for id: ", *bo_handle);
 						err = -1;
@@ -657,7 +915,6 @@ extern "C" int run_lx_user_task(void *p)
 			case OP::WAIT:
 			{
 				buffers.with_handle(r.operation.id, [&] (uint32_t const handle) {
-
 					int const err = lx_drm_ioctl_lima_gem_wait(args.drm, handle,
 					                                           r.operation.op);
 					notify_client = true;
@@ -676,23 +933,65 @@ extern "C" int run_lx_user_task(void *p)
 			return r;
 		};
 
-		args.for_each_pending_request(dispatch_pending);
+		args.with_pending_request(dispatch_pending);
 
 		if (notify_client)
 			args.signal_syncobj_wait();
 
 		lx_emul_task_schedule(true);
 	}
+
+	lx_user_destroy_gpu_task(args._gpu_task);
+	return 0;
 }
 
 
-static void request_already_pending(Gpu::Request const&, Gpu::Request const&) __attribute__((noreturn));
-static void request_already_pending(Gpu::Request const &p,
-                                    Gpu::Request const &r)
+/**
+ * Function executed by the the 'lx_user' task solely used to
+ * create new GPU worker tasks.
+ */
+struct Lx_user_task_args
 {
-	Genode::error("there is already a request pending: ", p,
-	              ", cannot schedule request: ", r);
-	Genode::sleep_forever();
+	bool create_task;
+	void *args;
+
+	struct task_struct *new_gpu_task;
+};
+static Lx_user_task_args _lx_user_task_args { };
+
+
+extern "C" int lx_user_task_func(void *p)
+{
+	Lx_user_task_args &args = *static_cast<Lx_user_task_args*>(p);
+
+	while (true) {
+		if (args.create_task) {
+			args.new_gpu_task = lx_user_new_gpu_task(gpu_task_func, args.args);
+			args.create_task = false;
+		}
+
+		lx_emul_task_schedule(true);
+	}
+}
+
+
+/*
+ * Helper utility that will create a new Gpu worker task
+ * be executing the 'lx_user' so that those are created
+ * from within the kernel context.
+ */
+static struct task_struct *create_gpu_task(void *args)
+{
+	if (_lx_user_task_args.create_task)
+		return nullptr;
+
+	_lx_user_task_args.args        = args;
+	_lx_user_task_args.create_task = true;
+
+	lx_emul_task_unblock(lx_user_task);
+	Lx_kit::env().scheduler.schedule();
+
+	return _lx_user_task_args.new_gpu_task;
 }
 
 
@@ -706,20 +1005,24 @@ struct Gpu::Session_component : public Genode::Session_object<Gpu::Session>
 		Genode::Env        &_env;
 		Genode::Entrypoint &_ep;
 
+		Vram_owner _owner { cap() };
+
+		Genode::Heap         _heap   { _env.ram(), _env.rm() };
+		Buffer_object_space  _worker_buffers { _heap };
+
+		Vram_local_space _vram_local_space { _ep, _heap };
+
 		Genode::Id_space<Session_component>::Element const _elem;
 
 		Genode::Attached_ram_dataspace _info_dataspace {
 			_env.ram(), _env.rm(), 4096 };
 		Genode::Signal_context_capability _completion_sigh { };
 
-		char const *_name;
-
 		Gpu::Request _pending_request   { };
 		Gpu::Request _completed_request { };
 
-		Gpu::Worker_args &_lx_task_args;
+		Gpu::Worker_args  _lx_task_args;
 		task_struct      *_lx_task;
-		Gpu::Buffer_space &_buffers { *_lx_task_args.buffers };
 
 		bool _managed_id(Gpu::Request const &request)
 		{
@@ -728,7 +1031,7 @@ struct Gpu::Session_component : public Genode::Session_object<Gpu::Session>
 			switch (request.operation.type) {
 			case OP::FREE:  [[fallthrough]];
 			case OP::EXEC:
-				return _buffers.managed(request.operation.id);
+				return _lx_task_args.buffers.managed(request.operation.id);
 			default:
 				break;
 			}
@@ -738,14 +1041,24 @@ struct Gpu::Session_component : public Genode::Session_object<Gpu::Session>
 
 		enum class Blocking_request : uint8_t { NO, YES };
 
+		/*
+		 * Most request will block the RPC interface as the Gpu session
+		 * requires this behaviour. 'WAIT' and 'SYNCOBJ_WAIT' are the
+		 * only RPCs performed in polling fashion.
+		 */
 		template <typename SUCC_FN, typename FAIL_FN>
 		void _schedule_request(Gpu::Request const &request,
 		                       SUCC_FN const &succ_fn,
 		                       FAIL_FN const &fail_fn,
 		                       Blocking_request block = Blocking_request::YES)
 		{
-			if (_pending_request.valid())
-				request_already_pending(_pending_request, request);
+			if (_pending_request.valid()) {
+				/* that should not happen and is most likely a bug in the client */
+				error(__func__, ": ", this, ": request pending: ", _pending_request,
+				      " cannot schedule new request: ", request);
+				fail_fn();
+				return;
+			}
 
 			/*
 			 * Requests referencing not managed handles will be
@@ -757,8 +1070,8 @@ struct Gpu::Session_component : public Genode::Session_object<Gpu::Session>
 			}
 
 			_pending_request = request;
-			_lx_task_args.pending_request   = &_pending_request;
-			_lx_task_args.completed_request = &_completed_request;
+			_lx_task_args._pending_request   = &_pending_request;
+			_lx_task_args._completed_request = &_completed_request;
 
 			lx_emul_task_unblock(_lx_task);
 			Lx_kit::env().scheduler.schedule();
@@ -772,10 +1085,12 @@ struct Gpu::Session_component : public Genode::Session_object<Gpu::Session>
 					_ep.wait_and_dispatch_one_io_signal();
 				}
 
-			if (_completed_request.success)
+			if (_completed_request.success) {
 				succ_fn(_completed_request);
-			else
+			}
+			else {
 				fail_fn();
+			}
 		}
 
 		bool _local_request(Gpu::Local_request::Type type)
@@ -784,14 +1099,14 @@ struct Gpu::Session_component : public Genode::Session_object<Gpu::Session>
 				.type = type,
 				.success = false,
 			};
-			_lx_task_args.local_request = &local_request;
+			_lx_task_args._local_request = &local_request;
 
 			// XXX must not return prematurely
 			lx_emul_task_unblock(_lx_task);
 			Lx_kit::env().scheduler.schedule();
 
-			bool const success = _lx_task_args.local_request->success;
-			_lx_task_args.local_request = nullptr;
+			bool const success = _lx_task_args._local_request->success;
+			_lx_task_args._local_request = nullptr;
 
 			return success;
 		}
@@ -802,7 +1117,7 @@ struct Gpu::Session_component : public Genode::Session_object<Gpu::Session>
 		{
 			Gpu::Ctx_id ctx_id { 0 };
 
-			Gpu::Request r = Gpu::Request::create(Gpu::Operation::Type::CTX_CREATE);
+			Gpu::Request r = Gpu::Request::create(this, Gpu::Operation::Type::CTX_CREATE);
 
 			auto success = [&] (Gpu::Request const &request) {
 				ctx_id = request.operation.ctx_id;
@@ -815,7 +1130,7 @@ struct Gpu::Session_component : public Genode::Session_object<Gpu::Session>
 
 		void _free_ctx(Gpu::Ctx_id ctx_id)
 		{
-			Gpu::Request r = Gpu::Request::create(Gpu::Operation::Type::CTX_FREE);
+			Gpu::Request r = Gpu::Request::create(this, Gpu::Operation::Type::CTX_FREE);
 			r.operation.ctx_id = ctx_id;
 
 			auto success = [&] (Gpu::Request const &) { };
@@ -829,7 +1144,7 @@ struct Gpu::Session_component : public Genode::Session_object<Gpu::Session>
 		{
 			Gpu::Syncobj_id syncobj_id { 0 };
 
-			Gpu::Request r = Gpu::Request::create(Gpu::Operation::Type::SYNCOBJ_CREATE);
+			Gpu::Request r = Gpu::Request::create(this, Gpu::Operation::Type::SYNCOBJ_CREATE);
 
 			auto success = [&] (Gpu::Request const &request) {
 				syncobj_id = request.operation.syncobj_id[0];
@@ -842,7 +1157,7 @@ struct Gpu::Session_component : public Genode::Session_object<Gpu::Session>
 
 		void _destroy_syncobj(Gpu::Syncobj_id syncobj_id)
 		{
-			Gpu::Request r = Gpu::Request::create(Gpu::Operation::Type::SYNCOBJ_DESTROY);
+			Gpu::Request r = Gpu::Request::create(this, Gpu::Operation::Type::SYNCOBJ_DESTROY);
 			r.operation.syncobj_id[0] = syncobj_id;
 
 			auto success = [&] (Gpu::Request const &) { };
@@ -859,6 +1174,87 @@ struct Gpu::Session_component : public Genode::Session_object<Gpu::Session>
 		bool _pending_syncobj_wait { false };
 		bool _pending_wait         { false };
 
+		struct Notifier : Syncobj_notifier
+		{
+			void _handle_notifier()
+			{
+				_sc.submit_completion_signal();
+			}
+
+			Genode::Signal_handler<Notifier> _notifier_sigh;
+			Session_component &_sc;
+
+			Notifier(Genode::Entrypoint &ep, Session_component &sc)
+			:
+				_notifier_sigh { ep, *this, &Notifier::_handle_notifier },
+				_sc { sc }
+			{ }
+
+			void notify() override
+			{
+				_notifier_sigh.local_submit();
+			}
+		};
+
+		Notifier _notifier { _env.ep(), *this };
+
+		/*
+		 * Free buffer-object
+		 *
+		 * Implemented here as it is used by 'unmap_gpu' as well as the
+		 * Session_component destructor to clean up.
+		 */
+		bool _unmap_gpu(Vram_id id, Genode::off_t, Virtual_address)
+		{
+			Gpu::Vram_capability const cap = _vram_local_space.lookup_vram_cap(id);
+			if (!cap.valid()) {
+				Genode::warning(__func__, ": could not look up Vram_capability for id ", id.value);
+				return false;
+			}
+
+			// XXX instead of procedural execution nested access
+
+			bool owner = false;
+			_env.ep().rpc_ep().apply(cap, [&] (Gpu_vram *v) {
+				owner = v->owner(_owner.cap);
+			});
+
+			if (!owner) {
+				Genode::warning(__func__, ": cannot free id: ", id.value, " not the owner");
+				return false;
+			}
+
+			Gpu_vram *vp = nullptr;
+			_env.ep().rpc_ep().apply(cap, [&] (Gpu_vram *v) {
+				_env.ep().dissolve(*v);
+				vp = v;
+			});
+
+			Vram_local *vlp = nullptr;
+			_vram_local_space.with_vram_local(id, [&] (Vram_local &vl) {
+				vlp = &vl;
+			});
+
+			Gpu::Request r = Gpu::Request::create(this, Gpu::Operation::Type::FREE);
+			r.operation.id = id;
+
+			if (vlp) {
+				Vram_local::Export_name const export_name = vlp->export_name;
+				if (export_name.valid()) {
+					r.operation.handle = export_name.value;
+				}
+
+				Genode::destroy(_heap, vlp);
+			}
+
+			Genode::destroy(_heap, vp);
+
+			auto success = [&] (Gpu::Request const &) { };
+			auto fail = [&] () { };
+			_schedule_request(r, success, fail);
+
+			return true;
+		}
 
 	public:
 
@@ -872,17 +1268,22 @@ struct Gpu::Session_component : public Genode::Session_object<Gpu::Session>
 		                  Resources    const &resources,
 		                  Label        const &label,
 		                  Diag                diag,
-		                  char         const *name,
 		                  Genode::Id_space<Session_component> &space)
 		:
 			Session_object { ep, resources, label, diag },
-			_env         { env },
-			_ep          { ep },
-			_elem        { *this, space },
-			_name        { name },
-			_lx_task_args { _worker_args },
-			_lx_task     { _lx_user_task }
+			_env           { env },
+			_ep            { ep },
+			_elem          { *this, space },
+			_lx_task_args  { _env.rm(), _worker_buffers, _vram_local_space, _notifier },
+			_lx_task       { create_gpu_task(&_lx_task_args ) }
 		{
+			if (!_lx_task) {
+				Genode::error("could not create GPU task");
+				throw Could_not_open_drm();
+			}
+
+			_lx_task_args._gpu_task = _lx_task;
+
 			if (!_local_request(Gpu::Local_request::Type::OPEN)) {
 				Genode::warning("could not open DRM session");
 				throw Could_not_open_drm();
@@ -894,12 +1295,49 @@ struct Gpu::Session_component : public Genode::Session_object<Gpu::Session>
 			_sync_id[1] = _create_syncobj();
 
 			void *info = _info_dataspace.local_addr<void>();
-			Genode::memcpy(info, _lx_task_args.info, sizeof (Gpu::Info_lima));
+			Genode::memcpy(info, &_lx_task_args.info, sizeof (Gpu::Info_lima));
 		}
 
 		virtual ~Session_component()
 		{
-			if (_lx_task_args.pending_request->valid()) {
+			/*
+			 * Close all imported handles (those were not created by this
+			 * sessions so the the export handle must be invalid).
+			 */
+			_vram_local_space.for_each<Vram_local>([&] (Vram_local &vl) {
+
+				if (vl.export_name.valid())
+					return;
+
+				if (!vl.import_handle.valid())
+					return;
+
+				Gpu::Request r = Gpu::Request::create(this, Gpu::Operation::Type::CLOSE);
+				r.operation.id = Gpu::Vram_id { .value = vl._elem.id().value };
+				r.operation.handle = vl.import_handle.value;
+
+				auto success = [&] (Gpu::Request const &) { };
+				auto fail = [&] () { };
+				_schedule_request(r, success, fail);
+			});
+
+			/*
+			 * Close all exported handles and free buffer objects owned by this session.
+			 *
+			 * Additionally destroy all imported handles we closed before.
+			 */
+			while (_vram_local_space.apply_any<Vram_local>([&] (Vram_local &vl) {
+
+				if (vl.import_handle.valid()) {
+					Genode::destroy(_heap, &vl);
+					return;
+				}
+
+				if (!_unmap_gpu(Gpu::Vram_id { .value = vl._elem.id().value }, 0, Gpu::Virtual_address { 0 }))
+					Genode::destroy(_heap, &vl);
+			})) { ; }
+
+			if (_lx_task_args._pending_request->valid()) {
 				Genode::warning("destructor override currently pending request");
 			}
 
@@ -913,18 +1351,10 @@ struct Gpu::Session_component : public Genode::Session_object<Gpu::Session>
 				Genode::warning("could not close DRM session - leaking objects");
 		}
 
-		char const *name() { return _name; }
-
 		void submit_completion_signal()
 		{
 			if (_completion_sigh.valid())
 				Genode::Signal_transmitter(_completion_sigh).submit();
-		}
-
-		bool operation_pending() const
-		{
-			/* only notify sessions with pending operations */
-			return _pending_syncobj_wait || _pending_wait;
 		}
 
 		/***************************
@@ -937,9 +1367,9 @@ struct Gpu::Session_component : public Genode::Session_object<Gpu::Session>
 		}
 
 		Gpu::Sequence_number execute(Gpu::Vram_id id,
-		                                 Genode::off_t) override
+		                             Genode::off_t) override
 		{
-			Gpu::Request r = Gpu::Request::create(Gpu::Operation::Type::EXEC);
+			Gpu::Request r = Gpu::Request::create(this, Gpu::Operation::Type::EXEC);
 			r.operation.id = id;
 			r.operation.ctx_id = _ctx_id;
 			r.operation.syncobj_id[0] = _sync_id[0];
@@ -960,6 +1390,7 @@ struct Gpu::Session_component : public Genode::Session_object<Gpu::Session>
 
 		bool complete(Gpu::Sequence_number seqno) override
 		{
+			/* ignore any seqno we are not aware of */
 			bool valid = false;
 			for (auto v : _sync_id) {
 				if (seqno.value == v.value) {
@@ -970,20 +1401,21 @@ struct Gpu::Session_component : public Genode::Session_object<Gpu::Session>
 			if (!valid)
 				return false;
 
+			/* handle previous interrupted call */
 			if (_pending_syncobj_wait) {
-				Gpu::Request *pr = _lx_task_args.pending_request;
+				Gpu::Request *pr = _lx_task_args._pending_request;
 				if (pr && pr->operation.type == Gpu::Operation::Type::SYNCOBJ_WAIT) {
 					return false;
 				}
 
-				Gpu::Request *cr = _lx_task_args.completed_request;
+				Gpu::Request *cr = _lx_task_args._completed_request;
 				if (cr && cr->operation.type == Gpu::Operation::Type::SYNCOBJ_WAIT) {
 					_pending_syncobj_wait = false;
 					return cr->success;
 				}
 			}
 
-			Gpu::Request r = Gpu::Request::create(Gpu::Operation::Type::SYNCOBJ_WAIT);
+			Gpu::Request r = Gpu::Request::create(this, Gpu::Operation::Type::SYNCOBJ_WAIT);
 			r.operation.syncobj_id[0] =
 				Gpu::Syncobj_id { .value = (uint32_t)seqno.value };
 
@@ -1021,12 +1453,35 @@ struct Gpu::Session_component : public Genode::Session_object<Gpu::Session>
 		Genode::Dataspace_capability map_cpu(Gpu::Vram_id id,
 		                                        Gpu::Mapping_attributes) override
 		{
-			return _buffers.lookup_buffer(id);
+			return _worker_buffers.lookup_buffer(id);
 		}
 
-		void unmap_cpu(Vram_id) override
+		void unmap_cpu(Vram_id id) override
 		{
-			Genode::warning(__func__, ": not implemented");
+			Vram_local *vlp = nullptr;
+			_vram_local_space.with_vram_local(id, [&] (Vram_local &vl) {
+
+				/* it should be safe to destroy the vl in all cases */
+				vlp = &vl;
+
+				// XXX check that is does not deferr BO freeing
+				if (vl.export_name.valid())
+					return;
+
+				if (!vl.import_handle.valid())
+					return;
+
+				Gpu::Request r = Gpu::Request::create(this, Gpu::Operation::Type::CLOSE);
+				r.operation.id = Gpu::Vram_id { .value = vl._elem.id().value };
+				r.operation.handle = vl.import_handle.value;
+
+				auto success = [&] (Gpu::Request const &) { };
+				auto fail = [&] () { };
+				_schedule_request(r, success, fail);
+			});
+
+			if (vlp)
+				Genode::destroy(_heap, vlp);
 		}
 
 		bool map_gpu(Vram_id id, Genode::size_t size, Genode::off_t,
@@ -1034,7 +1489,7 @@ struct Gpu::Session_component : public Genode::Session_object<Gpu::Session>
 		{
 			Genode::Dataspace_capability cap { };
 
-			cap = _buffers.lookup_buffer(id);
+			cap = _worker_buffers.lookup_buffer(id);
 			if (cap.valid()) {
 				error("Duplicate 'map_gpu' called for ", id.value);
 				return false;
@@ -1045,7 +1500,7 @@ struct Gpu::Session_component : public Genode::Session_object<Gpu::Session>
 				return false;
 			}
 
-			Gpu::Request r = Gpu::Request::create(Gpu::Operation::Type::ALLOC);
+			Gpu::Request r = Gpu::Request::create(this, Gpu::Operation::Type::ALLOC);
 			r.operation.id   = id;
 			r.operation.va   = (uint32_t) va.value;
 			r.operation.size = (uint32_t) size;
@@ -1057,35 +1512,71 @@ struct Gpu::Session_component : public Genode::Session_object<Gpu::Session>
 			auto fail = [&] () { };
 			_schedule_request(r, success, fail);
 
+			if (ret) {
+				/*
+				 * When we cannot create our book-keeping objects we have to
+				 * rollback the BO allocation.
+				 */
+				ret = false;
+				_worker_buffers.with_bo(id, [&] (Buffer_object const &bo) {
+					Gpu_vram *vram = nullptr;
+
+					try {
+						vram = new (_heap) Gpu_vram(bo, _owner);
+					} catch (...) {
+						return;
+					}
+
+					// XXX can it throw?
+					_env.ep().manage(*vram);
+
+					try {
+						new (_heap) Vram_local(_vram_local_space, vram->cap(), id);
+					} catch (...) {
+						_env.ep().dissolve(*vram);
+						Genode::destroy(_heap, vram);
+						return;
+					}
+
+					ret = true;
+				});
+				if (!ret) {
+					Gpu::Request r = Gpu::Request::create(this, Gpu::Operation::Type::FREE);
+					r.operation.id   = id;
+
+					auto success = [&] (Gpu::Request const &) { };
+					auto fail = [&] () {
+						error("map_gpu: ", this, " failed to clean up vram: ", id.value,
+						      " might leak: ", size, " bytes of memory");
+					};
+					_schedule_request(r, success, fail);
+				}
+			}
 			return ret;
 		}
 
 		void unmap_gpu(Vram_id id, Genode::off_t, Virtual_address) override
 		{
-			Gpu::Request r = Gpu::Request::create(Gpu::Operation::Type::FREE);
-			r.operation.id = id;
-
-			auto success = [&] (Gpu::Request const &) { };
-			auto fail = [&] () { };
-			_schedule_request(r, success, fail);
+			(void)_unmap_gpu(id, 0, Gpu::Virtual_address { 0 });
 		}
 
-		bool set_tiling_gpu(Gpu::Buffer_id id, Genode::off_t,  unsigned mode) override
+		bool set_tiling_gpu(Gpu::Vram_id id, Genode::off_t,  unsigned mode) override
 		{
+			/* handle previous interrupted call */
 			if (_pending_wait) {
-				Gpu::Request *pr = _lx_task_args.pending_request;
+				Gpu::Request *pr = _lx_task_args._pending_request;
 				if (pr && pr->operation.type == Gpu::Operation::Type::WAIT) {
 					return false;
 				}
 
-				Gpu::Request *cr = _lx_task_args.completed_request;
+				Gpu::Request *cr = _lx_task_args._completed_request;
 				if (cr && cr->operation.type == Gpu::Operation::Type::WAIT) {
 					_pending_wait = false;
 					return cr->success;
 				}
 			}
 
-			Gpu::Request r = Gpu::Request::create(Gpu::Operation::Type::WAIT);
+			Gpu::Request r = Gpu::Request::create(this, Gpu::Operation::Type::WAIT);
 			r.operation.id = id;
 			r.operation.op = mode;
 
@@ -1103,15 +1594,91 @@ struct Gpu::Session_component : public Genode::Session_object<Gpu::Session>
 			return completed;
 		}
 
-		Gpu::Vram_capability export_vram(Gpu::Vram_id) override
+		Gpu::Vram_capability export_vram(Gpu::Vram_id id) override
 		{
-			Genode::warning(__func__, ": not implemented");
+			if (!_vram_local_space.contains(id))
+				return Gpu::Vram_capability();
+
+			Vram_local::Export_name export_name =
+				_vram_local_space.lookup_export(id);
+
+			/*
+			 * Attempt to export first in case the buffer has not
+			 * been exported before and look up capability afterwards.
+			 * Also store the global handle for later use on import.
+			 */
+
+			if (!export_name.valid()) {
+
+				_vram_local_space.with_vram_local(id, [&] (Vram_local &vl) {
+					Gpu::Request r = Gpu::Request::create(this, Gpu::Operation::Type::FLINK);
+					r.operation.id = id;
+
+					auto success = [&] (Gpu::Request const &request) {
+						/* store for second check below */
+						export_name =
+							Vram_local::Export_name { request.operation.name, true };
+
+						/* set export handle for future use */
+						vl.export_name = export_name;
+					};
+					auto fail = [&] () { };
+					_schedule_request(r, success, fail);
+				});
+			}
+
+			if (export_name.valid()) {
+				Gpu::Vram_capability cap { };
+
+				cap = _vram_local_space.lookup_vram_cap(id);
+				_env.ep().rpc_ep().apply(cap, [&] (Gpu_vram *v) {
+
+					if (v->import_name.valid())
+						return;
+
+					/* set global name used for import later on */
+					v->import_name =
+						Gpu_vram::Import_name { .value = export_name.value, true };
+				});
+				return cap;
+			}
+
 			return Gpu::Vram_capability();
 		}
 
-		void import_vram(Gpu::Vram_capability, Gpu::Vram_id) override
+		void import_vram(Gpu::Vram_capability cap, Gpu::Vram_id id) override
 		{
-			Genode::warning(__func__, ": not implemented");
+			if (!_vram_local_space.contains(id))
+				try {
+					new (_heap) Vram_local(_vram_local_space, cap, id);
+				} catch (...) {
+					throw Gpu::Session::Out_of_ram();
+				}
+
+			if (_vram_local_space.lookup_import(id).valid())
+				return;
+
+			_env.ep().rpc_ep().apply(cap, [&] (Gpu_vram *v) {
+
+				Gpu::Request r = Gpu::Request::create(this, Gpu::Operation::Type::OPEN);
+				r.operation.name = v->import_name.value;
+
+				bool result = false;
+				_vram_local_space.with_vram_local(id, [&] (Vram_local &vl) {
+
+					auto success = [&] (Gpu::Request const &request) {
+						result = request.success;
+						vl.import_handle =
+							Vram_local::Import_handle { request.operation.handle,
+							                            true };
+					};
+					auto fail = [&] () { };
+					_schedule_request(r, success, fail);
+				});
+
+				if (!result)
+					throw Invalid_state();
+			});
 		}
 };
 
@@ -1129,18 +1696,13 @@ struct Gpu::Root : Gpu::Root_component
 		Genode::Env       &_env;
 		Genode::Allocator &_alloc;
 
-		uint32_t           _session_id;
-
 		Gpu::Session_space _session_space { };
+
 
 	protected:
 
 		Session_component *_create_session(char const *args) override
 		{
-			char *name = (char*)_alloc.alloc(64);
-			Genode::String<64> tmp("gpu_worker-", ++_session_id);
-			Genode::memcpy(name, tmp.string(), tmp.length());
-
 			Session::Label const label  { session_label_from_args(args) };
 
 			Session_component *sc =
@@ -1148,7 +1710,6 @@ struct Gpu::Root : Gpu::Root_component
 			                                   session_resources_from_args(args),
 			                                   label,
 			                                   session_diag_from_args(args),
-			                                   name,
 			                                   _session_space);
 			return sc;
 		}
@@ -1161,9 +1722,6 @@ struct Gpu::Root : Gpu::Root_component
 
 		void _destroy_session(Session_component *sc) override
 		{
-			char const *name = sc->name();
-
-			Genode::destroy(_alloc, const_cast<char*>(name));
 			Genode::destroy(md_alloc(), sc);
 		}
 
@@ -1173,18 +1731,8 @@ struct Gpu::Root : Gpu::Root_component
 		:
 			Root_component { env.ep(), alloc },
 			_env           { env },
-			_alloc         { alloc },
-			_session_id    { 0 }
+			_alloc         { alloc }
 		{ }
-
-		void completion_signal()
-		{
-			_session_space.for_each<Session_component>(
-				[&] (Session_component &sc) {
-					if (sc.operation_pending())
-						sc.submit_completion_signal();
-				});
-		}
 };
 
 
@@ -1199,15 +1747,6 @@ void lx_emul_announce_gpu_session(void)
 		Genode::Entrypoint &ep = Lx_kit::env().env.ep();
 		Lx_kit::env().env.parent().announce(ep.manage(*_gpu_root));
 	}
-}
-
-
-void lx_emul_submit_completion_signal(void)
-{
-	if (!_gpu_root.constructed())
-		return;
-
-	_gpu_root->completion_signal();
 }
 
 
@@ -1229,33 +1768,6 @@ struct Driver::Main : private Entrypoint::Io_progress_handler
 		_config_rom.xml().attribute_value("dtb", Dtb_name("dtb")) };
 	Attached_rom_dataspace _dtb_rom { _env, _dtb_name.string() };
 
-	Genode::Sliced_heap  _alloc          { _env.ram(), _env.rm() };
-	Genode::Region_map  &_worker_rm      { _env.rm() };
-	Gpu::Buffer_space    _worker_buffers { _alloc };
-	Gpu::Info_lima       _worker_info    { };
-
-	struct Notifier : Syncobj_notifier
-	{
-		void _handle_notifier()
-		{
-			lx_emul_submit_completion_signal();
-		}
-
-		Genode::Signal_handler<Notifier> _notifier_sigh;
-
-		Notifier(Genode::Entrypoint &ep)
-		:
-			_notifier_sigh { ep, *this, &Notifier::_handle_notifier }
-		{ }
-
-		void notify() override
-		{
-			_notifier_sigh.local_submit();
-		}
-	};
-
-	Notifier _sync_notifier { _env.ep() };
-
 	void handle_io_progress() override { }
 
 	Main(Env &env) : _env { env }
@@ -1265,18 +1777,10 @@ struct Driver::Main : private Entrypoint::Io_progress_handler
 		Lx_kit::initialize(_env);
 		_env.exec_static_constructors();
 
-		/*
-		 * For the moment there is only one task that handles
-		 * all sessions, the GPU device is only opened once and
-		 * the Buffer registry is global. Therefor only one client
-		 * at a time is allowed to access the driver.
-		 */
-		_worker_args.rm               = &_worker_rm;
-		_worker_args.buffers          = &_worker_buffers;
-		_worker_args.info             = &_worker_info;
-		_worker_args.syncobj_notifier = &_sync_notifier;
-
-		lx_user_task_args    = &_worker_args;
+		_lx_user_task_args.create_task  = false;
+		_lx_user_task_args.args         = nullptr;
+		_lx_user_task_args.new_gpu_task = nullptr;
+		lx_user_task_args = &_lx_user_task_args;
 
 		lx_emul_start_kernel(_dtb_rom.local_addr<void>());
 
