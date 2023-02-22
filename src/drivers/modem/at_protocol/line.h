@@ -31,7 +31,7 @@ class At_protocol::Line : Noncopyable
 
 	public:
 
-		Line(Byte_range_ptr ptr) : _ptr(ptr) { };
+		Line(Byte_range_ptr const &ptr) : _ptr(ptr.start, ptr.num_bytes) { };
 
 		bool starts_with(char const *s) const
 		{
