@@ -44,6 +44,8 @@ class Genode::Ns16550_uart : Mmio
 
 		Ns16550_uart(addr_t const base, uint32_t, uint32_t) : Mmio(base) { }
 
+		void init() { }
+
 		void put_char(char const c)
 		{
 			while (read<Lsr::Thr_empty>() == 0);
