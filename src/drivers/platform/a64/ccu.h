@@ -74,6 +74,7 @@ struct Driver::Ccu : private Attached_mmio
 	Gating_bit _bus_mipi_dsi { _clocks, "bus-mipi-dsi", _osc_24m_clk, _regs(),  0x60,  1 };
 	Gating_bit _bus_dma      { _clocks, "bus-dma",      _osc_24m_clk, _regs(),  0x60,  6 };
 	Gating_bit _bus_mmc0     { _clocks, "bus-mmc0",     _osc_24m_clk, _regs(),  0x60,  8 };
+	Gating_bit _bus_mmc1     { _clocks, "bus-mmc1",     _osc_24m_clk, _regs(),  0x60,  9 };
 	Gating_bit _bus_mmc2     { _clocks, "bus-mmc2",     _osc_24m_clk, _regs(),  0x60, 10 };
 	Gating_bit _bus_bus_ehci1{ _clocks, "bus-ehci1",    _osc_24m_clk, _regs(),  0x60, 25 };
 	Gating_bit _bus_bus_ohci1{ _clocks, "bus-ohci1",    _osc_24m_clk, _regs(),  0x60, 29 };
@@ -262,6 +263,38 @@ struct Driver::Ccu : private Attached_mmio
 		}
 	} _mmc0_clk { _clocks, _regs() };
 
+	struct Mmc1_clk : Clock, private Mmio
+	{
+		struct Reg : Register<0x08c, 32>
+		{
+			struct Sclk_gating : Bitfield<31, 1> { enum { MASK = 0, PASS = 1 }; };
+			struct Clk_src_sel : Bitfield<24, 2> { enum { PERIPH1 = 2, PERIPH0 = 1, INITIAL = 0 }; };
+			struct Clk_div_n   : Bitfield<16, 2> { };
+			struct Clk_div_m   : Bitfield<0,  4> { };
+		};
+
+		Mmc1_clk(Clocks &clocks, void *ccu_regs)
+		:
+			Clock(clocks, "mmc1"), Mmio((addr_t)ccu_regs)
+		{ }
+
+		void _enable()  override
+		{
+			write<Reg::Clk_div_n>(1);
+			write<Reg::Clk_div_m>(11);
+			write<Reg::Clk_src_sel>(Reg::Clk_src_sel::PERIPH0);
+			write<Reg::Sclk_gating>(Reg::Sclk_gating::PASS);
+		}
+
+		void _disable() override
+		{
+			write<Reg::Sclk_gating>(Reg::Sclk_gating::MASK);
+			write<Reg::Clk_src_sel>(Reg::Clk_src_sel::INITIAL);
+			write<Reg::Clk_div_m>(0);
+			write<Reg::Clk_div_n>(0);
+		}
+	} _mmc1_clk { _clocks, _regs() };
+
 	struct Mmc2_clk : Clock, private Mmio
 	{
 		struct Reg : Register<0x090, 32>
@@ -355,6 +388,7 @@ struct Driver::Ccu : private Attached_mmio
 	Reset_bit _mipi_dsi_rst  { _resets, "mipi-dsi", _regs(), 0x2c0,  1 };
 	Reset_bit _dma_rst       { _resets, "dma",      _regs(), 0x2c0,  6 };
 	Reset_bit _mmc0_rst      { _resets, "mmc0",     _regs(), 0x2c0,  8 };
+	Reset_bit _mmc1_rst      { _resets, "mmc1",     _regs(), 0x2c0,  9 };
 	Reset_bit _mmc2_rst      { _resets, "mmc2",     _regs(), 0x2c0, 10 };
 	Reset_bit _ehci1_rst     { _resets, "ehci1",    _regs(), 0x2c0, 25 };
 	Reset_bit _ohci1_rst     { _resets, "ohci1",    _regs(), 0x2c0, 29 };
