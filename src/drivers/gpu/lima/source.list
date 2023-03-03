@@ -1,5 +1,4 @@
 arch/arm64/boot/dts/allwinner/sun50i-a64-pine64-lts.dts
-arch/arm64/lib/delay.c
 arch/arm64/lib/memchr.S
 arch/arm64/lib/memcmp.S
 arch/arm64/lib/memcpy.S

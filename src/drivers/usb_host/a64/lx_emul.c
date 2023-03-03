@@ -12,16 +12,7 @@
  */
 
 #include <lx_emul.h>
-#include <time.h>
 #include <linux/slab.h>
-
-
-#include <asm-generic/delay.h>
-
-void __const_udelay(unsigned long xloops)
-{
-	lx_emul_time_udelay(xloops / 0x10C7UL);
-}
 
 
 #include <linux/dma-mapping.h>

@@ -12,7 +12,6 @@ SRC_C += lx_emul/a64/pmic.c
 SRC_C  += block.c
 SRC_C  += clock.c
 SRC_CC += main.cc
-SRC_CC += time.cc
 SRC_CC += lx_emul/shared_dma_buffer.cc
 
 vpath lx_emul/a64/common_dummies.c $(REP_DIR)/src/lib

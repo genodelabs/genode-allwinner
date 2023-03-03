@@ -23,14 +23,6 @@ const char * __clk_get_name(const struct clk * clk)
 }
 
 
-#include <asm-generic/delay.h>
-
-void __const_udelay(unsigned long xloops)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
 #include <linux/serial_core.h>
 
 const struct earlycon_id __earlycon_table[] = {};
@@ -129,14 +121,6 @@ void __rtnl_unlock(void)
 #include <linux/skbuff.h>
 
 void __skb_get_hash(struct sk_buff * skb)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <asm-generic/delay.h>
-
-void __udelay(unsigned long usecs)
 {
 	lx_emul_trace_and_stop(__func__);
 }

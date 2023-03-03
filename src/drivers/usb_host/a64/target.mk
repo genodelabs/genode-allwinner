@@ -10,7 +10,6 @@ SRC_C += lx_emul/a64/common_dummies.c
 SRC_C += lx_emul/shadow/drivers/clk/clk.c
 
 SRC_CC += main.cc
-SRC_CC += time.cc
 SRC_CC += lx_emul/shared_dma_buffer.cc
 
 vpath lx_emul/a64/common_dummies.c $(REP_DIR)/src/lib

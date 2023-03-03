@@ -90,20 +90,6 @@ void sched_set_fifo(struct task_struct * p)
 }
 
 
-#include <asm-generic/delay.h>
-
-void __udelay(unsigned long usecs)
-{
-	lx_emul_trace(__func__);
-}
-
-
-void __const_udelay(unsigned long xloops)
-{
-	lx_emul_trace(__func__);
-}
-
-
 #include <linux/firmware.h>
 
 struct builtin_fw __start_builtin_fw[] = { };
