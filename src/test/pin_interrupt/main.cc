@@ -77,7 +77,7 @@ struct Test::Main
 
 	enum { PB_EINT = 43 };
 
-	Irq_connection _irq { _env, PB_EINT };
+	Irq_connection _irq { _env, unsigned(PB_EINT) };
 
 	unsigned _count = 0;
 

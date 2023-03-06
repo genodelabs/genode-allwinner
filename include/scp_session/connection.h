@@ -23,10 +23,6 @@ namespace Scp { class Connection; }
 
 class Scp::Connection : Genode::Connection<Session>, Rpc_client<Session>
 {
-	public:
-
-		enum { RAM_QUOTA = 20*1024UL };
-
 	private:
 
 		Entrypoint &_ep;
@@ -51,12 +47,10 @@ class Scp::Connection : Genode::Connection<Session>, Rpc_client<Session>
 
 	public:
 
-		Connection(Env &env, char const *label = "")
+		Connection(Env &env, Label const &label = Label())
 		:
-			Genode::Connection<Scp::Session>(
-				env, session(env.parent(),
-				             "ram_quota=%u, cap_quota=%u, label=\"%s\"",
-				             RAM_QUOTA, CAP_QUOTA, label)),
+			Genode::Connection<Scp::Session>(env, label,
+			                                 Ram_quota { 20*1024 }, Args()),
 			Rpc_client<Session>(cap()),
 			_ep(env.ep()),
 			_ds(env.rm(), call<Rpc_dataspace>()),
