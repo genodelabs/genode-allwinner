@@ -183,6 +183,7 @@ block_handle_session(struct genode_block_session * const session,
 			break;
 		case GENODE_BLOCK_SYNC:
 			genode_block_ack_request(session, req, block_sync(bdev));
+			genode_block_notify_peers();
 		default: ;
 		};
 	}
