@@ -54,9 +54,9 @@ static unsigned check_and_constrain_value(Xml_node const &node,
 }
 
 
-struct Main : private Entrypoint::Io_progress_handler
+struct Main
 {
-	Env                  & env;
+	Env                   &env;
 	Attached_rom_dataspace dtb_rom        { env, "dtb"           };
 	Signal_handler<Main>   signal_handler { env.ep(), *this,
 	                                        &Main::handle_signal };
@@ -107,13 +107,6 @@ struct Main : private Entrypoint::Io_progress_handler
 		    lx_config.fps, " (", format, ")", " rotate: ", lx_config.rotate);
 	}
 
-	/**
-	 * Entrypoint::Io_progress_handler
-	 */
-	void handle_io_progress() override
-	{
-	}
-
 	void handle_signal()
 	{
 		lx_user_handle_io();
@@ -131,8 +124,6 @@ struct Main : private Entrypoint::Io_progress_handler
 		                genode_allocator_ptr(sliced_heap));
 
 		lx_emul_start_kernel(dtb_rom.local_addr<void>());
-
-		env.ep().register_io_progress_handler(*this);
 	}
 };
 

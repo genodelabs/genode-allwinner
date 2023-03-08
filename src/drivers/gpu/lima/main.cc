@@ -1758,7 +1758,7 @@ namespace Driver {
 } /* namespace Driver */
 
 
-struct Driver::Main : private Entrypoint::Io_progress_handler
+struct Driver::Main
 {
 	Env                    &_env;
 	Attached_rom_dataspace  _config_rom { _env, "config" };
@@ -1767,8 +1767,6 @@ struct Driver::Main : private Entrypoint::Io_progress_handler
 	Dtb_name              _dtb_name {
 		_config_rom.xml().attribute_value("dtb", Dtb_name("dtb")) };
 	Attached_rom_dataspace _dtb_rom { _env, _dtb_name.string() };
-
-	void handle_io_progress() override { }
 
 	Main(Env &env) : _env { env }
 	{
@@ -1785,8 +1783,6 @@ struct Driver::Main : private Entrypoint::Io_progress_handler
 		lx_emul_start_kernel(_dtb_rom.local_addr<void>());
 
 		lx_emul_announce_gpu_session();
-
-		_env.ep().register_io_progress_handler(*this);
 	}
 };
 
