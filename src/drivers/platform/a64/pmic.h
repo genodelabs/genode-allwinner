@@ -77,6 +77,17 @@ struct Driver::Pmic : private Noncopyable
 	                  "17 28 pmic! "
 	};
 
+	Power wifi_power { _powers, "pmic-wifi", _scp,
+	                  /* DLDO4, set bit 6 in output control 2 */
+	                  "b 18 pmic! "
+	                  "12 pmic@ 40 or 12 pmic! "
+	                  "a udelay "
+	                  ,
+	                  /* DLDO4, clear bit 6 in output control 2 */
+	                  "12 pmic@ bf and 12 pmic! "
+	                  "1a 18 pmic! "
+	};
+
 	Pmic(Scp::Local_connection &scp, Powers &powers)
 	:
 		_scp(scp), _powers(powers)
