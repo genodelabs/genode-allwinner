@@ -19,3 +19,5 @@ _/pkg/screenshot_trigger
 _/pkg/sntp_dummy_rtc
 _/pkg/stdin2out
 _/pkg/terminal
+_/pkg/vfs
+_/pkg/nitpicker

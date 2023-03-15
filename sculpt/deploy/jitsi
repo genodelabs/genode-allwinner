@@ -1,4 +1,4 @@
-<config arch="" info="Chromium-based Morph web browser">
+<config arch="" info="Video chat via Jitsi">
 
 	<common_routes>
 		<service name="ROM" label_last="ld.lib.so"> <parent/> </service>
@@ -73,8 +73,27 @@
 		</route>
 	</start>
 
-	<start name="black_hole" pkg="black_hole">
-		<config> <audio_in/> <audio_out/> <capture/> <report/> </config>
+	<start name="video_bridge" pkg="nitpicker">
+		<config request_framebuffer="no">
+			<capture/>
+			<domain name="" xpos="80" ypos="-80" layer="1" content="client" label="no" />
+			<default-policy domain=""/>
+		</config>
+		<route>
+			<service name="Report"> <parent/> </service>
+		</route>
+	</start>
+
+	<start name="camera" pkg="camera-pinephone">
+		<affinity xpos="3" width="1"/>
+		<config width="640" height="480" fps="15" skip="3" num_buffer="8" gray="yes" format="yuv" camera="front"/>
+		<route>
+			<service name="Timer">       <parent/> </service>
+			<service name="Platform">    <parent label="camera"/> </service>
+			<service name="Pin_state">   <parent/> </service>
+			<service name="Pin_control"> <parent/> </service>
+			<service name="Gui">         <child name="video_bridge"/> </service>
+		</route>
 	</start>
 
 	<start name="touch_keyboard" pkg="touch_keyboard">
@@ -89,7 +108,7 @@
 		<route> <service name="RM"> <parent/> </service> </route>
 	</start>
 
-	<start name="morph_config_fs" pkg="vfs">
+	<start name="jitsi_config_fs" pkg="vfs">
 		<provides> <service name="File_system"/> </provides>
 		<config>
 			<vfs>
@@ -105,13 +124,13 @@
 						defaultAudioDevice=
 						defaultVideoDevice=
 						domainWhiteListMode=false
-						homepage=@Variant(\0\0\0\x11\0\0\0\x23https://genode.org/files/pinephone/)
+						homepage=@Variant(\0\0\0\x11\0\0\0\x13https://meet.jit.si)
 						incognitoOnStart=false
 						newTabDefaultSection=0
 						restoreSession=true
 						searchEngine=duckduckgo
 						setDesktopMode=false
-						zoomFactor=1.0
+						zoomFactor=1.5
 					</inline>
 				</dir>
 				<ram/>
@@ -120,14 +139,14 @@
 		</config>
 	</start>
 
-	<start ram="1350M" name="morph_browser" pkg="cproc/pkg/morph_browser_pinephone-jemalloc/2023-03-16">
+	<start ram="1350M" name="morph_browser" pkg="cproc/pkg/morph_browser_pinephone-jemalloc/2023-03-20-a">
 		<affinity xpos="1" width="2"/>
 		<route>
 			<service name="Nic">
 				<child name="nic_router"/>
 			</service>
 			<service name="File_system" label="config">
-				<child name="morph_config_fs"/>
+				<child name="jitsi_config_fs"/>
 			</service>
 			<service name="File_system" label="downloads">
 				<child name="ram_fs"/>
@@ -151,10 +170,10 @@
 				<child name="audio_drv"/>
 			</service>
 			<service name="Audio_in">
-				<child name="black_hole"/>
+				<child name="audio_drv"/>
 			</service>
 			<service name="Capture">
-				<child name="black_hole"/>
+				<child name="video_bridge"/>
 			</service>
 			<service name="Gpu">
 				<child name="gpu_drv"/>
