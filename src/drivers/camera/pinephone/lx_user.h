@@ -20,9 +20,9 @@ enum {
 	MAX_HEIGHT = 720,
 	MAX_FPS    = 30,
 
-	MIN_WIDTH  = 640,
-	MIN_HEIGHT = 480,
-	MIN_FPS    = 15,
+	MIN_WIDTH  = 160,
+	MIN_HEIGHT = 120,
+	MIN_FPS    = 1,
 
 	FMT_YUV      = 0,
 	FMT_SBGRR8   = 1,

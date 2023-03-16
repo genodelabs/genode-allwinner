@@ -45,11 +45,6 @@ static unsigned check_and_constrain_value(Xml_node const &node,
 		value = max;
 	}
 
-	if (value != min && value != max) {
-		warning(attr, " value ", value, " not supported, will use ", min);
-		value = min;
-	}
-
 	return value;
 }
 
