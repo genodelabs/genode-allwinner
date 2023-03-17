@@ -612,18 +612,17 @@ static void _gui_show(struct genode_gui_refresh_context *ctx,
 		 * +-------+
 		 *
 		 * w_offset selects source column and h_offset source row,
-		 * flip picture while copying ccw.
+		 * copy ccw.
 		 */
-		unsigned const h_offset_value = (height - 1) * width;
 		unsigned       w_offset       = width;
 
 		unsigned h, w;
 		for (w = 0; w < width; w++) {
 
-			unsigned h_offset = h_offset_value;
+			unsigned h_offset = 0;
 			for (h = 0; h < height; h++) {
 				*(d++) = *(s + w_offset + h_offset);
-				h_offset -= width;
+				h_offset += width;
 			}
 			w_offset--;
 		}
