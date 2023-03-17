@@ -57,6 +57,7 @@
 #include <view/software_tabs_dialog.h>
 #include <view/software_presets_dialog.h>
 #include <view/software_options_dialog.h>
+#include <view/software_add_dialog.h>
 #include <view/software_update_dialog.h>
 #include <view/software_version_dialog.h>
 #include <view/software_status_dialog.h>
@@ -74,6 +75,7 @@ struct Sculpt::Main : Input_event_handler,
                       Graph::Action,
                       Dialog,
                       Depot_query,
+                      Component::Construction_info,
                       Menu_view::Hover_update_handler,
                       Device_controls_dialog::Action,
                       Device_power_dialog::Action,
@@ -85,7 +87,9 @@ struct Sculpt::Main : Input_event_handler,
                       Software_presets_dialog::Action,
                       Software_options_dialog::Action,
                       Software_update_dialog::Action,
+                      Software_add_dialog::Action,
                       Depot_users_dialog::Action,
+                      Component::Construction_action,
                       Software_status
 {
 	Env &_env;
@@ -322,6 +326,8 @@ struct Sculpt::Main : Input_event_handler,
 
 	Depot::Archive::User _image_index_user = _build_info.depot_user;
 
+	Depot::Archive::User _index_user = _build_info.depot_user;
+
 	Expanding_reporter _depot_query_reporter { _env, "query", "depot_query"};
 
 	/**
@@ -337,10 +343,13 @@ struct Sculpt::Main : Input_event_handler,
 	Timer::One_shot_timeout<Main> _deferred_depot_query_handler {
 		_timer, *this, &Main::_handle_deferred_depot_query };
 
-	bool _software_update_watches_depot()
+	bool _software_tab_watches_depot()
 	{
-		return _software_section_dialog.selected()
-		    && _software_tabs_dialog.dialog.update_selected();
+		if (!_software_section_dialog.selected())
+			return false;
+
+		return _software_tabs_dialog.dialog.add_selected()
+		    || _software_tabs_dialog.dialog.update_selected();
 	}
 
 	void _handle_deferred_depot_query(Duration)
@@ -351,16 +360,27 @@ struct Sculpt::Main : Input_event_handler,
 				xml.attribute("arch",    _deploy._arch);
 				xml.attribute("version", _query_version.value);
 
-				if (_software_update_watches_depot() || _scan_rom.xml().has_type("empty"))
+				if (_software_tab_watches_depot() || _scan_rom.xml().has_type("empty"))
 					xml.node("scan", [&] () {
 						xml.attribute("users", "yes"); });
 
-				if (_software_update_watches_depot() || _image_index_rom.xml().has_type("empty"))
+				if (_software_tab_watches_depot() || _image_index_rom.xml().has_type("empty"))
+					xml.node("index", [&] () {
+						xml.attribute("user",    _index_user);
+						xml.attribute("version", _sculpt_version);
+						xml.attribute("content", "yes");
+					});
+
+				if (_software_tab_watches_depot() || _image_index_rom.xml().has_type("empty"))
 					xml.node("image_index", [&] () {
 						xml.attribute("os",    "sculpt");
 						xml.attribute("board", _build_info.board);
 						xml.attribute("user",  _image_index_user);
 					});
+
+				_runtime_state.with_construction([&] (Component const &component) {
+					xml.node("blueprint", [&] () {
+						xml.attribute("pkg", component.path); }); });
 
 				/* update query for blueprints of all unconfigured start nodes */
 				_deploy.gen_depot_query(xml);
@@ -381,6 +401,35 @@ struct Sculpt::Main : Input_event_handler,
 		 * but are ultimately discarded.
 		 */
 		_deferred_depot_query_handler.schedule(Microseconds{5000});
+	}
+
+
+	/******************
+	 ** Browse index **
+	 ******************/
+
+	Attached_rom_dataspace _index_rom { _env, "report -> runtime/depot_query/index" };
+
+	Signal_handler<Main> _index_handler {
+		_env.ep(), *this, &Main::_handle_index };
+
+	void _handle_index()
+	{
+		_index_rom.update();
+
+		bool const software_add_dialog_shown = _software_section_dialog.selected()
+		                                    && _software_tabs_dialog.dialog.add_selected();
+		if (software_add_dialog_shown)
+			generate_dialog();
+	}
+
+	/**
+	 * Software_add_dialog::Action interface
+	 */
+	void query_index(Depot::Archive::User const &user) override
+	{
+		_index_user = user;
+		trigger_depot_query();
 	}
 
 
@@ -409,7 +458,11 @@ struct Sculpt::Main : Input_event_handler,
 		if (blueprint.attribute_value("version", 0U) != _query_version.value)
 			return;
 
+		_runtime_state.apply_to_construction([&] (Component &component) {
+			component.try_apply_blueprint(blueprint); });
+
 		_deploy.handle_deploy();
+		generate_dialog();
 	}
 
 
@@ -573,8 +626,16 @@ struct Sculpt::Main : Input_event_handler,
 	Conditional_float_dialog<Software_options_dialog>
 		_software_options_dialog { "software_options", _runtime_state, _launchers, *this };
 
+	Conditional_float_dialog<Software_add_dialog>
+		_software_add_dialog { "software_add", _build_info, _sculpt_version,
+		                       _network._nic_state, _index_update_queue,
+		                       _index_rom, _download_queue,
+		                       _cached_runtime_config,
+		                       *this, _scan_rom, *this, *this, *this };
+
 	Conditional_float_dialog<Software_update_dialog>
-		_software_update_dialog { "software_update", _build_info, _download_queue,
+		_software_update_dialog { "software_update", _build_info,
+		                          _network._nic_state, _download_queue,
 		                          _index_update_queue, _file_operation_queue,
 		                          _scan_rom, _image_index_rom, *this, *this };
 
@@ -671,6 +732,10 @@ struct Sculpt::Main : Input_event_handler,
 			                                                && _software_tabs_dialog.dialog.options_selected()
 			                                                && _storage._sculpt_partition.valid());
 
+			_software_add_dialog.generate_conditional(xml, _software_section_dialog.selected()
+			                                            && _software_tabs_dialog.dialog.add_selected()
+			                                            && _storage._sculpt_partition.valid());
+
 			_software_update_dialog.generate_conditional(xml, _software_section_dialog.selected()
 			                                               && _software_tabs_dialog.dialog.update_selected()
 			                                               && _storage._sculpt_partition.valid());
@@ -709,6 +774,59 @@ struct Sculpt::Main : Input_event_handler,
 
 	Managed_config<Main> _runtime_config {
 		_env, "config", "runtime", *this, &Main::_handle_runtime };
+
+	/**
+	 * Component::Construction_info interface
+	 */
+	void _with_construction(Component::Construction_info::With const &fn) const override
+	{
+		_runtime_state.with_construction([&] (Component const &c) { fn.with(c); });
+	}
+
+	/**
+	 * Component::Construction_action interface
+	 */
+	void new_construction(Component::Path const &pkg,
+	                      Component::Info const &info) override
+	{
+		(void)_runtime_state.new_construction(pkg, info, _affinity_space);
+		trigger_depot_query();
+	}
+
+	void _apply_to_construction(Component::Construction_action::Apply_to &fn) override
+	{
+		_runtime_state.apply_to_construction([&] (Component &c) { fn.apply_to(c); });
+	}
+
+	/**
+	 * Component::Construction_action interface
+	 */
+	void trigger_pkg_download() override
+	{
+		_runtime_state.apply_to_construction([&] (Component &c) {
+			_download_queue.add(c.path); });
+
+		/* incorporate new download-queue content into update */
+		_deploy.update_installation();
+
+		generate_runtime_config();
+	}
+
+	/**
+	 * Component::Construction_action interface
+	 */
+	void discard_construction() override { _runtime_state.discard_construction(); }
+
+	/**
+	 * Component::Construction_action interface
+	 */
+	void launch_construction()  override
+	{
+		_runtime_state.launch_construction();
+
+		/* trigger change of the deployment */
+		_deploy.update_managed_deploy_config();
+	}
 
 	bool _manually_managed_runtime = false;
 
@@ -770,8 +888,18 @@ struct Sculpt::Main : Input_event_handler,
 
 	bool _depot_user_selection_visible() const
 	{
+		if (!_software_section_dialog.selected())
+			return false;
+
+		return _software_tabs_dialog.dialog.update_selected()
+		    || _software_tabs_dialog.dialog.add_selected();
+	}
+
+	bool _software_add_dialog_has_keyboard_focus() const
+	{
 		return _software_section_dialog.selected()
-		    && _software_tabs_dialog.dialog.update_selected();
+		    && _software_tabs_dialog.dialog.add_selected()
+		    && _software_add_dialog.dialog.keyboard_needed();
 	}
 
 	bool _software_update_dialog_has_keyboard_focus() const
@@ -786,7 +914,8 @@ struct Sculpt::Main : Input_event_handler,
 	 */
 	bool touch_keyboard_needed() const
 	{
-		return _software_update_dialog_has_keyboard_focus();
+		return _software_add_dialog_has_keyboard_focus()
+		    || _software_update_dialog_has_keyboard_focus();
 	}
 
 
@@ -911,6 +1040,9 @@ struct Sculpt::Main : Input_event_handler,
 			if (_software_options_dialog.hovered())
 				_software_options_dialog.click();
 
+			if (_software_add_dialog.hovered())
+				_software_add_dialog.click();
+
 			if (_software_update_dialog.hovered())
 				_software_update_dialog.click();
 
@@ -938,6 +1070,7 @@ struct Sculpt::Main : Input_event_handler,
 			_dialpad_dialog.clack();
 			_current_call_dialog.clack();
 			_software_presets_dialog.clack();
+			_software_add_dialog.clack();
 			_software_update_dialog.clack();
 
 			if (_storage_dialog.hovered)
@@ -998,7 +1131,9 @@ struct Sculpt::Main : Input_event_handler,
 
 		ev.handle_press([&] (Input::Keycode, Codepoint code) {
 			need_generate_dialog = true;
-			if (_software_update_dialog_has_keyboard_focus())
+			if (_software_add_dialog_has_keyboard_focus())
+				_software_add_dialog.dialog.handle_key(code);
+			else if (_software_update_dialog_has_keyboard_focus())
 				_software_update_dialog.dialog.handle_key(code);
 		});
 
@@ -1321,6 +1456,17 @@ struct Sculpt::Main : Input_event_handler,
 		if (!_file_operation_queue.any_operation_in_progress())
 			_file_operation_queue.schedule_next_operations();
 
+		generate_runtime_config();
+	}
+
+	/**
+	 * Software_add_dialog::Action interface
+	 */
+	void update_sculpt_index(Depot::Archive::User const &user) override
+	{
+		_download_queue.remove_inactive_downloads();
+		_index_update_queue.remove_inactive_updates();
+		_index_update_queue.add(Path(user, "/index/", _sculpt_version));
 		generate_runtime_config();
 	}
 
@@ -1775,6 +1921,7 @@ struct Sculpt::Main : Input_event_handler,
 		_image_index_rom     .sigh(_image_index_handler);
 		_power_rom           .sigh(_power_handler);
 		_modem_state_rom     .sigh(_modem_state_handler);
+		_index_rom           .sigh(_index_handler);
 
 		/*
 		 * Import initial report content
@@ -1930,6 +2077,7 @@ Sculpt::Dialog::Hover_result Sculpt::Main::hover(Xml_node hover)
 			_software_tabs_dialog   .hover(vbox),
 			_software_presets_dialog.hover(vbox),
 			_software_options_dialog.hover(vbox),
+			_software_add_dialog    .hover(vbox),
 			_software_update_dialog .hover(vbox),
 			_storage_dialog.match_sub_dialog(vbox, "float", "frame", "vbox"),
 			_network.dialog.match_sub_dialog(vbox, "float")

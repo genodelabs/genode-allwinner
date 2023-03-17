@@ -28,7 +28,7 @@ struct Sculpt::Software_tabs_dialog
 	Presets         const &_presets;
 	Software_status const &_status;
 
-	enum class Choice { PRESETS, RUNTIME, OPTIONS, UPDATE, STATUS };
+	enum class Choice { PRESETS, RUNTIME, ADD, OPTIONS, UPDATE, STATUS };
 
 	Choice _choice { Choice::RUNTIME };
 
@@ -38,6 +38,7 @@ struct Sculpt::Software_tabs_dialog
 	{
 		if (_tab.hovered("presets")) return Choice::PRESETS;
 		if (_tab.hovered("runtime")) return Choice::RUNTIME;
+		if (_tab.hovered("add"))     return Choice::ADD;
 		if (_tab.hovered("options")) return Choice::OPTIONS;
 		if (_tab.hovered("update"))  return Choice::UPDATE;
 		if (_tab.hovered("status"))  return Choice::STATUS;
@@ -54,6 +55,7 @@ struct Sculpt::Software_tabs_dialog
 	void generate(Xml_generator &xml) const
 	{
 		bool const presets_avail = _storage_target.valid() && _presets.available();
+		bool const add_avail     = _storage_target.valid();
 		bool const options_avail = _storage_target.valid();
 		bool const update_avail  = _storage_target.valid();
 		bool const status_avail  = _status.software_status_available();
@@ -79,6 +81,7 @@ struct Sculpt::Software_tabs_dialog
 
 				gen_tab("presets", Choice::PRESETS, "Presets", presets_avail);
 				gen_tab("runtime", Choice::RUNTIME, "Runtime", true);
+				gen_tab("add",     Choice::ADD,     "Add",     add_avail);
 				gen_tab("options", Choice::OPTIONS, "Options", options_avail);
 				gen_tab("update",  Choice::UPDATE,  "Update",  update_avail);
 				gen_tab("status",  Choice::STATUS,  "Status",  status_avail);
@@ -98,6 +101,7 @@ struct Sculpt::Software_tabs_dialog
 	bool presets_selected() const { return _choice == Choice::PRESETS; }
 	bool runtime_selected() const { return _choice == Choice::RUNTIME; }
 	bool options_selected() const { return _choice == Choice::OPTIONS; }
+	bool add_selected()     const { return _choice == Choice::ADD; }
 	bool update_selected()  const { return _choice == Choice::UPDATE; }
 	bool status_selected()  const { return _choice == Choice::STATUS; }
 };

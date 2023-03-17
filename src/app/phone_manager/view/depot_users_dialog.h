@@ -192,9 +192,15 @@ struct Sculpt::Depot_users_dialog
 
 			remain_count++; /* account for '_gen_add_entry' */
 
+			bool known_pubkey = false;
+
 			gen_named_node(xml, "frame", "user_selection", [&] () {
 				xml.node("vbox", [&] () {
 					depot_users.for_each_sub_node("user", [&] (Xml_node user) {
+
+						if (_selected == user.attribute_value("name", User()))
+							known_pubkey = user.attribute_value("known_pubkey", false);
+
 						bool const last = (--remain_count == 0);
 						_gen_entry(xml, user, last); });
 
@@ -202,6 +208,15 @@ struct Sculpt::Depot_users_dialog
 						_gen_add_entry(xml, depot_users);
 				});
 			});
+
+			if (!_unfolded && !known_pubkey) {
+				gen_named_node(xml, "button", "pubkey warning", [&] {
+					xml.attribute("style", "invisible");
+					xml.node("label", [&] {
+						xml.attribute("font", "annotation/regular");
+						xml.attribute("text", "missing public key for verification"); });
+				});
+			}
 		}
 
 	public:
@@ -222,13 +237,25 @@ struct Sculpt::Depot_users_dialog
 
 		bool unfolded() const { return _unfolded; }
 
-		bool selected_user_has_download_url() const
+		struct User_properties
 		{
-			bool result = false;
+			bool exists;
+			bool download_url;
+			bool public_key;
+		};
+
+		User_properties selected_user_properties() const
+		{
+			User_properties result { };
 			_depot_users.xml().for_each_sub_node([&] (Xml_node const &user) {
-				if (_selected == user.attribute_value("name", User()))
-					if (Depot_url::from_string(_url(user)).valid())
-						result = true; });
+				if (_selected == user.attribute_value("name", User())) {
+					result = {
+						.exists       = true,
+						.download_url = Depot_url::from_string(_url(user)).valid(),
+						.public_key   = user.attribute_value("known_pubkey", false)
+					};
+				}
+			});
 			return result;
 		}
 
@@ -277,6 +304,8 @@ struct Sculpt::Depot_users_dialog
 			);
 		}
 
+		void reset_hover() { _user._hovered = { }; }
+
 		bool hovered() const { return _user._hovered.valid();  }
 
 		bool keyboard_needed() const { return _selected == _add_id(); }
@@ -292,6 +321,8 @@ struct Sculpt::Depot_users_dialog
 
 			_url_edit_field.apply(c);
 		}
+
+		bool one_selected() const { return !_unfolded && _selected.length() > 1; }
 };
 
 #endif /* _VIEW__DEPOT_USERS_DIALOG_H_ */

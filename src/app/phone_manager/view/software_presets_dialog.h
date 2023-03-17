@@ -77,14 +77,7 @@ struct Sculpt::Software_presets_dialog
 						gen_named_node(xml, "label", "name", [&] () {
 							xml.attribute("text", Name(" ", Pretty(preset.name))); });
 
-						/* inflate vertical spacing by adding an invisble button */
-						gen_named_node(xml, "button", "vspace", [&] () {
-							xml.attribute("style", "invisible");
-							xml.node("label", [&] () {
-								xml.attribute("text", " ");
-								xml.attribute("font", "title/regular");
-							});
-						});
+						gen_item_vspace(xml, "vspace");
 					});
 				});
 			});

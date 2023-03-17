@@ -43,4 +43,22 @@ static void gen_left_right(Genode::Xml_generator &xml, unsigned min_ex,
 }
 
 
+/**
+ * Inflate vertical spacing using an invisble button
+ */
+template <typename ID>
+static void gen_item_vspace(Genode::Xml_generator &xml, ID const &id)
+{
+	using namespace Sculpt;
+
+	gen_named_node(xml, "button", id, [&] () {
+		xml.attribute("style", "invisible");
+		xml.node("label", [&] () {
+			xml.attribute("text", " ");
+			xml.attribute("font", "title/regular");
+		});
+	});
+}
+
+
 #endif /* _VIEW__LAYOUT_HELPER_H_ */
