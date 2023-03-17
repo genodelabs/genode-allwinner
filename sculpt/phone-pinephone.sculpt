@@ -7,7 +7,7 @@ system:       phone
 build:        app/phone_manager app/menu_view
 build:        drivers/modem/pinephone drivers/uart/ns16550 drivers/platform/a64
 build:        drivers/audio_control/pinephone drivers/power/pinephone
-import:       src/terminal_crosslink
+import:       src/terminal_crosslink pkg/touch_keyboard
 import:       pkg/drivers_interactive-pinephone raw/pinephone-devices
 import:       src/a64_usb_host_drv src/usb_net_drv src/a64_sd_card_drv
 deploy:       empty

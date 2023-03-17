@@ -89,7 +89,8 @@
 						<dir name="dev"> <log/> </dir>
 					</vfs>
 					<policy label="log" decoration="yes" motion="20"/>
-					<policy label="runtime -> leitzentrale -> menu_view" decoration="no" motion="0"/>
+					<policy label="runtime -> leitzentrale -> menu_view"      decoration="no" motion="0"/>
+					<policy label="runtime -> leitzentrale -> touch_keyboard" decoration="no" motion="20"/>
 					<policy label_prefix="logo" decoration="no"/>
 					<default-policy/>
 				</config>

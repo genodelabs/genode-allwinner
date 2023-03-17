@@ -61,6 +61,7 @@
 #include <view/software_version_dialog.h>
 #include <view/software_status_dialog.h>
 #include <view/download_status.h>
+#include <runtime/touch_keyboard.h>
 
 namespace Sculpt { struct Main; }
 
@@ -115,7 +116,7 @@ struct Sculpt::Main : Input_event_handler,
 	}
 
 	Managed_config<Main> _system_config {
-	        _env, "system", "system", *this, &Main::_handle_system_config };
+		_env, "system", "system", *this, &Main::_handle_system_config };
 
 	struct System
 	{
@@ -678,6 +679,17 @@ struct Sculpt::Main : Input_event_handler,
 
 			_software_status_dialog.generate_conditional(xml, _software_section_dialog.selected()
 			                                               && _software_tabs_dialog.dialog.status_selected());
+
+			/*
+			 * Whenever the touch keyboard is visible, enforce some space at
+			 * the bottom of the dialog by using a vertical stack of empty
+			 * labels.
+			 */
+			if (touch_keyboard_needed())
+				gen_named_node(xml, "vbox", "keyboard space", [&] {
+					for (unsigned i = 0; i < 15; i++)
+						gen_named_node(xml, "label", String<10>(i), [&] {
+							xml.attribute("text", " "); }); });
 		});
 	}
 
@@ -723,6 +735,44 @@ struct Sculpt::Main : Input_event_handler,
 	void _handle_runtime_state();
 
 	Attached_rom_dataspace const _platform { _env, "platform_info" };
+
+
+	/********************
+	 ** Touch keyboard **
+	 ********************/
+
+	struct Touch_keyboard : Noncopyable
+	{
+		/*
+		 * Spawn the leitzentrale touch keyboard only after the basic GUI is up
+		 * beacuse the touch keyboard is not needed to pick up a call.
+		 */
+		bool started = false;
+
+		Touch_keyboard_attr attr;
+
+		Touch_keyboard(Touch_keyboard_attr attr) : attr(attr) { };
+
+		void gen_start_node(Xml_generator &xml) const
+		{
+			if (started)
+				gen_touch_keyboard(xml, attr);
+		}
+	};
+
+	Touch_keyboard _touch_keyboard {
+		.attr = { .min_width  = 720,
+		          .min_height = 480,
+		          .alpha      = Menu_view::Alpha::OPAQUE,
+		          .background = _background_color } };
+
+	/**
+	 * Condition for controlling the visibility of the touch keyboard
+	 */
+	bool touch_keyboard_needed() const
+	{
+		return false;
+	}
 
 
 	/****************************************
@@ -790,6 +840,9 @@ struct Sculpt::Main : Input_event_handler,
 
 		if (_main_menu_view.hovered(seq)) {
 
+			/* detect need for touch keyboard */
+			bool const orig_touch_keyboard_needed = touch_keyboard_needed();
+
 			/* determine clicked section */
 			Section_dialog *clicked_ptr = nullptr;
 			_section_dialogs.for_each([&] (Section_dialog &dialog) {
@@ -848,6 +901,10 @@ struct Sculpt::Main : Input_event_handler,
 
 			_main_menu_view.generate();
 			_clicked_seq_number.destruct();
+
+			/* the click might have changed the need for the touch keyboard */
+			if (orig_touch_keyboard_needed != touch_keyboard_needed())
+				_handle_window_layout();
 		}
 	}
 
@@ -885,8 +942,13 @@ struct Sculpt::Main : Input_event_handler,
 	void menu_view_hover_updated() override
 	{
 		/* take first hover report as indicator that the GUI is ready */
-		if (!_system.storage && _runtime_state.present_in_runtime("menu_view"))
+		if (!_system.storage && _runtime_state.present_in_runtime("menu_view")) {
 			_enter_second_driver_stage();
+
+			/* once the basic GUI is up, it is time to spawn the touch keyboard */
+			_touch_keyboard.started = true;
+			generate_runtime_config();
+		}
 
 		if (_clicked_seq_number.constructed())
 			_try_handle_click();
@@ -923,11 +985,13 @@ struct Sculpt::Main : Input_event_handler,
 			generate_dialog();
 	}
 
+	Color const _background_color { 62, 62, 67, 255 };
+
 	Menu_view _main_menu_view { _env, _child_states, *this, "menu_view",
 	                             Ram_quota{12*1024*1024}, Cap_quota{150},
 	                             "menu_dialog", "menu_view_hover", *this,
 	                             Menu_view::Alpha::OPAQUE,
-	                             Color { 62, 62, 67, 255 } };
+	                             _background_color };
 
 	void _handle_window_layout();
 
@@ -1737,7 +1801,8 @@ void Sculpt::Main::_handle_window_layout()
 	Decorator_margins const margins(_decorator_margins.xml());
 
 	typedef String<128> Label;
-	Label const menu_view_label("runtime -> leitzentrale -> menu_view");
+	Label const menu_view_label     ("runtime -> leitzentrale -> menu_view");
+	Label const touch_keyboard_label("runtime -> leitzentrale -> touch_keyboard");
 
 	_window_list.update();
 	Xml_node const window_list = _window_list.xml();
@@ -1767,9 +1832,21 @@ void Sculpt::Main::_handle_window_layout()
 			}
 		};
 
+		_with_window(window_list, touch_keyboard_label, [&] (Xml_node win) {
+			if (!_leitzentrale_visible)
+				return;
+
+			Area  const size = win_size(win);
+			Point const pos  = touch_keyboard_needed()
+			                 ? Point(0, int(mode.area.h()) - int(size.h()))
+			                 : Point(0, int(mode.area.h()));
+
+			gen_window(win, Rect(pos, size));
+		});
+
 		_with_window(window_list, menu_view_label, [&] (Xml_node win) {
 			Area  const size = win_size(win);
-			Point const pos(_leitzentrale_visible ? 0 : (int)size.w(), 0);
+			Point const pos(_leitzentrale_visible ? 0 : int(size.w()), 0);
 			gen_window(win, Rect(pos, size));
 		});
 	});
@@ -2087,6 +2164,9 @@ void Sculpt::Main::_generate_runtime_config(Xml_generator &xml) const
 	});
 
 	_main_menu_view.gen_start_node(xml);
+
+	_touch_keyboard.gen_start_node(xml);
+
 	_storage.gen_runtime_start_nodes(xml);
 
 	/*
