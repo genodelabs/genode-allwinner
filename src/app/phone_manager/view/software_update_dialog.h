@@ -17,16 +17,16 @@
 #include <model/build_info.h>
 #include <model/download_queue.h>
 #include <model/index_update_queue.h>
-#include <view/dialog.h>
+#include <view/depot_users_dialog.h>
 
 namespace Sculpt { struct Software_update_dialog; }
 
 
 struct Sculpt::Software_update_dialog
 {
-	using Depot_users = Attached_rom_dataspace;
+	using Depot_users = Depot_users_dialog::Depot_users;
+	using User        = Depot_users_dialog::User;
 	using Image_index = Attached_rom_dataspace;
-	using User        = Depot::Archive::User;
 	using Url         = String<128>;
 	using Version     = String<16>;
 
@@ -35,17 +35,24 @@ struct Sculpt::Software_update_dialog
 	Download_queue       const &_download_queue;
 	Index_update_queue   const &_index_update_queue;
 	File_operation_queue const &_file_operation_queue;
-	Depot_users          const &_depot_users;
 	Image_index          const &_image_index;
 
-	User _selected_user = _build_info.depot_user;
+	struct Action : Interface
+	{
+		virtual void query_image_index(User const &user) = 0;
+		virtual void trigger_image_download(Path const &) = 0;
+		virtual void update_image_index(User const &) = 0;
+		virtual void install_boot_image(Path const &) = 0;
+	};
+
+	Action &_action;
+
+	Depot_users_dialog _users;
 
 	Path _last_installed { };
 	Path _last_selected  { };
 
-	bool _users_unfolded = false;
-
-	Path _index_path() const { return Path(_selected_user, "/image/index"); }
+	Path _index_path() const { return Path(_users.selected(), "/image/index"); }
 
 	bool _index_update_in_progress() const
 	{
@@ -61,7 +68,7 @@ struct Sculpt::Software_update_dialog
 
 	Path _image_path(Version const &version) const
 	{
-		return Path(_selected_user, "/image/sculpt-", _build_info.board, "-", version);
+		return Path(_users.selected(), "/image/sculpt-", _build_info.board, "-", version);
 	}
 
 	bool _installing() const
@@ -69,20 +76,9 @@ struct Sculpt::Software_update_dialog
 		return _file_operation_queue.copying_to_path("/rw/boot");
 	};
 
-	Hoverable_item _user      { };
 	Hoverable_item _check     { };
 	Hoverable_item _version   { };
 	Hoverable_item _operation { };
-
-	struct Action : Interface
-	{
-		virtual void query_image_index(User const &user) = 0;
-		virtual void trigger_image_download(Path const &) = 0;
-		virtual void update_image_index(User const &) = 0;
-		virtual void install_boot_image(Path const &) = 0;
-	};
-
-	Action &_action;
 
 	using Hover_result = Hoverable_item::Hover_result;
 
@@ -98,82 +94,17 @@ struct Sculpt::Software_update_dialog
 		_download_queue(download_queue),
 		_index_update_queue(index_update_queue),
 		_file_operation_queue(file_operation_queue),
-		_depot_users(depot_users),
 		_image_index(image_index),
-		_action(action)
+		_action(action),
+		_users(depot_users, _build_info.depot_user)
 	{ }
 
-	Url _user_url(Xml_node const &user) const
-	{
-		if (!user.has_sub_node("url"))
-			return { };
-
-		Url const url = user.sub_node("url").decoded_content<Url>();
-
-		/*
-		 * Ensure that the URL does not contain any '"' character because it will
-		 * be taken as an XML attribute value.
-		 */
-		for (char const *s = url.string(); *s; s++)
-			if (*s == '"')
-				return { };
-
-		User const name = user.attribute_value("name", User());
-
-		return Url(url, "/", name);
-	}
-
-	void _gen_vspacer(Xml_generator &xml, char const *name) const
+	static void _gen_vspacer(Xml_generator &xml, char const *name)
 	{
 		gen_named_node(xml, "label", name, [&] () {
 			xml.attribute("text", " ");
 			xml.attribute("font", "annotation/regular");
 		});
-	}
-
-	void _gen_user_entry(Xml_generator &xml, Xml_node const user, bool last) const
-	{
-		User const name     = user.attribute_value("name", User());
-		bool const selected = (name == _selected_user);
-
-		if (!selected && !_users_unfolded)
-			return;
-
-		gen_named_node(xml, "hbox", name, [&] () {
-			gen_named_node(xml, "float", "left", [&] () {
-				xml.attribute("west", "yes");
-				xml.node("hbox", [&] () {
-					gen_named_node(xml, "float", "button", [&] () {
-						gen_named_node(xml, "button", "button", [&] () {
-
-							if (selected)
-								xml.attribute("selected", "yes");
-
-							xml.attribute("style", "radio");
-							xml.node("hbox", [&] () { });
-						});
-					});
-					gen_named_node(xml, "label", "name", [&] () {
-						xml.attribute("text", Path(" ", _user_url(user))); });
-				});
-			});
-			gen_named_node(xml, "hbox", "right", [&] () { });
-		});
-		if (_users_unfolded && !last)
-			_gen_vspacer(xml, String<64>("below ", name).string());
-	}
-
-	void _gen_user_selection(Xml_generator &xml) const
-	{
-		Xml_node const depot_users = _depot_users.xml();
-
-		size_t remain_count = depot_users.num_sub_nodes();
-
-		gen_named_node(xml, "frame", "user_selection", [&] () {
-			xml.node("vbox", [&] () {
-				depot_users.for_each_sub_node("user", [&] (Xml_node user) {
-					bool const last = (--remain_count == 0);
-					_gen_user_entry(xml, user, last); }); }); });
 	}
 
 	void _gen_image_main(Xml_generator &xml, Xml_node const &image) const
@@ -329,7 +260,7 @@ struct Sculpt::Software_update_dialog
 		Xml_node const index = _image_index.xml();
 
 		index.for_each_sub_node("user", [&] (Xml_node const &user) {
-			if (user.attribute_value("name", User()) == _selected_user)
+			if (user.attribute_value("name", User()) == _users.selected())
 				user.for_each_sub_node("image", [&] (Xml_node const &image) {
 					_gen_image_entry(xml, image); }); });
 	}
@@ -338,9 +269,9 @@ struct Sculpt::Software_update_dialog
 	{
 		gen_named_node(xml, "frame", "update_dialog", [&] {
 			xml.node("vbox", [&] {
-				_gen_user_selection(xml);
+				_users.generate(xml);
 
-				if (_users_unfolded)
+				if (_users.unfolded())
 					return;
 
 				_gen_vspacer(xml, "spacer1");
@@ -371,31 +302,29 @@ struct Sculpt::Software_update_dialog
 
 	Hover_result hover(Xml_node const &hover)
 	{
+		Hover_result users_hover = Hover_result::UNMODIFIED;
+		hover.with_optional_sub_node("vbox", [&] (Xml_node const &vbox) {
+			vbox.with_optional_sub_node("frame", [&] (Xml_node const &frame) {
+				frame.with_optional_sub_node("vbox", [&] (Xml_node const &vbox) {
+					users_hover = _users.hover(vbox); }); }); });
+
 		return Dialog::any_hover_changed(
-			_user     .match(hover, "vbox", "frame", "vbox", "frame", "vbox", "hbox", "name"),
+			users_hover,
 			_check    .match(hover, "vbox", "frame", "vbox", "float", "button", "name"),
 			_version  .match(hover, "vbox", "frame", "name"),
 			_operation.match(hover, "vbox", "frame", "vbox", "float", "float", "hbox", "button", "name")
 		);
 	}
 
-	bool hovered() const { return _user._hovered.valid();  }
+	bool hovered() const { return _users.hovered();  }
 
 	void click()
 	{
-		if (_user._hovered.length() > 1) {
-
-			if (_users_unfolded) {
-				_selected_user = _user._hovered;
-				_action.query_image_index(_selected_user);
-				_users_unfolded = false;
-			} else {
-				_users_unfolded = true;
-			}
-		}
+		_users.click([&] (User const &selected_user) {
+			_action.query_image_index(selected_user); });
 
 		if (_check.hovered("check") && !_index_update_in_progress())
-			_action.update_image_index(_selected_user);
+			_action.update_image_index(_users.selected());
 
 		if (_operation.hovered("download"))
 			_action.trigger_image_download(_image_path(_version._hovered));
