@@ -27,6 +27,9 @@ is 'yuv', which selects YUV420.
 The :convert: attribute specifies if the captured image data is converted
 to the pixel format suitable for displaying directly. Default is 'true'.
 
+The :gray: attribute instructs the driver to only produce a grayscale
+picture. Default is 'true'.
+
 The :rotate: attribute specifies if the capture image data is rotated
 counter-clockwise and flipped. Default is 'true'.
 

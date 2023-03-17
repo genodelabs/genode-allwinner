@@ -558,7 +558,34 @@ struct genode_gui_refresh_context
 
 	bool convert;
 	bool rotate;
+	bool gray;
 };
+
+
+static void _rotate_y_as_gray(unsigned char const *y,
+                              unsigned int width,
+                              unsigned int height,
+                              unsigned int *dst)
+{
+	unsigned w_offset = width;
+
+	unsigned h, w;
+	for (w = 0; w < width; w++) {
+
+		unsigned h_offset = 0;
+		for (h = 0; h < height; h++) {
+
+			unsigned char const v = *(y + w_offset + h_offset);
+			unsigned int  const abgr = 0xff000000u
+			                         | (v)
+			                         | (v << 8)
+			                         | (v << 16);
+			*(dst++) = abgr;
+			h_offset += width;
+		}
+		w_offset--;
+	}
+}
 
 
 #include "yuv_rgb.h"
@@ -588,6 +615,12 @@ static void _gui_show(struct genode_gui_refresh_context *ctx,
 	/* fast-path for raw access */
 	if (!ctx->convert && !ctx->rotate) {
 		memcpy(p, b->base, b->size > size ? size : b->size);
+		return;
+	}
+
+	/* fast-path for grayish rotate */
+	if (ctx->convert && ctx->rotate && ctx->gray) {
+		_rotate_y_as_gray(y, width, height, p);
 		return;
 	}
 
@@ -641,6 +674,7 @@ static void gui_display_image(struct genode_gui             *gui,
 		.height  = config->height,
 		.convert = config->convert,
 		.rotate  = config->rotate,
+		.gray    = config->gray,
 	};
 
 	genode_gui_refresh(gui, _gui_show, &ctx);

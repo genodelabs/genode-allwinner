@@ -40,6 +40,7 @@ struct lx_user_config_t
 
 	unsigned rotate;
 	unsigned convert;
+	unsigned gray;
 
 	unsigned skip_frames;
 

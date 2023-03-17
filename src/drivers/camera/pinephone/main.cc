@@ -84,6 +84,7 @@ struct Main
 			                          0u, lx_config.fps);
 
 		lx_config.convert = config.attribute_value("convert", true);
+		lx_config.gray    = config.attribute_value("gray", true);
 		lx_config.rotate  = config.attribute_value("rotate", true);
 
 		using Format = String<8>;
