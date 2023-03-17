@@ -787,6 +787,9 @@ static int capture_task_function(void *p)
 	struct Camera *camera = (struct Camera*)p;
 	struct genode_gui *gui;
 
+	unsigned const skip_frames = camera->config.skip_frames;
+	unsigned skip_count;
+
 	if (!camera->config.valid) {
 		printk("Camera configuration invalid\n");
 		sleep_forever();
@@ -804,13 +807,18 @@ static int capture_task_function(void *p)
 	if (control_camera(camera, true))
 		BUG();
 
+	skip_count = 0;
 	while (true) {
 		/* get_buffer will block when no buffer is available */
 		struct Buffer *b = get_buffer(camera);
 		if (!b)
 			break;
 
-		gui_display_image(gui, b, &camera->config);
+		if (skip_count >= skip_frames) {
+			gui_display_image(gui, b, &camera->config);
+			skip_count = 0;
+		}
+		skip_count++;
 
 		put_buffer(camera, b);
 	}

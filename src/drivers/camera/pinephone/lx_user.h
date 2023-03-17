@@ -41,6 +41,8 @@ struct lx_user_config_t
 	unsigned rotate;
 	unsigned convert;
 
+	unsigned skip_frames;
+
 	/* set after parsing the configuration */
 	unsigned valid;
 };

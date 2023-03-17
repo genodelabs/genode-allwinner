@@ -79,6 +79,10 @@ struct Main
 			check_and_constrain_value(config, "fps", (unsigned)MIN_FPS,
 			                                         (unsigned)MAX_FPS);
 
+		lx_config.skip_frames =
+			check_and_constrain_value(config, "skip_frames",
+			                          0u, lx_config.fps);
+
 		lx_config.convert = config.attribute_value("convert", true);
 		lx_config.rotate  = config.attribute_value("rotate", true);
 
@@ -99,7 +103,8 @@ struct Main
 
 		log("Use ", cam, " camera configuration: ",
 		    lx_config.width, "x", lx_config.height, "@",
-		    lx_config.fps, " (", format, ")", " rotate: ", lx_config.rotate);
+		    lx_config.fps, "/", lx_config.skip_frames,
+		    " (", format, ")", " rotate: ", lx_config.rotate);
 	}
 
 	void handle_signal()
