@@ -85,6 +85,7 @@ struct Sculpt::Main : Input_event_handler,
                       Software_presets_dialog::Action,
                       Software_options_dialog::Action,
                       Software_update_dialog::Action,
+                      Depot_users_dialog::Action,
                       Software_status
 {
 	Env &_env;
@@ -575,7 +576,7 @@ struct Sculpt::Main : Input_event_handler,
 	Conditional_float_dialog<Software_update_dialog>
 		_software_update_dialog { "software_update", _build_info, _download_queue,
 		                          _index_update_queue, _file_operation_queue,
-		                          _scan_rom, _image_index_rom, *this };
+		                          _scan_rom, _image_index_rom, *this, *this };
 
 	Conditional_float_dialog<Software_version_dialog>
 		_software_version_dialog { "software_version", _build_info };
@@ -675,7 +676,8 @@ struct Sculpt::Main : Input_event_handler,
 			                                               && _storage._sculpt_partition.valid());
 
 			_software_version_dialog.generate_conditional(xml, _software_section_dialog.selected()
-			                                                && _software_tabs_dialog.dialog.update_selected());
+			                                                && _software_tabs_dialog.dialog.update_selected()
+			                                                && !touch_keyboard_needed());
 
 			_software_status_dialog.generate_conditional(xml, _software_section_dialog.selected()
 			                                               && _software_tabs_dialog.dialog.status_selected());
@@ -766,12 +768,25 @@ struct Sculpt::Main : Input_event_handler,
 		          .alpha      = Menu_view::Alpha::OPAQUE,
 		          .background = _background_color } };
 
+	bool _depot_user_selection_visible() const
+	{
+		return _software_section_dialog.selected()
+		    && _software_tabs_dialog.dialog.update_selected();
+	}
+
+	bool _software_update_dialog_has_keyboard_focus() const
+	{
+		return _software_section_dialog.selected()
+		    && _software_tabs_dialog.dialog.update_selected()
+		    && _software_update_dialog.dialog.keyboard_needed();
+	}
+
 	/**
 	 * Condition for controlling the visibility of the touch keyboard
 	 */
 	bool touch_keyboard_needed() const
 	{
-		return false;
+		return _software_update_dialog_has_keyboard_focus();
 	}
 
 
@@ -980,6 +995,12 @@ struct Sculpt::Main : Input_event_handler,
 			_try_handle_clack();
 			_touched = false;
 		}
+
+		ev.handle_press([&] (Input::Keycode, Codepoint code) {
+			need_generate_dialog = true;
+			if (_software_update_dialog_has_keyboard_focus())
+				_software_update_dialog.dialog.handle_key(code);
+		});
 
 		if (need_generate_dialog)
 			generate_dialog();
@@ -1241,6 +1262,22 @@ struct Sculpt::Main : Input_event_handler,
 
 		/* update config/managed/deploy with the component 'name' removed */
 		_deploy.update_managed_deploy_config();
+	}
+
+	/**
+	 * Depot_users_dialog::Action interface
+	 */
+	void add_depot_url(Depot_url const &depot_url) override
+	{
+		using Content = File_operation_queue::Content;
+
+		_file_operation_queue.new_small_file(Path("/rw/depot/", depot_url.user, "/download"),
+		                                     Content { depot_url.download });
+
+		if (!_file_operation_queue.any_operation_in_progress())
+			_file_operation_queue.schedule_next_operations();
+
+		generate_runtime_config();
 	}
 
 	/**
@@ -2081,6 +2118,10 @@ void Sculpt::Main::_handle_runtime_state()
 				_index_update_queue.try_schedule_downloads();
 				if (_index_update_queue.download_count != orig_download_count)
 					_deploy.update_installation();
+
+				/* update depot-user selection after adding new depot URL */
+				if (_depot_user_selection_visible())
+					trigger_depot_query();
 			}
 		}
 	}
