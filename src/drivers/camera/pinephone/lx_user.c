@@ -542,8 +542,9 @@ static struct genode_gui *create_gui(struct lx_user_config_t *config)
 {
 	struct genode_gui_args const args = {
 		.label  = config->camera == CAMERA_FRONT ? "gc2154" : "ov5640",
-		.width  = config->rotate ? config->height : config->width,
-		.height = config->rotate ? config->width  : config->height,
+		/* use double the width for double buffering */
+		.width  = config->rotate ? config->height    : config->width * 2,
+		.height = config->rotate ? config->width * 2 : config->height ,
 	};
 	return genode_gui_create(&args);
 }
@@ -555,6 +556,8 @@ struct genode_gui_refresh_context
 
 	unsigned width;
 	unsigned height;
+
+	bool view_flip;
 
 	bool convert;
 	bool rotate;
@@ -599,7 +602,6 @@ static void _gui_show(struct genode_gui_refresh_context *ctx,
 {
 	struct Buffer *b = ctx->buffer;
 
-	unsigned int *p = (unsigned int*)dst;
 	unsigned const int width  = ctx->width;
 	unsigned const int height = ctx->height;
 	unsigned const int pixels = width * height;
@@ -609,6 +611,8 @@ static void _gui_show(struct genode_gui_refresh_context *ctx,
 	unsigned char *u = v + ((pixels)/4);
 	unsigned const int y_stride  = width;
 	unsigned const int uv_stride = width/2;
+
+	unsigned int *p = (unsigned int*)dst + (ctx->view_flip * pixels);
 
 	lx_emul_mem_cache_invalidate((void*)b->base, b->size);
 
@@ -664,9 +668,35 @@ static void _gui_show(struct genode_gui_refresh_context *ctx,
 }
 
 
+static struct genode_gui_view
+_gui_set_view(struct genode_gui_refresh_context *ctx)
+{
+	struct genode_gui_view view = {
+		.x      = 0,
+		.y      = 0,
+		.width  = 0,
+		.height = 0,
+	};
+
+	/* display first buffer while painting to second */
+	view.x = ctx->view_flip ? 0
+	                         : ctx->rotate ? 0
+	                                       : -ctx->width;
+	view.y = ctx->view_flip ? 0
+	                         : ctx->rotate ? -ctx->width
+	                                       : 0;
+
+	view.width  = ctx->rotate ? ctx->height : ctx->width;
+	view.height = ctx->rotate ? ctx->width  : ctx->height;
+
+	return view;
+}
+
+
 static void gui_display_image(struct genode_gui             *gui,
                               struct Buffer           const *b,
-                              struct lx_user_config_t const *config)
+                              struct lx_user_config_t const *config,
+                              bool                           view_flip)
 {
 	struct genode_gui_refresh_context ctx = {
 		.buffer  = b,
@@ -675,7 +705,10 @@ static void gui_display_image(struct genode_gui             *gui,
 		.convert = config->convert,
 		.rotate  = config->rotate,
 		.gray    = config->gray,
+		.view_flip = view_flip,
 	};
+
+	genode_gui_swap_view(gui, _gui_set_view, &ctx);
 
 	genode_gui_refresh(gui, _gui_show, &ctx);
 }
@@ -823,6 +856,7 @@ static int capture_task_function(void *p)
 
 	unsigned const skip_frames = camera->config.skip_frames;
 	unsigned skip_count;
+	bool view_flip;
 
 	if (!camera->config.valid) {
 		printk("Camera configuration invalid\n");
@@ -841,6 +875,7 @@ static int capture_task_function(void *p)
 	if (control_camera(camera, true))
 		BUG();
 
+	view_flip = true;
 	skip_count = 0;
 	while (true) {
 		/* get_buffer will block when no buffer is available */
@@ -849,7 +884,8 @@ static int capture_task_function(void *p)
 			break;
 
 		if (skip_count >= skip_frames) {
-			gui_display_image(gui, b, &camera->config);
+			gui_display_image(gui, b, &camera->config, view_flip);
+			view_flip = view_flip ? false : true;
 			skip_count = 0;
 		}
 		skip_count++;

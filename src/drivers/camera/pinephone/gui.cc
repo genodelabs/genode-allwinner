@@ -79,9 +79,29 @@ struct genode_gui : private Noncopyable, private Interface
 			                  * _mode.area.h()
 			                  * _mode.bytes_per_pixel();
 			fn(_fb_ptr, size);
+		}
 
-			_gui.framebuffer()->refresh(0, 0, _mode.area.w(),
-			                                  _mode.area.h());
+		template <typename FN>
+		void swap_view(FN const &fn)
+		{
+			using C = Gui::Session::Command;
+
+			genode_gui_view const view = fn();
+
+			Gui::Point const point { view.x, view.y };
+			Gui::Area  const area  { view.width, view.height };
+
+			_gui.enqueue<C::Geometry>(_view, Gui::Rect(Gui::Point(0, 0),
+			                                           area));
+			_gui.enqueue<C::Offset>(_view, point);
+			_gui.execute();
+
+			/*
+			 * The explicit refresh here should probably not be needed
+			 * as setting the offset should trigger it as well.
+			 */
+			_gui.framebuffer()->refresh(view.x, -view.y,
+			                            area.w(), area.h());
 		}
 };
 
@@ -121,5 +141,15 @@ void genode_gui_refresh(struct genode_gui *gui_ptr,
 {
 	gui_ptr->refresh([&] (unsigned char *dst, size_t size) {
 		refresh_cb(ctx, dst, size);
+	});
+}
+
+
+void genode_gui_swap_view(struct genode_gui *gui_ptr,
+                          genode_gui_swap_view_t view_cb,
+                          struct genode_gui_refresh_context *ctx)
+{
+	gui_ptr->swap_view([&] {
+		return view_cb(ctx);
 	});
 }

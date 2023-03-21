@@ -58,6 +58,22 @@ void genode_gui_refresh(struct genode_gui *,
                         struct genode_gui_refresh_context *);
 
 
+struct genode_gui_view
+{
+	int x;
+	int y;
+
+	unsigned width;
+	unsigned height;
+};
+
+typedef struct genode_gui_view (*genode_gui_swap_view_t)
+	(struct genode_gui_refresh_context *);
+
+void genode_gui_swap_view(struct genode_gui *gui_ptr,
+                          genode_gui_swap_view_t view_cb,
+                          struct genode_gui_refresh_context *ctx);
+
 #ifdef __cplusplus
 }
 #endif
