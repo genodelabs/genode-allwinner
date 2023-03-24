@@ -48,7 +48,7 @@ struct Sculpt::Software_add_dialog : private Index_menu_dialog::Policy
 	struct Action : Interface
 	{
 		virtual void query_index        (User const &) = 0;
-		virtual void update_sculpt_index(User const &) = 0;
+		virtual void update_sculpt_index(User const &, Verify) = 0;
 	};
 
 	Action &_action;
@@ -268,11 +268,14 @@ struct Sculpt::Software_add_dialog : private Index_menu_dialog::Policy
 
 	void click()
 	{
-		if (_users.hovered())
+		if (_users.hovered()) {
 			_users.click([&] (User const &selected_user) {
 				_action.query_index(selected_user);
 				_reset_menu();
 			});
+		}
+
+		Verify const verify { _users.selected_user_properties().public_key };
 
 		if (_component_add_dialog_visible()) {
 
@@ -294,7 +297,7 @@ struct Sculpt::Software_add_dialog : private Index_menu_dialog::Policy
 						auto path = item.attribute_value("path", Component::Path());
 						auto info = item.attribute_value("info", Component::Info());
 
-						_construction_action.new_construction(path, info);
+						_construction_action.new_construction(path, verify, info);
 					},
 
 					[&] /* leave pkg */ { _construction_action.discard_construction(); }
@@ -306,7 +309,7 @@ struct Sculpt::Software_add_dialog : private Index_menu_dialog::Policy
 		}
 
 		if (_check.hovered("check") && !_index_update_in_progress())
-			_action.update_sculpt_index(_users.selected());
+			_action.update_sculpt_index(_users.selected(), verify);
 	}
 
 	void clack()

@@ -786,10 +786,10 @@ struct Sculpt::Main : Input_event_handler,
 	/**
 	 * Component::Construction_action interface
 	 */
-	void new_construction(Component::Path const &pkg,
+	void new_construction(Component::Path const &pkg, Verify verify,
 	                      Component::Info const &info) override
 	{
-		(void)_runtime_state.new_construction(pkg, info, _affinity_space);
+		(void)_runtime_state.new_construction(pkg, verify, info, _affinity_space);
 		trigger_depot_query();
 	}
 
@@ -804,7 +804,7 @@ struct Sculpt::Main : Input_event_handler,
 	void trigger_pkg_download() override
 	{
 		_runtime_state.apply_to_construction([&] (Component &c) {
-			_download_queue.add(c.path); });
+			_download_queue.add(c.path, c.verify); });
 
 		/* incorporate new download-queue content into update */
 		_deploy.update_installation();
@@ -1427,10 +1427,10 @@ struct Sculpt::Main : Input_event_handler,
 	/**
 	 * Software_update_dialog::Action interface
 	 */
-	void trigger_image_download(Path const &path) override
+	void trigger_image_download(Path const &path, Verify verify) override
 	{
 		_download_queue.remove_inactive_downloads();
-		_download_queue.add(path);
+		_download_queue.add(path, verify);
 		_deploy.update_installation();
 		generate_runtime_config();
 	}
@@ -1438,11 +1438,11 @@ struct Sculpt::Main : Input_event_handler,
 	/**
 	 * Software_update_dialog::Action interface
 	 */
-	void update_image_index(Depot::Archive::User const &user) override
+	void update_image_index(Depot::Archive::User const &user, Verify verify) override
 	{
 		_download_queue.remove_inactive_downloads();
 		_index_update_queue.remove_inactive_updates();
-		_index_update_queue.add(Path(user, "/image/index"));
+		_index_update_queue.add(Path(user, "/image/index"), verify);
 		generate_runtime_config();
 	}
 
@@ -1462,11 +1462,11 @@ struct Sculpt::Main : Input_event_handler,
 	/**
 	 * Software_add_dialog::Action interface
 	 */
-	void update_sculpt_index(Depot::Archive::User const &user) override
+	void update_sculpt_index(Depot::Archive::User const &user, Verify verify) override
 	{
 		_download_queue.remove_inactive_downloads();
 		_index_update_queue.remove_inactive_updates();
-		_index_update_queue.add(Path(user, "/index/", _sculpt_version));
+		_index_update_queue.add(Path(user, "/index/", _sculpt_version), verify);
 		generate_runtime_config();
 	}
 

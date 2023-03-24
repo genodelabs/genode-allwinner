@@ -42,10 +42,10 @@ struct Sculpt::Software_update_dialog
 
 	struct Action : Interface
 	{
-		virtual void query_image_index(User const &user) = 0;
-		virtual void trigger_image_download(Path const &) = 0;
-		virtual void update_image_index(User const &) = 0;
-		virtual void install_boot_image(Path const &) = 0;
+		virtual void query_image_index     (User const &) = 0;
+		virtual void trigger_image_download(Path const &, Verify) = 0;
+		virtual void update_image_index    (User const &, Verify) = 0;
+		virtual void install_boot_image    (Path const &) = 0;
 	};
 
 	Action &_action;
@@ -326,15 +326,17 @@ struct Sculpt::Software_update_dialog
 
 	void click()
 	{
+		Verify const verify { _users.selected_user_properties().public_key };
+
 		if (_users.hovered())
 			_users.click([&] (User const &selected_user) {
 				_action.query_image_index(selected_user); });
 
 		if (_check.hovered("check") && !_index_update_in_progress())
-			_action.update_image_index(_users.selected());
+			_action.update_image_index(_users.selected(), verify);
 
 		if (_operation.hovered("download"))
-			_action.trigger_image_download(_image_path(_version._hovered));
+			_action.trigger_image_download(_image_path(_version._hovered), verify);
 
 		if (_version._hovered.length() > 1)
 			_last_selected = _image_path(_version._hovered);

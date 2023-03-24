@@ -30,9 +30,14 @@ struct Sculpt::Index_update_queue : Noncopyable
 	{
 		Path const path;
 
+		Verify const verify;
+
 		enum class State { REMOVING, DOWNLOADING, DONE, FAILED } state;
 
-		Update(Path const &path) : path(path), state(State::REMOVING) { }
+		Update(Path const &path, Verify verify)
+		:
+			path(path), verify(verify), state(State::REMOVING)
+		{ }
 
 		bool active() const { return state == State::REMOVING
 		                          || state == State::DOWNLOADING; }
@@ -56,7 +61,7 @@ struct Sculpt::Index_update_queue : Noncopyable
 		_download_queue(download_queue)
 	{ }
 
-	void add(Path const &path)
+	void add(Path const &path, Verify const verify)
 	{
 		if (!Depot::Archive::index(path) && !Depot::Archive::image_index(path)) {
 			warning("attempt to add a non-index path '", path, "' to index-download queue");
@@ -73,7 +78,7 @@ struct Sculpt::Index_update_queue : Noncopyable
 			return;
 		}
 
-		new (_alloc) Registered<Update>(_updates, path);
+		new (_alloc) Registered<Update>(_updates, path, verify);
 
 		_file_operation_queue.remove_file(Path("/rw/depot/",  path));
 		_file_operation_queue.remove_file(Path("/rw/public/", path, ".xz"));
@@ -95,7 +100,7 @@ struct Sculpt::Index_update_queue : Noncopyable
 		_updates.for_each([&] (Update &update) {
 			if (update.state == Update::State::REMOVING) {
 				update.state =  Update::State::DOWNLOADING;
-				_download_queue.add(update.path);
+				_download_queue.add(update.path, update.verify);
 				download_count++;
 			}
 		});
