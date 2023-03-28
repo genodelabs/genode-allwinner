@@ -46,16 +46,11 @@ struct Buffer
 };
 
 
-enum {
-	BUFFER_COUNT = 4,
-};
-
-
 struct Camera
 {
 	struct lx_user_config_t config;
 
-	struct Buffer buffer[BUFFER_COUNT];
+	struct Buffer buffer[MAX_BUFFER];
 
 	struct media_v2_topology topology;
 
@@ -379,12 +374,13 @@ static int _request_buffers(struct Camera *camera)
 {
 	struct cdev   *video  = camera->video0;
 	struct Buffer *buffer = camera->buffer;
+	unsigned num_buffer   = camera->config.num_buffer;
 	struct v4l2_requestbuffers arg;
 	int err;
 	unsigned i;
 
 	memset(&arg, 0, sizeof(arg));
-	arg.count  = BUFFER_COUNT; // suni6-csi wants at least 3 buffers
+	arg.count  = num_buffer; // suni6-csi wants at least 3 buffers
 	arg.type   = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	arg.memory = V4L2_MEMORY_MMAP;
 
@@ -395,7 +391,7 @@ static int _request_buffers(struct Camera *camera)
 		return err;
 	}
 
-	if (arg.count < 2 || arg.count != BUFFER_COUNT) {
+	if (arg.count < 2 || arg.count != num_buffer) {
 		printk("Insufficient buffer memory, count: %u\n", arg.count);
 		return -ENOMEM;
 	}
@@ -441,10 +437,11 @@ static int _queue_buffers(struct Camera *camera)
 {
 	struct cdev   *video  = camera->video0;
 	struct Buffer *buffer = camera->buffer;
+	unsigned num_buffer   = camera->config.num_buffer;
 	int err;
-	int i;
+	unsigned i;
 
-	for (i = 0; i < BUFFER_COUNT; i++) {
+	for (i = 0; i < num_buffer; i++) {
 		struct v4l2_buffer arg = {
 			.type   = V4L2_BUF_TYPE_VIDEO_CAPTURE,
 			.memory = V4L2_MEMORY_MMAP,

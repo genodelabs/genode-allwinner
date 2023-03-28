@@ -24,6 +24,9 @@ enum {
 	MIN_HEIGHT = 120,
 	MIN_FPS    = 1,
 
+	MIN_BUFFER = 4,
+	MAX_BUFFER = 16,
+
 	FMT_YUV      = 0,
 	FMT_SBGRR8   = 1,
 	CAMERA_FRONT = 0,
@@ -37,6 +40,8 @@ struct lx_user_config_t
 	unsigned fps;
 	unsigned format;
 	unsigned camera;
+
+	unsigned num_buffer;
 
 	unsigned rotate;
 	unsigned convert;

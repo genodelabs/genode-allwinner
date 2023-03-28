@@ -30,6 +30,9 @@ to the pixel format suitable for displaying directly. Default is 'true'.
 The :gray: attribute instructs the driver to only produce a grayscale
 picture. Default is 'true'.
 
+The :num_buffer: attribute sets the size of the buffer queue. The minimal
+amount is '4' while the maximal number is '16'. Default is '4'.
+
 The :rotate: attribute specifies if the capture image data is rotated
 counter-clockwise and flipped. Default is 'true'.
 
