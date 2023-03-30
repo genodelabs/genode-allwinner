@@ -1133,22 +1133,6 @@ int string_escape_mem(const char * src,size_t isz,char * dst,size_t osz,unsigned
 int sysctl_tstamp_allow_data;
 
 
-#include <linux/sysfs.h>
-
-int sysfs_emit(char * buf,const char * fmt,...)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/sysfs.h>
-
-int sysfs_emit_at(char * buf,int at,const char * fmt,...)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
 #include <linux/task_work.h>
 
 int task_work_add(struct task_struct * task,struct callback_head * work,enum task_work_notify_mode notify)

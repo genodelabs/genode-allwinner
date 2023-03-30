@@ -734,22 +734,6 @@ int string_escape_mem(const char * src,size_t isz,char * dst,size_t osz,unsigned
 int suppress_printk;
 
 
-#include <linux/sysfs.h>
-
-int sysfs_emit(char * buf,const char * fmt,...)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/sysfs.h>
-
-int sysfs_emit_at(char * buf,int at,const char * fmt,...)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
 #include <linux/clockchips.h>
 
 void tick_broadcast(const struct cpumask * mask)

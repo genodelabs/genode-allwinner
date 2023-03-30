@@ -836,22 +836,6 @@ int suppress_printk;
 
 #include <linux/sysfs.h>
 
-int sysfs_emit(char * buf,const char * fmt,...)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/sysfs.h>
-
-int sysfs_emit_at(char * buf,int at,const char * fmt,...)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/sysfs.h>
-
 void sysfs_remove_bin_file(struct kobject * kobj,const struct bin_attribute * attr)
 {
 	lx_emul_trace_and_stop(__func__);

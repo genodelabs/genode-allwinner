@@ -834,22 +834,6 @@ void sort(void * base,size_t num,size_t size,cmp_func_t cmp_func,swap_func_t swa
 bool static_key_initialized;
 
 
-#include <linux/sysfs.h>
-
-int sysfs_emit(char * buf,const char * fmt,...)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/sysfs.h>
-
-int sysfs_emit_at(char * buf,int at,const char * fmt,...)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
 #include <linux/task_work.h>
 
 int task_work_add(struct task_struct * task,struct callback_head * work,enum task_work_notify_mode notify)

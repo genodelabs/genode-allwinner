@@ -321,23 +321,6 @@ void unregister_handler_proc(unsigned int irq,struct irqaction * action)
 }
 
 
-#include <linux/sysfs.h>
-
-int sysfs_create_group(struct kobject * kobj,const struct attribute_group * grp)
-{
-	lx_emul_trace(__func__);
-	return 0;
-}
-
-
-#include <linux/sysfs.h>
-
-void sysfs_remove_group(struct kobject * kobj,const struct attribute_group * grp)
-{
-	lx_emul_trace(__func__);
-}
-
-
 #include <asm-generic/qspinlock.h>
 
 void queued_spin_lock_slowpath(struct qspinlock * lock,u32 val)

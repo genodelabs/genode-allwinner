@@ -28,28 +28,6 @@ struct kernfs_node * kernfs_find_and_get_ns(struct kernfs_node * parent,const ch
 }
 
 
-#include <linux/sysfs.h>
-
-int sysfs_create_dir_ns(struct kobject * kobj,const void * ns)
-{
-	lx_emul_trace(__func__);
-	return 0;
-}
-
-
-int sysfs_create_group(struct kobject * kobj,const struct attribute_group * grp)
-{
-	lx_emul_trace(__func__);
-	return 0;
-}
-
-
-void sysfs_remove_group(struct kobject * kobj,const struct attribute_group * grp)
-{
-	lx_emul_trace(__func__);
-}
-
-
 #include <linux/random.h>
 
 int __must_check get_random_bytes_arch(void * buf,int nbytes)

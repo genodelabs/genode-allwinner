@@ -13,10 +13,13 @@
 
 #include <lx_emul.h>
 
+#include <linux/string.h>
+
 unsigned long __must_check __arch_copy_from_user(void *to, const void __user *from, unsigned long n);
 unsigned long __must_check __arch_copy_from_user(void *to, const void __user *from, unsigned long n)
 {
-	lx_emul_trace_and_stop(__func__);
+	memcpy(to, from, n);
+	return 0;
 }
 
 
@@ -170,6 +173,46 @@ int add_random_ready_callback(struct random_ready_callback * rdy)
 int sysfs_create_link(struct kobject * kobj,struct kobject * target,const char * name)
 {
 	lx_emul_trace(__func__);
+	return 0;
+}
+
+
+int sysfs_emit(char * buf,const char * fmt,...)
+{
+	lx_emul_trace(__func__);
+	return PAGE_SIZE;
+}
+
+
+int sysfs_emit_at(char * buf, int at, const char * fmt,...)
+{
+	lx_emul_trace(__func__);
+	return at > PAGE_SIZE ? PAGE_SIZE : PAGE_SIZE - at;
+}
+
+
+int sysfs_create_group(struct kobject * kobj,const struct attribute_group * grp)
+{
+	lx_emul_trace(__func__);
+	return 0;
+}
+
+
+void sysfs_remove_group(struct kobject * kobj,const struct attribute_group * grp)
+{
+	lx_emul_trace(__func__);
+}
+
+
+#include <linux/slab.h>
+#include <linux/kobject.h>
+
+int sysfs_create_dir_ns(struct kobject * kobj,const void * ns)
+{
+	if (!kobj)
+		return -EINVAL;
+
+	kobj->sd = kzalloc(sizeof(*kobj->sd), GFP_KERNEL);
 	return 0;
 }
 

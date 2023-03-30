@@ -730,31 +730,7 @@ int string_escape_mem(const char * src,size_t isz,char * dst,size_t osz,unsigned
 
 #include <linux/sysfs.h>
 
-int sysfs_emit(char * buf,const char * fmt,...)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/sysfs.h>
-
-int sysfs_emit_at(char * buf,int at,const char * fmt,...)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/sysfs.h>
-
 void sysfs_notify(struct kobject * kobj,const char * dir,const char * attr)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/sysfs.h>
-
-void sysfs_remove_group(struct kobject * kobj,const struct attribute_group * grp)
 {
 	lx_emul_trace_and_stop(__func__);
 }

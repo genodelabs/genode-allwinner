@@ -19,20 +19,6 @@ EXPORT_PER_CPU_SYMBOL(net_rand_noise);
 
 #include <linux/sysfs.h>
 
-int sysfs_create_dir_ns(struct kobject * kobj,const void * ns)
-{
-	lx_emul_trace(__func__);
-	return 0;
-}
-
-
-int sysfs_create_group(struct kobject * kobj,const struct attribute_group * grp)
-{
-	lx_emul_trace(__func__);
-	return 0;
-}
-
-
 void sysfs_remove_bin_file(struct kobject * kobj,const struct bin_attribute * attr)
 {
 	lx_emul_trace(__func__);

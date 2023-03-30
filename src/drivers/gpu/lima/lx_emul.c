@@ -14,16 +14,6 @@
 #include <lx_emul.h>
 
 
-#include <linux/sysfs.h>
-
-int sysfs_create_dir_ns(struct kobject * kobj,const void * ns)
-{
-	lx_emul_trace(__func__);
-	kobj->sd = kzalloc(sizeof(*kobj->sd), GFP_KERNEL);
-	return 0;
-}
-
-
 #include <linux/mount.h>
 #include <linux/fs.h>
 #include <linux/slab.h>

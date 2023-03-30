@@ -115,16 +115,6 @@ struct file * shmem_file_setup(const char * name,loff_t size,unsigned long flags
 }
 
 
-#include <linux/sysfs.h>
-
-int sysfs_create_dir_ns(struct kobject * kobj,const void * ns)
-{
-	lx_emul_trace(__func__);
-	kobj->sd = kzalloc(sizeof(*kobj->sd), GFP_KERNEL);
-	return 0;
-}
-
-
 #include <linux/firmware.h>
 
 int request_firmware_nowait(struct module * module,bool uevent,const char * name,

@@ -131,16 +131,6 @@ void page_frag_free(void * addr)
 }
 
 
-#include <linux/sysfs.h>
-
-int sysfs_create_dir_ns(struct kobject * kobj,const void * ns)
-{
-	lx_emul_trace(__func__);
-	kobj->sd = kzalloc(sizeof(*kobj->sd), GFP_KERNEL);
-	return 0;
-}
-
-
 #include <linux/proc_fs.h>
 
 struct proc_dir_entry { int dummy; };

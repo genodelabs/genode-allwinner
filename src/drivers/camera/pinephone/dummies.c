@@ -28,15 +28,6 @@ DEFINE_PER_CPU(unsigned long, net_rand_noise);
 EXPORT_PER_CPU_SYMBOL(net_rand_noise);
 
 
-#include <linux/sysfs.h>
-
-int sysfs_create_dir_ns(struct kobject * kobj,const void * ns)
-{
-	lx_emul_trace(__func__);
-	return 0;
-}
-
-
 #include <linux/kernfs.h>
 
 struct kernfs_node * kernfs_find_and_get_ns(struct kernfs_node * parent,const char * name,const void * ns)

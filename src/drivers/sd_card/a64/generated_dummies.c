@@ -849,22 +849,6 @@ void synchronize_rcu(void)
 }
 
 
-#include <linux/sysfs.h>
-
-int sysfs_emit(char * buf,const char * fmt,...)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/sysfs.h>
-
-int sysfs_emit_at(char * buf,int at,const char * fmt,...)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
 #include <linux/task_work.h>
 
 struct callback_head * task_work_cancel(struct task_struct * task,task_work_func_t func)
