@@ -68,6 +68,8 @@ LX_FILES += Makefile \
             scripts/mod \
             scripts/checksyscalls.sh \
             scripts/atomic/check-atomics.sh \
+            scripts/asn1_compiler.c \
+            scripts/extract-cert.c \
             tools/include/tools \
             arch/arm64/Makefile \
             arch/arm64/configs \

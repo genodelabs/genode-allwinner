@@ -157,4 +157,15 @@
 		<clock name="dram-csi" driver_name="ram"/>
 		<clock name="csi-mclk" driver_name="xclk"/>
 	</device>
+	<device name="mmc1" type="allwinner,sun50i-a64-mmc">
+		<io_mem address="0x01c10000" size="0x1000"/>
+		<irq number="93"/>
+		<clock name="bus-mmc1" driver_name="ahb"/>
+		<clock name="mmc1"     driver_name="mmc"/>
+		<reset-domain name="mmc1"/>
+		<power-domain name="pmic-wifi"/>
+	</device>
+	<device name="wifi_pwrseq" type="mmc-pwrseq-simple">
+		<clock name="dummy" driver_name="ext_clock"/>
+	</device>
 </devices>

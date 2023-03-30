@@ -11,3 +11,13 @@ PATCHES := src/a64_linux/rsb_timeout.patch \
            src/a64_linux/gc2145_no_debug.patch \
            src/a64_linux/remove_usbphy_role_switch.patch \
            src/a64_linux/usb_message.patch
+
+#
+# Just to make sure that the compiler will use the right header files
+# we delete the local copy from the source directory after the files
+# were copied.
+#
+default: rm_header
+rm_header: _dirs
+	@$(MSG_PREFIX)"remove wireless.h from rtl8723cs directory "
+	$(VERBOSE)rm src/linux/drivers/staging/rtl8723cs/include/linux/wireless.h

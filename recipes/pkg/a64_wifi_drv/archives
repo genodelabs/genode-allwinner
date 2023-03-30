@@ -1,0 +1,6 @@
+_/src/a64_wifi_drv
+_/src/openssl
+_/src/vfs
+_/src/vfs_jitterentropy
+_/src/libc
+_/raw/a64_wifi_firmware
