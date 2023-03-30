@@ -236,6 +236,7 @@ struct Driver::Ccu : private Attached_mmio
 		{
 			struct Sclk_gating : Bitfield<31, 1> { enum { MASK = 0, PASS = 1 }; };
 			struct Clk_src_sel : Bitfield<24, 2> { enum { PERIPH1 = 2, PERIPH0 = 1, INITIAL = 0 }; };
+			struct Clk_div_n   : Bitfield<16, 2> { };
 			struct Clk_div_m   : Bitfield<0,  4> { };
 		};
 
@@ -246,6 +247,7 @@ struct Driver::Ccu : private Attached_mmio
 
 		void _enable()  override
 		{
+			write<Reg::Clk_div_n>(0);
 			write<Reg::Clk_div_m>(11);
 			write<Reg::Clk_src_sel>(Reg::Clk_src_sel::PERIPH0);
 			write<Reg::Sclk_gating>(Reg::Sclk_gating::PASS);
@@ -256,6 +258,7 @@ struct Driver::Ccu : private Attached_mmio
 			write<Reg::Sclk_gating>(Reg::Sclk_gating::MASK);
 			write<Reg::Clk_src_sel>(Reg::Clk_src_sel::INITIAL);
 			write<Reg::Clk_div_m>(0);
+			write<Reg::Clk_div_n>(0);
 		}
 	} _mmc0_clk { _clocks, _regs() };
 
@@ -265,6 +268,7 @@ struct Driver::Ccu : private Attached_mmio
 		{
 			struct Sclk_gating : Bitfield<31, 1> { enum { MASK = 0, PASS = 1 }; };
 			struct Clk_src_sel : Bitfield<24, 2> { enum { PERIPH1 = 2, PERIPH0 = 1, INITIAL = 0 }; };
+			struct Clk_div_n   : Bitfield<16, 2> { };
 			struct Clk_div_m   : Bitfield<0,  4> { };
 		};
 
@@ -275,12 +279,18 @@ struct Driver::Ccu : private Attached_mmio
 
 		void _enable()  override
 		{
+			write<Reg::Clk_div_n>(0);
+			write<Reg::Clk_div_m>(11);
+			write<Reg::Clk_src_sel>(Reg::Clk_src_sel::PERIPH0);
 			write<Reg::Sclk_gating>(Reg::Sclk_gating::PASS);
 		}
 
 		void _disable() override
 		{
-			write<Reg::Sclk_gating>(Reg::Sclk_gating::PASS);
+			write<Reg::Sclk_gating>(Reg::Sclk_gating::MASK);
+			write<Reg::Clk_src_sel>(Reg::Clk_src_sel::INITIAL);
+			write<Reg::Clk_div_m>(0);
+			write<Reg::Clk_div_n>(0);
 		}
 	} _mmc2_clk { _clocks, _regs() };
 
