@@ -6,7 +6,7 @@ _/pkg/trace_logger
 _/pkg/mesa_gpu-lima
 _/pkg/a64_lima_gpu_drv-pinephone
 _/pkg/a64_audio_drv
-_/pkg/nano3d
+_/pkg/unconfigured_nano3d
 _/pkg/sticks_blue_backdrop
 _/pkg/system_clock-dummy
 _/pkg/test-camera-pinephone

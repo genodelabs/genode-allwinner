@@ -49,7 +49,7 @@
 		</config>
 	</start>
 
-	<start name="nano3d" pkg="nano3d">
+	<start name="nano3d" pkg="unconfigured_nano3d">
 		<affinity xpos="1" width="1"/>
 		<route>
 			<service name="Gui"> <parent label="follow_touch"/> </service>
