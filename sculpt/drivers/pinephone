@@ -91,6 +91,11 @@
 				<device name="dma_controller"/>
 			</policy>
 
+			<policy label="runtime -> wifi" info="yes">
+				<device name="wifi_pwrseq"/>
+				<device name="mmc1"/>
+			</policy>
+
 		</config>
 		<route> <any-service> <parent/> </any-service> </route>
 	</start>
@@ -194,6 +199,19 @@
 
 			<policy label_suffix="-> camera -> PE16" pin="gc2145-reset"/>
 			<policy label_suffix="-> camera -> PE17" pin="gc2145-powerdown"/>
+
+			<!-- wifi -->
+			<select name="sdc1_clk" bank="G" index="0" function="2"/>
+			<select name="sdc1_cmd" bank="G" index="1" function="2"/>
+			<select name="sdc1_d0"  bank="G" index="2" function="2"/>
+			<select name="sdc1_d1"  bank="G" index="3" function="2"/>
+			<select name="sdc1_d2"  bank="G" index="4" function="2"/>
+			<select name="sdc1_d3"  bank="G" index="5" function="2"/>
+
+			<out name="wifi_pwrseq" bank="L" index="2"/>
+
+			<policy label="runtime -> wifi -> PL2" pin="wifi_pwrseq"/>
+
 		</config>
 	</start>
 

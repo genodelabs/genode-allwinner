@@ -272,7 +272,8 @@ struct Sculpt::Main : Input_event_handler,
 		generate_runtime_config();
 	}
 
-	Pci_info _pci_info { .modem_present = true };
+	Pci_info _pci_info { .wifi_present  = true,
+	                     .modem_present = true };
 
 	Network _network { _env, _heap, *this, _child_states, *this, _runtime_state, _pci_info };
 
@@ -742,7 +743,7 @@ struct Sculpt::Main : Input_event_handler,
 
 			_software_version_dialog.generate_conditional(xml, _software_section_dialog.selected()
 			                                                && _software_tabs_dialog.dialog.update_selected()
-			                                                && !touch_keyboard_needed());
+			                                                && !_touch_keyboard.visible);
 
 			_software_status_dialog.generate_conditional(xml, _software_section_dialog.selected()
 			                                               && _software_tabs_dialog.dialog.status_selected());
@@ -752,7 +753,7 @@ struct Sculpt::Main : Input_event_handler,
 			 * the bottom of the dialog by using a vertical stack of empty
 			 * labels.
 			 */
-			if (touch_keyboard_needed())
+			if (_touch_keyboard.visible)
 				gen_named_node(xml, "vbox", "keyboard space", [&] {
 					for (unsigned i = 0; i < 15; i++)
 						gen_named_node(xml, "label", String<10>(i), [&] {
@@ -765,7 +766,15 @@ struct Sculpt::Main : Input_event_handler,
 	 */
 	void generate_dialog() override
 	{
+		/* detect need for touch keyboard */
+		bool const orig_touch_keyboard_visible = _touch_keyboard.visible;
+
+		_touch_keyboard.visible = touch_keyboard_needed();
+
 		_main_menu_view.generate();
+
+		if (orig_touch_keyboard_visible != _touch_keyboard.visible)
+			_handle_window_layout();
 	}
 
 	Attached_rom_dataspace _runtime_state_rom { _env, "report -> runtime/state" };
@@ -869,6 +878,11 @@ struct Sculpt::Main : Input_event_handler,
 		 */
 		bool started = false;
 
+		/*
+		 * Updated and evaluated by 'generate_dialog'
+		 */
+		bool visible = false;
+
 		Touch_keyboard_attr attr;
 
 		Touch_keyboard(Touch_keyboard_attr attr) : attr(attr) { };
@@ -909,13 +923,20 @@ struct Sculpt::Main : Input_event_handler,
 		    && _software_update_dialog.dialog.keyboard_needed();
 	}
 
+	bool _network_dialog_has_keyboard_focus() const
+	{
+		return _network_section_dialog.selected()
+		    && _network.dialog.need_keyboard_focus_for_passphrase();
+	}
+
 	/**
 	 * Condition for controlling the visibility of the touch keyboard
 	 */
 	bool touch_keyboard_needed() const
 	{
 		return _software_add_dialog_has_keyboard_focus()
-		    || _software_update_dialog_has_keyboard_focus();
+		    || _software_update_dialog_has_keyboard_focus()
+		    || _network_dialog_has_keyboard_focus();
 	}
 
 
@@ -971,8 +992,6 @@ struct Sculpt::Main : Input_event_handler,
 				dialog.detail = any_selected
 				              ? Section_dialog::Detail::MINIMIZED
 				              : Section_dialog::Detail::DEFAULT; });
-
-		_main_menu_view.generate();
 	}
 
 	void _try_handle_click()
@@ -983,9 +1002,6 @@ struct Sculpt::Main : Input_event_handler,
 		Input::Seq_number const seq = *_clicked_seq_number;
 
 		if (_main_menu_view.hovered(seq)) {
-
-			/* detect need for touch keyboard */
-			bool const orig_touch_keyboard_needed = touch_keyboard_needed();
 
 			/* determine clicked section */
 			Section_dialog *clicked_ptr = nullptr;
@@ -1046,12 +1062,8 @@ struct Sculpt::Main : Input_event_handler,
 			if (_software_update_dialog.hovered())
 				_software_update_dialog.click();
 
-			_main_menu_view.generate();
 			_clicked_seq_number.destruct();
-
-			/* the click might have changed the need for the touch keyboard */
-			if (orig_touch_keyboard_needed != touch_keyboard_needed())
-				_handle_window_layout();
+			generate_dialog();
 		}
 	}
 
@@ -1079,8 +1091,8 @@ struct Sculpt::Main : Input_event_handler,
 			if (_graph.hovered())
 				_graph.dialog.clack(*this, _storage);
 
-			_main_menu_view.generate();
 			_clacked_seq_number.destruct();
+			generate_dialog();
 		}
 	}
 
@@ -1130,11 +1142,14 @@ struct Sculpt::Main : Input_event_handler,
 		}
 
 		ev.handle_press([&] (Input::Keycode, Codepoint code) {
+
 			need_generate_dialog = true;
 			if (_software_add_dialog_has_keyboard_focus())
 				_software_add_dialog.dialog.handle_key(code);
 			else if (_software_update_dialog_has_keyboard_focus())
 				_software_update_dialog.dialog.handle_key(code);
+			else if (_network_dialog_has_keyboard_focus())
+				_network.handle_key_press(code);
 		});
 
 		if (need_generate_dialog)
@@ -2021,7 +2036,7 @@ void Sculpt::Main::_handle_window_layout()
 				return;
 
 			Area  const size = win_size(win);
-			Point const pos  = touch_keyboard_needed()
+			Point const pos  = _touch_keyboard.visible
 			                 ? Point(0, int(mode.area.h()) - int(size.h()))
 			                 : Point(0, int(mode.area.h()));
 
