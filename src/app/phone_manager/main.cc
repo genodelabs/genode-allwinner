@@ -1292,7 +1292,9 @@ struct Sculpt::Main : Input_event_handler,
 	 */
 	bool software_status_available() const override
 	{
-		return _diagnostics_available() || _update_running();
+		return _diagnostics_available()
+		    || _update_running()
+		    || _download_queue.any_failed_download();
 	}
 
 	/**
@@ -1318,14 +1320,9 @@ struct Sculpt::Main : Input_event_handler,
 			if (_manually_managed_runtime)
 				return;
 
-			bool const network_missing = _deploy.update_needed()
-			                         && !_network._nic_state.ready();
-			bool const show_diagnostics =
-				_deploy.any_unsatisfied_child() || network_missing;
-
 			auto gen_network_diagnostics = [&] (Xml_generator &xml)
 			{
-				if (!network_missing)
+				if (!_network_missing())
 					return;
 
 				gen_named_node(xml, "hbox", "network", [&] () {
@@ -1339,7 +1336,7 @@ struct Sculpt::Main : Input_event_handler,
 				});
 			};
 
-			if (show_diagnostics) {
+			if (_diagnostics_available()) {
 				gen_named_node(xml, "frame", "diagnostics", [&] () {
 					xml.node("vbox", [&] () {
 
@@ -1364,8 +1361,12 @@ struct Sculpt::Main : Input_event_handler,
 			}
 
 			Xml_node const state = _update_state_rom.xml();
-			if (_update_running() && state.attribute_value("progress", false))
-				gen_download_status(xml, state);
+
+			bool const download_in_progress =
+				(_update_running() && state.attribute_value("progress", false));
+
+			if (download_in_progress || _download_queue.any_failed_download())
+				gen_download_status(xml, state, _download_queue);
 		});
 	}
 
