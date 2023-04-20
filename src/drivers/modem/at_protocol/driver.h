@@ -255,12 +255,7 @@ class At_protocol::Driver : Noncopyable
 		 */
 		bool powering_down() const
 		{
-			bool result = false;
-
-			status.with_pending_command([&] (Command const &command) {
-				result = (command == AT_POWER_DOWN) && !status.powered_down; });
-
-			return result;
+			return _control.power_down_scheduled() && !status.powered_down;
 		}
 
 		/**

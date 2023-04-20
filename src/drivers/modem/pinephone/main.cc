@@ -304,6 +304,7 @@ struct Modem::Main : private Delayer
 
 		auto busy = [&] {
 			return _at_protocol_driver.constructed()
+			    && !_at_protocol_driver->powering_down()
 			    && (orig_busy_count != busy_count()); };
 
 		/*

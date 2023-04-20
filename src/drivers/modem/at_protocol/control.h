@@ -176,11 +176,11 @@ class At_protocol::Control : Noncopyable
 		{
 			_apply_to(fn, _check_ready,
 			              _disable_echo,
+			              _power_down,
 			              _ring,
 			              _set_pin,
 			              _request_pin_state,
 			              _request_pin_count,
-			              _power_down,
 			              _reboot,
 			              _query_qcfg,
 			              _assign_qcfg,
@@ -263,8 +263,7 @@ class At_protocol::Control : Noncopyable
 			_apply_to_operations(try_complete);
 		}
 
-		Pin      _current_pin   { };
-		Power    _current_power { };
+		Pin      _current_pin { };
 		unsigned _current_ring_count { };
 
 		struct Outbound_info
@@ -305,12 +304,17 @@ class At_protocol::Control : Noncopyable
 			return (_status.cpin->value == "READY");
 		}
 
+		template <typename COMMAND>
+		bool _submitted(COMMAND const &command) const
+		{
+			return command.constructed()
+			    && (command->state == Operation::State::SUBMITTED);
+		}
+
 		void _apply_pin(Pin const &pin)
 		{
 			auto failed = [&] (auto const &request) {
-				return request.constructed()
-				    && (request->state == Operation::State::SUBMITTED)
-				    && _status.cme_error.constructed(); };
+				return _submitted(request) && _status.cme_error.constructed(); };
 
 			if (failed(_request_pin_state))
 				_request_pin_state.destruct();
@@ -444,15 +448,16 @@ class At_protocol::Control : Noncopyable
 
 		void _apply_power(Power const &power)
 		{
-			if (power == _current_power)
-				return;
+			/*
+			 * Retry failed power-down command, which can happen when issued
+			 * during modem startup.
+			 */
+			bool const power_down_failed = _submitted(_power_down) && _status.error;
+			if (power_down_failed)
+				_power_down.destruct();
 
-			if (power == "off") {
-				if (!_power_down.constructed()) {
-					_power_down.construct();
-					_current_power = power;
-				}
-			}
+			if (power == "off" && !_status.powered_down && !_power_down.constructed())
+				_power_down.construct();
 		}
 
 		void _apply_ring(Xml_node const &ring)
@@ -466,9 +471,7 @@ class At_protocol::Control : Noncopyable
 		void _apply_qcfg(Qcfg const &qcfg)
 		{
 			auto failed = [&] (auto const &request) {
-				return request.constructed()
-				    && (request->state == Operation::State::SUBMITTED)
-				    && _status.error; };
+				return _submitted(request) && _status.error; };
 
 			if (failed(_query_qcfg))
 				_query_qcfg.destruct();
@@ -566,6 +569,8 @@ class At_protocol::Control : Noncopyable
 		}
 
 		bool outbound() const { return _outbound_info.constructed(); }
+
+		bool power_down_scheduled() const { return _power_down.constructed(); }
 
 		void gen_outbound_call(Xml_generator &xml) const
 		{
