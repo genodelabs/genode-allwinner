@@ -73,6 +73,23 @@ struct Sculpt::Index_pkg_dialog
 					_gen_info_label(xml, "pad3", "");
 					xml.node("label", [&] {
 						xml.attribute("text", "installed but incomplete"); });
+
+					if (_nic_state.ready()) {
+						_gen_info_label(xml, "pad4", "");
+
+						auto const text = properties.public_key
+						                ? " Reattempt Install "
+						                : " Reattempt Install without Verification ";
+
+						gen_named_node(xml, "float", "install", [&] () {
+							xml.node("button", [&] () {
+								_install_item.gen_button_attr(xml, "install");
+								xml.node("label", [&] () {
+									xml.attribute("text", text);
+								});
+							});
+						});
+					}
 				}
 
 				/*
