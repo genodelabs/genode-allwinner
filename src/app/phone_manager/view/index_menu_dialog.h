@@ -77,6 +77,13 @@ struct Sculpt::Index_menu_dialog
 
 		bool _pkg_selected = false;
 
+		void _reset_selection()
+		{
+			_item._hovered = Hoverable_item::Id();
+			_pkg_selected = false;
+		}
+
+
 	public:
 
 		Index_menu_dialog(Index const &index) : _index(index) { }
@@ -166,9 +173,16 @@ struct Sculpt::Index_menu_dialog
 
 		void reset()
 		{
-			_item._hovered = Hoverable_item::Id();
 			_menu = { };
-			_pkg_selected = false;
+			_reset_selection();
+		}
+
+		void one_level_back()
+		{
+			if (_menu.level() == 0)
+				_menu._level--;
+
+			_reset_selection();
 		}
 };
 

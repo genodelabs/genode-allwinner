@@ -283,7 +283,8 @@ struct Sculpt::Software_add_dialog : private Index_menu_dialog::Policy
 				_component_add.click(_construction_action,
 					[&] /* leave */ {
 						_construction_action.discard_construction();
-						_reset_menu();
+						_component_add.reset();
+						_menu.one_level_back();
 					}
 				);
 
