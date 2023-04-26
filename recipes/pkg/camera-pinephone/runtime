@@ -10,7 +10,6 @@
 
 	<content>
 		<rom label="ld.lib.so"/>
-		<rom label="camera-pinephone.config"/>
 		<rom label="camera-pinephone.dtb" as="dtb"/>
 		<rom label="pinephone_camera_drv"/>
 	</content>
