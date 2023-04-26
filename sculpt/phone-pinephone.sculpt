@@ -15,4 +15,5 @@ deploy:       empty
 presets:      empty nano3d system_shell gpu_test osci camera_test
 presets:      morph_browser jitsi
 launcher:     screenshot report_dump
-depot:        nfeske cproc cnuke jschlatow
+depot:        genodelabs cnuke alex-ab mstein nfeske cproc chelmuth jschlatow
+depot:        ssumpf skalk
