@@ -184,6 +184,18 @@ struct Sculpt::Index_menu_dialog
 
 			_reset_selection();
 		}
+
+		bool anything_visible(User const &user) const
+		{
+			if (_menu.level())
+				return true;
+
+			bool at_least_one_item_exists = false;
+			_menu.for_each_item(_index.xml(), user, [&] (Xml_node const &) {
+				at_least_one_item_exists = true; });
+
+			return at_least_one_item_exists;
+		}
 };
 
 #endif /* _VIEW__INDEX_MENU_DIALOG_H_ */

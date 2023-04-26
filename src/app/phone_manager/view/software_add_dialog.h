@@ -222,6 +222,11 @@ struct Sculpt::Software_add_dialog : private Index_menu_dialog::Policy
 
 		_gen_vspacer(xml, "spacer4");
 		_gen_vspacer(xml, "spacer5");
+
+		User const user = _users.selected();
+		if (!_component_add_dialog_visible() && !_menu.anything_visible(user))
+			return;
+
 		gen_named_node(xml, "float", "index", [&] {
 			xml.node("frame", [&] {
 				xml.node("vbox", [&] {
@@ -230,7 +235,7 @@ struct Sculpt::Software_add_dialog : private Index_menu_dialog::Policy
 					if (_component_add_dialog_visible())
 						_component_add.generate(xml);
 					else
-						_menu.generate(xml, _users.selected(), *this);
+						_menu.generate(xml, user, *this);
 				});
 			});
 		});
