@@ -30,6 +30,8 @@ namespace Board {
 
 	using Pic = Hw::Gicv2;
 
+	Hw::size_t detect_ram_size();
+
 	static constexpr bool NON_SECURE = true;
 };
 

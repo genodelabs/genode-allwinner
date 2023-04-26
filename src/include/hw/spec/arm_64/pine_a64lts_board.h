@@ -29,6 +29,9 @@ namespace Hw::Pine_a64lts_board {
 		UART_SIZE  = 0x1000,
 		UART_CLOCK = 0,
 
+		/* used to detect RAM size*/
+		DRAMCOM_BASE = 0x1c62000,
+
 		NR_OF_CPUS = 4,
 	};
 
