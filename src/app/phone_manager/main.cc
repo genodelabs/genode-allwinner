@@ -481,6 +481,7 @@ struct Sculpt::Main : Input_event_handler,
 	{
 		_scan_rom.update();
 		generate_dialog();
+		_software_update_dialog.dialog.sanitize_user_selection();
 	}
 
 	Attached_rom_dataspace _image_index_rom { _env, "report -> runtime/depot_query/image_index" };
@@ -1199,7 +1200,12 @@ struct Sculpt::Main : Input_event_handler,
 	 */
 	void toggle_inspect_view(Storage_target const &) override { }
 
-	void use(Storage_target const &target) override { _storage.use(target); }
+	void use(Storage_target const &target) override
+	{
+		_software_update_dialog.dialog.reset();
+		_download_queue.reset();
+		_storage.use(target);
+	}
 
 	/*
 	 * Storage_dialog::Action interface
