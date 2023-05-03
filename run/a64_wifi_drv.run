@@ -117,7 +117,7 @@ install_config {
 				<policy label="a64_pio_drv -> ">
 					<device name="pio"/>
 				</policy>
-				<policy label="a64_wifi_drv -> " info="yes">
+				<policy label="wifi_drv -> " info="yes">
 					<device name="wifi_pwrseq"/>
 					<device name="mmc1"/>
 				</policy>
@@ -177,7 +177,7 @@ install_config {
 			<config verbose="no" verbose_domain_state="yes" dhcp_discover_timeout_sec="10" dhcp_request_timeout_sec="6">
 
 				<policy label_prefix="test-lwip_httpsrv" domain="downlink"/>
-				<policy label_prefix="a64_wifi_drv"      domain="uplink"/>
+				<policy label_prefix="wifi_drv"          domain="uplink"/>
 
 				<domain name="uplink" verbose_packets="no" verbose_packet_drop="no" icmp_echo_server="yes">
 
@@ -288,7 +288,7 @@ install_config {
 			</route>
 		</start>
 
-		<start name="a64_wifi_drv" caps="250" priority="-1">
+		<start name="wifi_drv" caps="250" priority="-1">
 			<resource name="RAM" quantum="32M"/>
 			<config ld_verbose="yes">
 				<report mac_address="true"/>
@@ -303,6 +303,8 @@ install_config {
 			</config>
 			<route>
 				<service name="Uplink"> <child name="nic_router"/> </service>
+				<service name="ROM" label="wifi.lib.so">
+					<parent label="a64_wifi.lib.so"/> </service>
 				<service name="ROM" label="dtb">
 					<parent label="wifi-} [board] {.dtb"/> </service>
 				<service name="Report" label="accesspoints">
