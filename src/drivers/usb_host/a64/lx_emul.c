@@ -15,42 +15,6 @@
 #include <linux/slab.h>
 
 
-#include <linux/dma-mapping.h>
-
-int dma_supported(struct device *dev, u64 mask)
-{
-	return 1;
-}
-
-
-dma_addr_t dma_map_page_attrs(struct device * dev, struct page * page,size_t offset,
-                              size_t size, enum dma_data_direction dir, unsigned long attrs)
-{
-	dma_addr_t    const dma_addr  = page_to_phys(page);
-	unsigned long const virt_addr = (unsigned long)page_to_virt(page);
-
-	lx_emul_mem_cache_clean_invalidate((void *)(virt_addr + offset), size);
-
-	return dma_addr + offset;
-}
-
-
-void dma_unmap_page_attrs(struct device * dev,
-                          dma_addr_t addr,
-                          size_t size,
-                          enum dma_data_direction dir,
-                          unsigned long attrs)
-{
-	unsigned long const virt_addr = lx_emul_mem_virt_addr((void*)addr);
-
-	if (!virt_addr)
-		return;
-
-	if (dir == DMA_FROM_DEVICE)
-		lx_emul_mem_cache_invalidate((void *)virt_addr, size);
-}
-
-
 #include <linux/dmapool.h>
 
 struct dma_pool { size_t size; };
@@ -88,21 +52,4 @@ void dma_pool_free(struct dma_pool * pool,void * vaddr,dma_addr_t dma)
 void cdev_init(struct cdev * cdev,const struct file_operations * fops)
 {
 	lx_emul_usb_register_devio(fops);
-}
-
-
-#include <linux/gfp.h>
-#include <linux/mm.h>
-
-
-void free_pages(unsigned long addr,unsigned int order)
-{
-	if (addr != 0ul)
-		__free_pages(virt_to_page((void *)addr), order);
-}
-
-
-unsigned long __get_free_pages(gfp_t gfp_mask, unsigned int order)
-{
-	return (unsigned long) alloc_pages_exact(1u << order, gfp_mask);
 }

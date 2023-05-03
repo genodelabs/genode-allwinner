@@ -611,14 +611,6 @@ int reset_control_assert(struct reset_control * rstc)
 }
 
 
-#include <linux/sched.h>
-
-void sched_set_fifo(struct task_struct * p)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
 #include <linux/seq_file.h>
 
 void seq_vprintf(struct seq_file * m,const char * f,va_list args)

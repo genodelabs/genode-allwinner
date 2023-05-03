@@ -35,14 +35,6 @@ unsigned long __fdget(unsigned int fd)
 }
 
 
-#include <linux/gfp.h>
-
-unsigned long __get_free_pages(gfp_t gfp_mask,unsigned int order)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
 #include <linux/kfifo.h>
 
 int __kfifo_alloc(struct __kfifo * fifo,unsigned int size,size_t esize,gfp_t gfp_mask)
@@ -380,14 +372,6 @@ int follow_pfn(struct vm_area_struct * vma,unsigned long address,unsigned long *
 #include <linux/file.h>
 
 void fput(struct file * file)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/gfp.h>
-
-void free_pages(unsigned long addr,unsigned int order)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -776,14 +760,6 @@ int reset_control_assert(struct reset_control * rstc)
 #include <linux/reset.h>
 
 int reset_control_reset(struct reset_control * rstc)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/sched.h>
-
-void sched_set_fifo(struct task_struct * p)
 {
 	lx_emul_trace_and_stop(__func__);
 }

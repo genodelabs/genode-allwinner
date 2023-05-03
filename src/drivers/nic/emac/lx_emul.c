@@ -71,32 +71,6 @@ bool is_vmalloc_addr(const void * x)
 }
 
 
-#include <linux/dma-mapping.h>
-
-dma_addr_t dma_map_page_attrs(struct device * dev, struct page * page,size_t offset,
-                              size_t size, enum dma_data_direction dir, unsigned long attrs)
-{
-	dma_addr_t    const dma_addr  = page_to_phys(page);
-	unsigned long const virt_addr = (unsigned long)page_to_virt(page);
-
-	lx_emul_mem_cache_clean_invalidate((void *)(virt_addr + offset), size);
-
-	return dma_addr + offset;
-}
-
-
-void dma_unmap_page_attrs(struct device * dev, dma_addr_t addr, size_t size,
-                          enum dma_data_direction dir, unsigned long attrs)
-{
-	/*
-	 * In principle, this function should call 'lx_emul_mem_cache_invalidate'
-	 * to invalidate the cache for DMA buffers before being used for receiving
-	 * network packets. However, the access pattern by the EMAC NIC driver
-	 * apparently does not require it.
-	 */
-}
-
-
 #include <linux/random.h>
 
 int __must_check get_random_bytes_arch(void * buf,int nbytes)

@@ -82,14 +82,6 @@ struct inode * alloc_anon_inode(struct super_block * s)
 }
 
 
-#include <linux/dma-mapping.h>
-
-int dma_supported(struct device *dev, u64 mask)
-{
-	return 1;
-}
-
-
 #include <linux/atomic.h>
 #include <linux/dma-fence.h>
 

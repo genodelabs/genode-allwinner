@@ -207,14 +207,6 @@ void rtnl_register(int protocol,int msgtype,rtnl_doit_func doit,rtnl_dumpit_func
 }
 
 
-#include <linux/gfp.h>
-
-void free_pages(unsigned long addr,unsigned int order)
-{
-	printk("free_pages leaks 2^%d pages\n", order);
-}
-
-
 #include <linux/stringhash.h>
 
 unsigned int full_name_hash(const void * salt,const char * name,unsigned int len)
@@ -249,22 +241,6 @@ void synchronize_rcu(void)
 #include <linux/async.h>
 
 void async_synchronize_full(void)
-{
-	lx_emul_trace(__func__);
-}
-
-
-#include <linux/dma-mapping.h>
-
-void dma_sync_single_for_cpu(struct device * dev,dma_addr_t addr,size_t size,enum dma_data_direction dir)
-{
-	lx_emul_trace(__func__);
-}
-
-
-#include <linux/dma-mapping.h>
-
-void dma_sync_single_for_device(struct device * dev,dma_addr_t addr,size_t size,enum dma_data_direction dir)
 {
 	lx_emul_trace(__func__);
 }

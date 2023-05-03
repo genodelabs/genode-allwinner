@@ -107,14 +107,6 @@ void cdev_device_del(struct cdev * cdev,struct device * dev)
 }
 
 
-#include <linux/sched.h>
-
-void sched_set_fifo(struct task_struct * p)
-{
-	printk("sched_set_fifo called, doing nothing\n");
-}
-
-
 #include <linux/fb.h>
 
 int remove_conflicting_framebuffers(struct apertures_struct * a,const char * name,bool primary)

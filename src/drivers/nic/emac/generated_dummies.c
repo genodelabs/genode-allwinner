@@ -237,14 +237,6 @@ __wsum csum_partial(const void * buff,int len,__wsum wsum)
 bool dma_default_coherent;
 
 
-#include <linux/dma-mapping.h>
-
-int dma_supported(struct device * dev,u64 mask)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
 #include <linux/netlink.h>
 
 void do_trace_netlink_extack(const char * msg)
@@ -1024,14 +1016,6 @@ int rtnl_trylock(void)
 #include <linux/rtnetlink.h>
 
 int rtnl_unicast(struct sk_buff * skb,struct net * net,u32 pid)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/sched.h>
-
-void sched_set_fifo(struct task_struct * p)
 {
 	lx_emul_trace_and_stop(__func__);
 }

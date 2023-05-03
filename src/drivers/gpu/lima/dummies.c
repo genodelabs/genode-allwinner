@@ -117,14 +117,6 @@ struct regulator * devm_regulator_get_optional(struct device * dev,const char * 
 
 #include <linux/sched.h>
 
-void sched_set_fifo(struct task_struct * p)
-{
-	lx_emul_trace(__func__);
-}
-
-
-#include <linux/sched.h>
-
 void sched_set_fifo_low(struct task_struct * p)
 {
 	lx_emul_trace(__func__);

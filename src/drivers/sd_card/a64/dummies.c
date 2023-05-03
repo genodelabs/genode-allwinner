@@ -149,14 +149,6 @@ int reset_control_reset(struct reset_control * rstc)
 }
 
 
-#include <linux/sched.h>
-
-void sched_set_fifo(struct task_struct * p)
-{
-	lx_emul_trace(__func__);
-}
-
-
 #include <linux/gpio/consumer.h>
 
 struct gpio_desc * __must_check devm_gpiod_get_index(struct device * dev,const char * con_id,unsigned int idx,enum gpiod_flags flags)
