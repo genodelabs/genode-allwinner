@@ -33,14 +33,6 @@ const struct earlycon_id __earlycon_table[] = {};
 const struct earlycon_id __earlycon_table_end[] = {};
 
 
-#include <linux/gfp.h>
-
-unsigned long __get_free_pages(gfp_t gfp_mask,unsigned int order)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
 #include <asm-generic/percpu.h>
 
 unsigned long __per_cpu_offset[NR_CPUS] = {};
@@ -49,14 +41,6 @@ unsigned long __per_cpu_offset[NR_CPUS] = {};
 #include <linux/printk.h>
 
 int __printk_ratelimit(const char * func)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/cred.h>
-
-void __put_cred(struct cred * cred)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -168,14 +152,6 @@ void clk_put(struct clk * clk)
 }
 
 
-#include <linux/fs.h>
-
-struct timespec64 current_time(struct inode * inode)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
 #include <linux/power_supply.h>
 
 struct power_supply * devm_power_supply_get_by_phandle(struct device * dev,const char * property)
@@ -224,14 +200,6 @@ int extcon_set_state_sync(struct extcon_dev * edev,unsigned int id,bool state)
 #include <linux/kobject.h>
 
 struct kobject *firmware_kobj;
-
-
-#include <linux/gfp.h>
-
-void free_pages(unsigned long addr,unsigned int order)
-{
-	lx_emul_trace_and_stop(__func__);
-}
 
 
 #include <linux/property.h>
@@ -357,14 +325,6 @@ bool is_software_node(const struct fwnode_handle * fwnode)
 #include <linux/kobject.h>
 
 struct kobject *kernel_kobj;
-
-
-#include <linux/sched/signal.h>
-
-int kill_pid_usb_asyncio(int sig,int errno,sigval_t addr,struct pid * pid,const struct cred * cred)
-{
-	lx_emul_trace_and_stop(__func__);
-}
 
 
 #include <linux/kobject.h>
@@ -598,14 +558,6 @@ void power_supply_unreg_notifier(struct notifier_block * nb)
 #include <linux/printk.h>
 
 int printk_deferred(const char * fmt,...)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/pid.h>
-
-void put_pid(struct pid * pid)
 {
 	lx_emul_trace_and_stop(__func__);
 }

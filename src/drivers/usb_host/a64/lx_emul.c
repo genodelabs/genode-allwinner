@@ -80,3 +80,29 @@ void dma_pool_free(struct dma_pool * pool,void * vaddr,dma_addr_t dma)
 {
 	lx_emul_mem_free(vaddr);
 }
+
+
+#include <lx_emul/usb.h>
+#include <linux/cdev.h>
+
+void cdev_init(struct cdev * cdev,const struct file_operations * fops)
+{
+	lx_emul_usb_register_devio(fops);
+}
+
+
+#include <linux/gfp.h>
+#include <linux/mm.h>
+
+
+void free_pages(unsigned long addr,unsigned int order)
+{
+	if (addr != 0ul)
+		__free_pages(virt_to_page((void *)addr), order);
+}
+
+
+unsigned long __get_free_pages(gfp_t gfp_mask, unsigned int order)
+{
+	return (unsigned long) alloc_pages_exact(1u << order, gfp_mask);
+}

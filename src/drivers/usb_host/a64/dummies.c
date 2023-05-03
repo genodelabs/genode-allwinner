@@ -65,12 +65,6 @@ int register_chrdev_region(dev_t from,unsigned count,const char * name)
 
 #include <linux/cdev.h>
 
-void cdev_init(struct cdev * cdev,const struct file_operations * fops)
-{
-	lx_emul_trace(__func__);
-}
-
-
 int cdev_add(struct cdev * p,dev_t dev,unsigned count)
 {
 	lx_emul_trace(__func__);
@@ -236,6 +230,40 @@ void wake_up_var(void * var)
 #include <linux/wait_bit.h>
 
 void __init wait_bit_init(void)
+{
+	lx_emul_trace(__func__);
+}
+
+
+#include <linux/fs.h>
+
+struct timespec64 current_time(struct inode * inode)
+{
+	struct timespec64 ret = { 0 };
+	lx_emul_trace(__func__);
+	return ret;
+}
+
+
+#include <linux/pid.h>
+
+void put_pid(struct pid * pid)
+{
+	lx_emul_trace(__func__);
+}
+
+
+#include <linux/cred.h>
+
+void __put_cred(struct cred * cred)
+{
+	lx_emul_trace(__func__);
+}
+
+
+#include <linux/thread_info.h>
+
+void __check_object_size(const void * ptr,unsigned long n,bool to_user)
 {
 	lx_emul_trace(__func__);
 }
