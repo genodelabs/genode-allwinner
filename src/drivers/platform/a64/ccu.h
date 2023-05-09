@@ -249,7 +249,7 @@ struct Driver::Ccu : private Attached_mmio
 		void _enable()  override
 		{
 			write<Reg::Clk_div_n>(0);
-			write<Reg::Clk_div_m>(7);
+			write<Reg::Clk_div_m>(11);
 			write<Reg::Clk_src_sel>(Reg::Clk_src_sel::PERIPH0);
 			write<Reg::Sclk_gating>(Reg::Sclk_gating::PASS);
 		}
