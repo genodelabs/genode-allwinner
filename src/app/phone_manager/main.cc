@@ -896,10 +896,10 @@ struct Sculpt::Main : Input_event_handler,
 	};
 
 	Touch_keyboard _touch_keyboard {
-		.attr = { .min_width  = 720,
-		          .min_height = 480,
-		          .alpha      = Menu_view::Alpha::OPAQUE,
-		          .background = _background_color } };
+		{ .min_width  = 720,
+		  .min_height = 480,
+		  .alpha      = Menu_view::Alpha::OPAQUE,
+		  .background = _background_color } };
 
 	bool _depot_user_selection_visible() const
 	{

@@ -173,7 +173,7 @@ struct Sculpt::Index_menu_dialog
 
 		void reset()
 		{
-			_menu = { };
+			_menu = Index_menu { };
 			_reset_selection();
 		}
 
