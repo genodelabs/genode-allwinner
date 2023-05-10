@@ -1,3 +1,9 @@
+#
+# Set to true in case the driver needs to be debugged to
+# pull in the locally build binaries rather than the ones
+# from the depot.
+#
+set debug_driver false
 
 proc wifi_ssid { } {
 	return $::env(GENODE_WIFI_SSID)
@@ -12,7 +18,7 @@ create_boot_directory
 import_from_depot [depot_user]/pkg/a64_wifi_drv
 
 
-build {
+set build_components {
 	core init timer
 	drivers/platform/a64
 	drivers/pin/a64
@@ -25,6 +31,13 @@ build {
 	test/lwip/http_srv
 	lib/vfs_lwip
 }
+
+append_if $debug_driver build_components {
+        drivers/wifi
+        lib/a64_wifi
+}
+
+build $build_components
 
 
 #
@@ -299,12 +312,17 @@ install_config {
 						<jitterentropy name="urandom"/>
 						<wifi/>
 					</dir>
+					<dir name="firmware">
+						<tar name="wifi_firmware.tar"/>
+					</dir>
 				</vfs>
 			</config>
 			<route>
 				<service name="Uplink"> <child name="nic_router"/> </service>
 				<service name="ROM" label="wifi.lib.so">
 					<parent label="a64_wifi.lib.so"/> </service>
+				<service name="ROM" label="wifi_firmware.tar">
+					<parent label="a64_wifi_firmware.tar"/> </service>
 				<service name="ROM" label="dtb">
 					<parent label="wifi-} [board] {.dtb"/> </service>
 				<service name="Report" label="accesspoints">
@@ -326,6 +344,15 @@ install_config {
 		</start>
 
 	</config>
+}
+
+#
+# Provide dummy 'wifi.lib.so' shared-object for
+# boot-module assembly
+#
+if {$debug_driver} {
+exec rm bin/wifi.lib.so
+exec echo dummy > bin/wifi.lib.so
 }
 
 build_boot_image [build_artifacts]
