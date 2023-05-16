@@ -31,9 +31,9 @@ namespace Hw::Pine_a64lts_board {
 
 		/* used to detect RAM size*/
 		DRAMCOM_BASE = 0x1c62000,
-
-		NR_OF_CPUS = 4,
 	};
+
+	static constexpr Genode::size_t NR_OF_CPUS = 4;
 
 	namespace Cpu_mmio {
 		enum {
