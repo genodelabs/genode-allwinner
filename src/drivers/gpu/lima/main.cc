@@ -1638,7 +1638,8 @@ struct Gpu::Session_component : public Genode::Session_object<Gpu::Session>
 
 					/* set global name used for import later on */
 					v->import_name =
-						Gpu_vram::Import_name { .value = export_name.value, true };
+						Gpu_vram::Import_name { .value = export_name.value,
+						                        ._valid = true };
 				});
 				return cap;
 			}
