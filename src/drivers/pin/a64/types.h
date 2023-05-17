@@ -53,12 +53,9 @@ struct Pio_driver::Pin_id
 	Bank  bank;
 	Index index;
 
-	Pin_id() = delete;
-
 	static Pin_id from_xml(Xml_node const &node)
 	{
-		return { .bank  = Bank ::from_xml(node),
-		         .index = Index::from_xml(node) };
+		return { Bank ::from_xml(node), Index::from_xml(node) };
 	}
 
 	bool operator == (Pin_id const &other) const
@@ -73,6 +70,10 @@ struct Pio_driver::Pin_id
 	{
 		Genode::print(out, "P", Char('A' + (char)bank.value), index.value);
 	}
+
+	private:
+
+		Pin_id(Bank bank, Index index) : bank(bank), index(index) { };
 };
 
 #endif /* _TYPES_H_ */
