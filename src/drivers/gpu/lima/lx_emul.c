@@ -882,3 +882,24 @@ void *genode_lookup_mapping_from_offset(void *p,
 	}
 	return NULL;
 }
+
+
+#include <linux/dma-mapping.h>
+
+int dma_map_sgtable(struct device *dev, struct sg_table *sgt,
+                    enum dma_data_direction dir, unsigned long attrs)
+{
+	int nents = dma_map_sg_attrs(dev, sgt->sgl, sgt->orig_nents, dir, attrs);
+	if (nents < 0)
+		return nents;
+	sgt->nents = nents;
+	return 0;
+}
+
+
+#include <linux/slab.h>
+
+void * kmem_cache_alloc_lru(struct kmem_cache * cachep,struct list_lru * lru,gfp_t flags)
+{
+	return kmem_cache_alloc(cachep, flags);
+}

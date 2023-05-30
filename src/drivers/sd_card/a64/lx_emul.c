@@ -59,3 +59,17 @@ int regulator_get_voltage(struct regulator * regulator)
 }
 
 
+#include <linux/slab.h>
+
+void * kmem_cache_alloc_lru(struct kmem_cache * cachep,struct list_lru * lru,gfp_t flags)
+{
+	return kmem_cache_alloc(cachep, flags);
+}
+
+
+#include <linux/ioprio.h>
+
+int __get_task_ioprio(struct task_struct * p)
+{
+	return IOPRIO_DEFAULT;
+}

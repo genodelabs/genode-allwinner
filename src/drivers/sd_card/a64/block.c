@@ -11,6 +11,7 @@
  * version 2.
  */
 
+#include <linux/part_stat.h>
 #include <../block/blk.h>
 #include <linux/module.h>
 #include <linux/blkdev.h>
@@ -43,6 +44,7 @@ struct block_device *bdev_alloc(struct gendisk *disk, u8 partno)
 	bdev->bd_disk = disk;
 	bdev->bd_partno = partno;
 	bdev->bd_inode = inode;
+	bdev->bd_queue = disk->queue;
 
 	bdev->bd_stats = alloc_percpu(struct disk_stats);
 	return bdev;
@@ -142,7 +144,8 @@ static inline void block_request(struct block_device         * const bdev,
                                  struct genode_block_request * const request,
                                  bool                          write)
 {
-	struct bio  * bio  = bio_alloc(GFP_KERNEL, 1);
+	struct bio  * bio  = bio_alloc(bdev, 1, write ? REQ_OP_WRITE
+	                                              : REQ_OP_READ, GFP_KERNEL);
 	struct page * page = virt_to_page(request->addr);
 
 	bio_set_dev(bio, bdev);
@@ -152,7 +155,6 @@ static inline void block_request(struct block_device         * const bdev,
 	bio->bi_opf            = write ? REQ_OP_WRITE : REQ_OP_READ;
 	bio->bi_private        = request;
 
-	bio_set_flag(bio, BIO_WORKINGSET);
 	bio_add_page(bio, page, request->blk_cnt * 512,
 	             (unsigned long)request->addr & (PAGE_SIZE-1));
 	submit_bio(bio);

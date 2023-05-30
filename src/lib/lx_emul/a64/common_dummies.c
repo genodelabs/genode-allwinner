@@ -74,14 +74,6 @@ int __cpuhp_setup_state(enum cpuhp_state state,const char * name,bool invoke,
 }
 
 
-#include <linux/sched/loadavg.h>
-
-void calc_global_load(void)
-{
-	lx_emul_trace(__func__);
-}
-
-
 #include <linux/timekeeper_internal.h>
 
 void update_vsyscall(struct timekeeper * tk)
@@ -161,6 +153,8 @@ int sysfs_create_file_ns(struct kobject * kobj,const struct attribute * attr,con
 
 
 #include <linux/random.h>
+
+struct random_ready_callback;
 
 int add_random_ready_callback(struct random_ready_callback * rdy)
 {
@@ -332,6 +326,94 @@ void register_handler_proc(unsigned int irq,struct irqaction * action)
 }
 
 
-#include <linux/genhd.h>
+#include <linux/blkdev.h>
 
 struct device_type part_type;
+
+
+extern void software_node_notify_remove(struct device * dev);
+void software_node_notify_remove(struct device * dev)
+{
+	lx_emul_trace(__func__);
+}
+
+
+#include <linux/sysctl.h>
+
+struct ctl_table_header * register_sysctl(const char * path,struct ctl_table * table)
+{
+	lx_emul_trace(__func__);
+	return NULL;
+}
+
+
+void __init __register_sysctl_init(const char * path,struct ctl_table * table,const char * table_name)
+{
+	lx_emul_trace(__func__);
+}
+
+
+#include <linux/sysfs.h>
+
+int sysfs_add_file_to_group(struct kobject * kobj,const struct attribute * attr,const char * group)
+{
+	lx_emul_trace(__func__);
+	return 0;
+}
+
+
+#include <linux/sysfs.h>
+
+int sysfs_merge_group(struct kobject * kobj,const struct attribute_group * grp)
+{
+	lx_emul_trace(__func__);
+	return 0;
+}
+
+
+#include <linux/context_tracking_irq.h>
+
+noinstr void ct_irq_enter(void)
+{
+	lx_emul_trace(__func__);
+}
+
+
+#include <linux/context_tracking_irq.h>
+
+void ct_irq_enter_irqson(void)
+{
+	lx_emul_trace(__func__);
+}
+
+
+#include <linux/context_tracking_irq.h>
+
+noinstr void ct_irq_exit(void)
+{
+	lx_emul_trace(__func__);
+}
+
+
+#include <linux/context_tracking_irq.h>
+
+void ct_irq_exit_irqson(void)
+{
+	lx_emul_trace(__func__);
+}
+
+
+#include <linux/random.h>
+
+void add_interrupt_randomness(int irq)
+{
+	lx_emul_trace(__func__);
+}
+
+
+#include <linux/random.h>
+
+void add_device_randomness(const void * buf,size_t len)
+{
+	lx_emul_trace(__func__);
+}

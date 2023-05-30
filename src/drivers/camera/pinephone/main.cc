@@ -49,6 +49,12 @@ static unsigned check_and_constrain_value(Xml_node const &node,
 }
 
 
+void lx_user_request_parent_exit(void)
+{
+	Lx_kit::env().env.parent().exit(-1);
+}
+
+
 struct Main
 {
 	Env                   &env;

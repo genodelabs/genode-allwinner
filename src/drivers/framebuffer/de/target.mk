@@ -3,6 +3,7 @@ TARGET   = $(DRIVER)_fb_drv
 REQUIRES = arm_v8a
 LIBS     = base blit a64_lx_emul
 SRC_CC  += main.cc
+SRC_CC  += lx_emul/random_dummy.cc
 SRC_C   += fb.c lx_user.c clock.c reset.c
 SRC_C   += lx_emul/pin.c
 SRC_C   += lx_emul/a64/pio.c

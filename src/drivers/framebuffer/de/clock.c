@@ -152,8 +152,18 @@ int clk_set_rate_exclusive(struct clk * clk,unsigned long rate)
 
 int clk_hw_register(struct device * dev,struct clk_hw * hw)
 {
-	lx_emul_trace(__func__);
-	return 0;
+	/*
+	 * Lookup like done in 'dev_or_parent_of_node()'.
+	 */
+	struct device_node *np = dev->of_node;
+	if (!np)
+		dev->parent->of_node;
+	if (!np) {
+		printk("Error: could not lookup device_node for dev %px\n", dev);
+		lx_emul_trace_and_stop(__func__);
+	}
+
+	return of_clk_hw_register(np, hw);
 }
 
 
@@ -212,7 +222,8 @@ int clk_set_rate(struct clk * clk,unsigned long rate)
 	}
 
 	if (lx_emul_clock_get_rate(clk) != rate) {
-		printk("Error: cannot change clock rate dynamically to %ld\n", rate);
+		printk("Warning: cannot change clock rate dynamically "
+		       " from %ld to %ld\n", lx_emul_clock_get_rate(clk), rate);
 		lx_emul_trace_and_stop(__func__);
 	}
 

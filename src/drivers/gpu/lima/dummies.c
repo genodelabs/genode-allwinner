@@ -17,23 +17,6 @@
 unsigned long net_rand_noise;
 
 
-#include <linux/random.h>
-
-void get_random_bytes(void * buf,int nbytes)
-{
-	lx_emul_trace(__func__);
-}
-
-
-#include <linux/random.h>
-
-int __must_check get_random_bytes_arch(void * buf,int nbytes)
-{
-	lx_emul_trace(__func__);
-	return 0;
-}
-
-
 #include <asm/pgtable.h>
 
 pgprot_t pgprot_writecombine(pgprot_t prot)
@@ -159,26 +142,104 @@ bool is_vmalloc_addr(const void * x)
 }
 
 
-#include <linux/random.h>
-
-void add_interrupt_randomness(int irq,int irq_flags)
+long strnlen_user(const char __user * str,long count)
 {
-	lx_emul_trace(__func__);
+	lx_emul_trace_and_stop(__func__);
 }
-
-
-#include <linux/wait_bit.h>
-
-void __init wait_bit_init(void)
-{
-	lx_emul_trace(__func__);
-}
-
 
 
 #include <linux/skbuff.h>
 
-void skb_init()
+void __init skb_init(void)
 {
 	lx_emul_trace(__func__);
+}
+
+
+#include <net/net_namespace.h>
+
+void __init net_ns_init(void)
+{
+	lx_emul_trace(__func__);
+}
+
+
+#include <linux/pm_opp.h>
+
+int devm_pm_opp_set_config(struct device * dev,struct dev_pm_opp_config * config)
+{
+	lx_emul_trace(__func__);
+	return 0;
+}
+
+
+#include <linux/devfreq.h>
+
+static struct devfreq _devfreq_dummy;
+
+struct devfreq * devm_devfreq_add_device(struct device * dev,struct devfreq_dev_profile * profile,const char * governor_name,void * data)
+{
+	lx_emul_trace(__func__);
+	return &_devfreq_dummy;
+}
+
+
+#include <linux/pm_opp.h>
+
+void dev_pm_opp_put(struct dev_pm_opp * opp)
+{
+	lx_emul_trace(__func__);
+}
+
+
+#include <linux/pm_opp.h>
+
+int dev_pm_opp_set_rate(struct device * dev,unsigned long target_freq)
+{
+	lx_emul_trace(__func__);
+	return 0;
+}
+
+
+#include <linux/devfreq.h>
+
+struct dev_pm_opp * devfreq_recommended_opp(struct device * dev,unsigned long * freq,u32 flags)
+{
+	lx_emul_trace(__func__);
+	return NULL;
+}
+
+
+#include <linux/devfreq.h>
+
+void devm_devfreq_remove_device(struct device * dev,struct devfreq * devfreq)
+{
+	lx_emul_trace(__func__);
+}
+
+
+#include <linux/devfreq.h>
+
+int devfreq_suspend_device(struct devfreq *devfreq)
+{
+	lx_emul_trace(__func__);
+    return 0;
+}
+
+
+#include <linux/devfreq.h>
+
+int devfreq_resume_device(struct devfreq *devfreq)
+{
+	lx_emul_trace(__func__);
+    return 0;
+}
+
+
+#include <linux/pm_opp.h>
+
+int devm_pm_opp_of_add_table(struct device * dev)
+{
+	lx_emul_trace(__func__);
+	return 0;
 }

@@ -1,0 +1,27 @@
+* Remove PM dependency to prevent polluting all drivers with not
+  strictly necessary PM support.
+
+* Explicitly call PM resume function in the OV5640 driver that does
+  require PM support.
+--- src/linux/drivers/media/i2c/ov5640.c
++++ src/linux/drivers/media/i2c/ov5640.c
+@@ -3995,7 +3995,7 @@ static int ov5640_s_stream(struct v4l2_subdev *sd, int enable)
+ 	int ret = 0;
+ 
+ 	if (enable) {
+-		ret = pm_runtime_resume_and_get(&sensor->i2c_client->dev);
++		ret = ov5640_sensor_resume(&sensor->i2c_client->dev);
+ 		if (ret < 0)
+ 			return ret;
+ 
+--- src/linux/drivers/media/platform/sunxi/sun6i-csi/Kconfig
++++ src/linux/drivers/media/platform/sunxi/sun6i-csi/Kconfig
+@@ -3,7 +3,7 @@ config VIDEO_SUN6I_CSI
+ 	tristate "Allwinner A31 Camera Sensor Interface (CSI) Driver"
+ 	depends on V4L_PLATFORM_DRIVERS && VIDEO_DEV
+ 	depends on ARCH_SUNXI || COMPILE_TEST
+-	depends on PM && COMMON_CLK && RESET_CONTROLLER && HAS_DMA
++	depends on COMMON_CLK && RESET_CONTROLLER && HAS_DMA
+ 	select MEDIA_CONTROLLER
+ 	select VIDEO_V4L2_SUBDEV_API
+ 	select VIDEOBUF2_DMA_CONTIG

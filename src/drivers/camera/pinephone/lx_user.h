@@ -53,6 +53,9 @@ struct lx_user_config_t
 	unsigned valid;
 };
 
+
+void lx_user_request_parent_exit(void);
+
 #ifdef __cplusplus
 }
 #endif

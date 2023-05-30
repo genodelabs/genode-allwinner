@@ -47,14 +47,6 @@ long io_schedule_timeout(long timeout)
 }
 
 
-#include <linux/random.h>
-
-void add_interrupt_randomness(int irq,int irq_flags)
-{
-	lx_emul_trace(__func__);
-}
-
-
 #include <linux/fs.h>
 #include <linux/mount.h>
 #include <linux/slab.h>
@@ -79,17 +71,6 @@ void simple_release_fs(struct vfsmount ** mount,int * count)
 struct inode * alloc_anon_inode(struct super_block * s)
 {
 	return kmalloc(sizeof(struct inode), GFP_KERNEL);
-}
-
-
-#include <linux/atomic.h>
-#include <linux/dma-fence.h>
-
-u64 dma_fence_context_alloc(unsigned num)
-{
-	static atomic64_t dma_fence_context_counter = ATOMIC64_INIT(1);
-	WARN_ON(!num);
-	return atomic64_add_return(num, &dma_fence_context_counter) - num;
 }
 
 

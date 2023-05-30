@@ -28,15 +28,6 @@ struct kernfs_node * kernfs_find_and_get_ns(struct kernfs_node * parent,const ch
 }
 
 
-#include <linux/random.h>
-
-int __must_check get_random_bytes_arch(void * buf,int nbytes)
-{
-	lx_emul_trace(__func__);
-	return 0;
-}
-
-
 #include <linux/proc_fs.h>
 
 struct proc_dir_entry { int dummy; };
@@ -55,14 +46,6 @@ int __register_chrdev(unsigned int major, unsigned int baseminor,unsigned int co
 {
 	lx_emul_trace(__func__);
 	return 0;
-}
-
-
-#include <linux/random.h>
-
-void get_random_bytes(void * buf,int nbytes)
-{
-	lx_emul_trace(__func__);
 }
 
 
@@ -122,14 +105,6 @@ int kobject_uevent_env(struct kobject * kobj,enum kobject_action action,char * e
 {
 	lx_emul_trace(__func__);
 	return 0;
-}
-
-
-#include <linux/dma-resv.h>
-
-void dma_resv_init(struct dma_resv * obj)
-{
-	lx_emul_trace(__func__);
 }
 
 
@@ -195,7 +170,7 @@ void cfb_imageblit(struct fb_info *info, const struct fb_image *image)
 }
 
 
-void fb_deferred_io_init(struct fb_info *info)
+int fb_deferred_io_init(struct fb_info *info)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -220,18 +195,36 @@ int of_clk_set_defaults(struct device_node * node,bool clk_supplier)
 }
 
 
-#include <linux/wait_bit.h>
+#include <net/net_namespace.h>
 
-void __init wait_bit_init(void)
+void __init net_ns_init(void)
 {
 	lx_emul_trace(__func__);
 }
 
 
-
 #include <linux/skbuff.h>
 
-void skb_init()
+void __init skb_init(void)
 {
 	lx_emul_trace(__func__);
+}
+
+
+#include <linux/mm.h>
+
+bool is_vmalloc_addr(const void * x)
+{
+	lx_emul_trace(__func__);
+	return false;
+}
+
+
+#include <drm/drm_aperture.h>
+
+int drm_aperture_remove_conflicting_framebuffers(resource_size_t base, resource_size_t size,
+                         bool primary, const struct drm_driver *req_driver)
+{
+	lx_emul_trace(__func__);
+	return 0;
 }

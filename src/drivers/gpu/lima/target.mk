@@ -5,6 +5,7 @@ LIBS     = base a64_lx_emul
 INC_DIR += $(PRG_DIR)/include/lx_emul/shadow
 SRC_CC  += main.cc
 SRC_CC  += emul.cc
+SRC_CC  += lx_emul/random_dummy.cc
 SRC_C   += lx_emul.c
 SRC_C   += lx_user.c
 SRC_C   += clock.c

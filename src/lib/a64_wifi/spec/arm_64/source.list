@@ -1,4 +1,3 @@
-certs/common.c
 crypto/acompress.c
 crypto/aead.c
 crypto/aes_generic.c
@@ -19,7 +18,6 @@ crypto/gf128mul.c
 crypto/ghash-generic.c
 crypto/hash_info.c
 crypto/kpp.c
-crypto/memneq.c
 crypto/proc.c
 crypto/rng.c
 crypto/scatterwalk.c
@@ -46,7 +44,6 @@ drivers/of/fdt.c
 drivers/of/fdt_address.c
 drivers/of/irq.c
 drivers/of/kobj.c
-drivers/of/of_net.c
 drivers/of/of_reserved_mem.c
 drivers/of/platform.c
 drivers/of/property.c
@@ -70,7 +67,6 @@ drivers/mmc/core/sdio_irq.c
 drivers/mmc/core/sdio_ops.c
 drivers/mmc/core/slot-gpio.c
 drivers/mmc/host/sunxi-mmc.c
-drivers/net/Space.c
 drivers/net/loopback.c
 drivers/staging/rtl8723cs/core/crypto/aes-ccm.c
 drivers/staging/rtl8723cs/core/crypto/aes-ctr.c
@@ -240,11 +236,7 @@ kernel/locking/semaphore.c
 kernel/notifier.c
 kernel/panic.c
 kernel/resource.c
-kernel/sched/clock.c
-kernel/sched/completion.c
-kernel/sched/swait.c
-kernel/sched/wait.c
-kernel/sched/wait_bit.c
+kernel/sched/build_utility.c
 kernel/smpboot.c
 kernel/softirq.c
 kernel/task_work.c
@@ -301,6 +293,7 @@ lib/scatterlist.c
 lib/siphash.c
 lib/sort.c
 lib/string.c
+lib/string_helpers.c
 lib/timerqueue.c
 lib/vsprintf.c
 lib/xarray.c
@@ -309,9 +302,11 @@ mm/util.c
 net/core/datagram.c
 net/core/dev.c
 net/core/dev_addr_lists.c
+net/core/gro.c
 net/core/link_watch.c
 net/core/net-sysfs.c
 net/core/net_namespace.c
+net/core/of_net.c
 net/core/rtnetlink.c
 net/core/skbuff.c
 net/core/sock.c
@@ -334,6 +329,7 @@ net/mac80211/ht.c
 net/mac80211/ibss.c
 net/mac80211/iface.c
 net/mac80211/key.c
+net/mac80211/link.c
 net/mac80211/main.c
 net/mac80211/michael.c
 net/mac80211/mlme.c

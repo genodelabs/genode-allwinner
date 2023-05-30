@@ -109,6 +109,11 @@ struct reset_control * __devm_reset_control_get(struct device * dev, const char 
 }
 
 
+#include <linux/mmzone.h>
+
+struct mem_section **mem_section;
+
+
 #include <linux/dma-mapping.h>
 
 /*

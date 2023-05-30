@@ -71,21 +71,6 @@ bool is_vmalloc_addr(const void * x)
 }
 
 
-#include <linux/random.h>
-
-int __must_check get_random_bytes_arch(void * buf,int nbytes)
-{
-	printk("get_random_bytes_arch: leaving buffer unmodified\n");
-	return 0;
-}
-
-
-void get_random_bytes(void * buf,int nbytes)
-{
-	printk("get_random_bytes: leaving buffer unmodified\n");
-}
-
-
 #include <linux/gfp.h>
 
 void * page_frag_alloc_align(struct page_frag_cache * nc, unsigned int fragsz,
@@ -136,3 +121,14 @@ struct regulator * devm_regulator_get(struct device * dev,const char * id)
 }
 
 
+#include <linux/interrupt.h>
+
+void do_softirq_own_stack(void)
+{
+    /*
+     * We have no IRQ stack to switch to anyway,
+     * so we stay here in contrast to the original
+     * implementation
+     */
+    __do_softirq();
+}

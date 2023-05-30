@@ -22,7 +22,6 @@ drivers/of/fdt.c
 drivers/of/fdt_address.c
 drivers/of/irq.c
 drivers/of/kobj.c
-drivers/of/of_net.c
 drivers/of/of_reserved_mem.c
 drivers/of/platform.c
 drivers/of/property.c
@@ -54,6 +53,7 @@ drivers/usb/host/ehci-platform.c
 drivers/usb/phy/of.c
 drivers/usb/roles/class.c
 fs/nls/nls_base.c
+kernel/async.c
 kernel/irq/chip.c
 kernel/irq/devres.c
 kernel/irq/handle.c
@@ -65,10 +65,7 @@ kernel/kthread.c
 kernel/locking/mutex.c
 kernel/locking/rwsem.c
 kernel/notifier.c
-kernel/sched/clock.c
-kernel/sched/completion.c
-kernel/sched/swait.c
-kernel/sched/wait.c
+kernel/sched/build_utility.c
 kernel/time/clockevents.c
 kernel/time/clocksource.c
 kernel/time/hrtimer.c
@@ -111,7 +108,9 @@ lib/kobject.c
 lib/radix-tree.c
 lib/rbtree.c
 lib/refcount.c
+lib/scatterlist.c
 lib/string.c
+lib/string_helpers.c
 lib/timerqueue.c
 lib/vsprintf.c
 lib/xarray.c

@@ -206,7 +206,7 @@ void synchronize_rcu_expedited(void)
 
 #include <linux/netdevice.h>
 
-int dev_ioctl(struct net *net, unsigned int cmd, struct ifreq *ifr, bool *need_copyout)
+int dev_ioctl(struct net * net,unsigned int cmd,struct ifreq * ifr,void __user * data,bool * need_copyout)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -227,22 +227,6 @@ char * get_options(const char * str,int nints,int * ints)
 #include <linux/rcutree.h>
 
 void rcu_barrier(void)
-{
-	lx_emul_trace(__func__);
-}
-
-
-#include <linux/random.h>
-
-void add_device_randomness(const void * buf,unsigned int size)
-{
-	lx_emul_trace(__func__);
-}
-
-
-#include <linux/random.h>
-
-void add_interrupt_randomness(int irq,int irq_flags)
 {
 	lx_emul_trace(__func__);
 }
@@ -286,31 +270,6 @@ struct proc_dir_entry * proc_create_seq_private(const char * name,umode_t mode,s
 }
 
 
-int __pm_runtime_resume(struct device *dev, int rpmflags)
-{
-	lx_emul_trace(__func__);
-	return 1;
-}
-
-
-void pm_runtime_new_link(struct device *dev)
-{
-	lx_emul_trace(__func__);
-}
-
-
-void pm_runtime_drop_link(struct device_link *link)
-{
-	lx_emul_trace(__func__);
-}
-
-
-void pm_runtime_reinit(struct device *dev)
-{
-	lx_emul_trace(__func__);
-}
-
-
 struct iwl_mvm;
 struct ieee80211_vif;
 
@@ -328,90 +287,6 @@ int __ieee80211_suspend(struct ieee80211_hw *hw, struct cfg80211_wowlan *wowlan)
 {
 	lx_emul_trace(__func__);
 	return 0;
-}
-
-
-void pm_runtime_init(struct device *dev)
-{
-	lx_emul_trace(__func__);
-}
-
-
-int pm_runtime_barrier(struct device *dev)
-{
-	lx_emul_trace(__func__);
-	return 0;
-}
-
-
-int __pm_runtime_idle(struct device *dev, int rpmflags)
-{
-	return -ENOSYS;
-}
-
-
-void pm_runtime_set_memalloc_noio(struct device *dev,
-                                  bool enable)
-{
-	lx_emul_trace(__func__);
-}
-
-
-void pm_runtime_remove(struct device *dev)
-{
-	lx_emul_trace(__func__);
-}
-
-
-void pm_runtime_put_suppliers(struct device *dev)
-{
-	lx_emul_trace(__func__);
-}
-
-
-int pm_generic_runtime_suspend(struct device *dev)
-{
-	lx_emul_trace(__func__);
-	return 0;
-}
-
-
-int pm_generic_runtime_resume(struct device *dev)
-{
-	lx_emul_trace(__func__);
-	return 0;
-}
-
-
-void pm_runtime_get_suppliers(struct device *dev)
-{
-	lx_emul_trace(__func__);
-}
-
-
-int dev_pm_domain_attach(struct device *dev, bool power_on)
-{
-	lx_emul_trace(__func__);
-    return 0;
-}
-
-
-void dev_pm_domain_detach(struct device *dev, bool power_off)
-{
-	lx_emul_trace(__func__);
-}
-
-
-int dpm_sysfs_add(struct device *dev)
-{
-	lx_emul_trace(__func__);
-	return 0;
-}
-
-
-void dpm_sysfs_remove(struct device *dev)
-{
-	lx_emul_trace(__func__);
 }
 
 
@@ -593,6 +468,12 @@ void kernel_sigaction(int sig,__sighandler_t action)
 }
 
 
+u8 get_random_u8(void)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
 /////////////////////////////////////////////////////////////
 // XXX move below to lx_emul.c for a64
 /////////////////////////////////////////////////////////////
@@ -630,3 +511,15 @@ void yield()
 }
 
 
+#include <linux/filter.h>
+
+DEFINE_STATIC_KEY_FALSE(bpf_master_redirect_enabled_key);
+EXPORT_SYMBOL_GPL(bpf_master_redirect_enabled_key);
+
+
+#include <net/gen_stats.h>
+
+void gnet_stats_basic_sync_init(struct gnet_stats_basic_sync * b)
+{
+	lx_emul_trace(__func__);
+}

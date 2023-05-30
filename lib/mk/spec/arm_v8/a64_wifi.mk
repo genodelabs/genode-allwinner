@@ -16,6 +16,7 @@ SRC_CC  += lx_emul/random.cc
 SRC_CC  += dtb_helper.cc
 
 SRC_C   += clock.c
+SRC_C   += irq.c
 SRC_C   += $(notdir $(wildcard $(TARGET_LIB_DIR)/generated_dummies.c))
 
 

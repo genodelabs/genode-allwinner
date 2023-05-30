@@ -9,11 +9,10 @@ available via the USB-C port.
 
 --- src/linux/arch/arm64/boot/dts/allwinner/sun50i-a64-pinephone-1.2.dts
 +++ src/linux/arch/arm64/boot/dts/allwinner/sun50i-a64-pinephone-1.2.dts
-@@ -74,12 +74,6 @@
- 		 */
+@@ -75,11 +75,6 @@
  		vbus-supply = <&reg_usb_5v>;
  		vbus_in-supply = <&usb_power_supply>;
--
+ 
 -		port {
 -			typec0_dr_sw: endpoint {
 -				remote-endpoint = <&usb0_drd_sw>;
@@ -22,11 +21,10 @@ available via the USB-C port.
  	};
  };
  
-@@ -115,13 +109,3 @@
- 		quectel,qdai = "1,1,0,1,0,0,1,1";
+@@ -116,16 +111,6 @@
  	};
  };
--
+ 
 -&usbphy {
 -	usb-role-switch;
 -
@@ -36,3 +34,7 @@ available via the USB-C port.
 -		};
 -	};
 -};
+-
+ &hdmi {
+ 	extcon = <&anx7688 0>;
+ };

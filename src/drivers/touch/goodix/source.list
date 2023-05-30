@@ -77,13 +77,11 @@ kernel/kthread.c
 kernel/locking/mutex.c
 kernel/locking/osq_lock.c
 kernel/locking/rtmutex.c
+kernel/locking/rtmutex_api.c
 kernel/locking/rwsem.c
 kernel/notifier.c
 kernel/panic.c
-kernel/sched/clock.c
-kernel/sched/completion.c
-kernel/sched/swait.c
-kernel/sched/wait.c
+kernel/sched/build_utility.c
 kernel/smpboot.c
 kernel/softirq.c
 kernel/task_work.c
@@ -134,6 +132,7 @@ lib/rbtree.c
 lib/refcount.c
 lib/sort.c
 lib/string.c
+lib/string_helpers.c
 lib/timerqueue.c
 lib/vsprintf.c
 lib/xarray.c

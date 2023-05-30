@@ -839,7 +839,8 @@ static bool setup_camera(struct Camera *camera)
 
 static void sleep_forever(void)
 {
-	/* parent exit? */
+	lx_user_request_parent_exit();
+
 	__set_current_state(TASK_DEAD);
 	schedule();
 	BUG();
@@ -870,7 +871,7 @@ static int capture_task_function(void *p)
 	}
 
 	if (control_camera(camera, true))
-		BUG();
+		sleep_forever();
 
 	view_flip = true;
 	skip_count = 0;

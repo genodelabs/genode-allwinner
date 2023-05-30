@@ -73,6 +73,25 @@ void input_set_capability(struct input_dev * dev,unsigned int type,unsigned int 
 }
 
 
+void input_copy_abs(struct input_dev *dst, unsigned int dst_axis,
+            const struct input_dev *src, unsigned int src_axis)
+{
+	/* src must have EV_ABS and src_axis set */
+	if (WARN_ON(!(test_bit(EV_ABS, src->evbit) &&
+				  test_bit(src_axis, src->absbit))))
+		return;
+
+	if (!src->absinfo)
+		return;
+
+	input_set_capability(dst, EV_ABS, dst_axis);
+	if (!dst->absinfo)
+		return;
+
+	dst->absinfo[dst_axis] = src->absinfo[src_axis];
+}
+
+
 int input_register_device(struct input_dev * dev)
 {
 	return 0;

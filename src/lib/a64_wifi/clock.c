@@ -16,16 +16,16 @@
 #include <linux/slab.h>
 #include <lx_emul/clock.h>
 
-struct mmc_clock_mapping {
+struct wifi_clock_mapping {
 	char const    *client_con_id;
 	char const    *clock_name;
 	struct clk    *clk;
 	struct clk_hw *hw;
 };
 
-enum { NUM_MMC_CLOCK_MAPPINGS = 3 };
+enum { NUM_WIFI_CLOCK_MAPPINGS = 3 };
 
-static struct mmc_clock_mapping mmc_clock_mappings[NUM_MMC_CLOCK_MAPPINGS] = {
+static struct wifi_clock_mapping wifi_clock_mappings[NUM_WIFI_CLOCK_MAPPINGS] = {
 	{ "ahb", "bus-mmc1",  NULL, NULL },
 	{ "mmc", "mmc1",  NULL, NULL },
 	{ "ext_clock", "ext_clock",  NULL, NULL }
@@ -44,9 +44,9 @@ struct clk *clk_get(struct device *dev, const char *con_id)
 
 	{
 		unsigned i;
-		for (i = 0; i < NUM_MMC_CLOCK_MAPPINGS; i++) {
+		for (i = 0; i < NUM_WIFI_CLOCK_MAPPINGS; i++) {
 
-			struct mmc_clock_mapping *mapping = &mmc_clock_mappings[i];
+			struct wifi_clock_mapping *mapping = &wifi_clock_mappings[i];
 
 			if (strcmp(con_id, mapping->client_con_id) != 0)
 				continue;
@@ -75,8 +75,8 @@ struct clk *clk_get(struct device *dev, const char *con_id)
 static struct clk_hw *lookup_internal_clk_hw(struct clk *clk)
 {
 	unsigned i;
-	for (i = 0; i < NUM_MMC_CLOCK_MAPPINGS; i++) {
-		struct mmc_clock_mapping *mapping = &mmc_clock_mappings[i];
+	for (i = 0; i < NUM_WIFI_CLOCK_MAPPINGS; i++) {
+		struct wifi_clock_mapping *mapping = &wifi_clock_mappings[i];
 		if (mapping->clk == clk)
 			return mapping->hw;
 	}

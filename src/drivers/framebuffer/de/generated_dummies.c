@@ -1,7 +1,7 @@
 /*
  * \brief  Dummy definitions of Linux Kernel functions
  * \author Automatically generated file - do no edit
- * \date   2021-11-24
+ * \date   2023-06-13
  */
 
 #include <lx_emul.h>
@@ -18,6 +18,19 @@ int ___ratelimit(struct ratelimit_state * rs,const char * func)
 #include <linux/clk-provider.h>
 
 struct clk_hw * __clk_hw_register_gate(struct device * dev,struct device_node * np,const char * name,const char * parent_name,const struct clk_hw * parent_hw,const struct clk_parent_data * parent_data,unsigned long flags,void __iomem * reg,u8 bit_idx,u8 clk_gate_flags,spinlock_t * lock)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/cpumask.h>
+
+struct cpumask __cpu_active_mask;
+
+
+#include <linux/dma-fence-unwrap.h>
+
+struct dma_fence * __dma_fence_unwrap_merge(unsigned int num_fences,struct dma_fence ** fences,struct dma_fence_unwrap * iter)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -87,17 +100,25 @@ void __memcpy_toio(volatile void __iomem * to,const void * from,size_t count)
 }
 
 
-#include <linux/reset.h>
+#include <asm-generic/percpu.h>
 
-struct reset_control * __of_reset_control_get(struct device_node * node,const char * id,int index,bool shared,bool optional,bool acquired)
+unsigned long __per_cpu_offset[NR_CPUS] = {};
+
+
+#include <linux/printk.h>
+
+void __printk_safe_enter(void)
 {
 	lx_emul_trace_and_stop(__func__);
 }
 
 
-#include <asm-generic/percpu.h>
+#include <linux/printk.h>
 
-unsigned long __per_cpu_offset[NR_CPUS] = {};
+void __printk_safe_exit(void)
+{
+	lx_emul_trace_and_stop(__func__);
+}
 
 
 #include <linux/sched/task.h>
@@ -108,9 +129,9 @@ void __put_task_struct(struct task_struct * tsk)
 }
 
 
-#include <linux/ioport.h>
+#include <linux/mm.h>
 
-void __release_region(struct resource * parent,resource_size_t start,resource_size_t n)
+void __show_mem(unsigned int filter,nodemask_t * nodemask,int max_zone_idx)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -134,7 +155,15 @@ void __unregister_chrdev(unsigned int major,unsigned int baseminor,unsigned int 
 
 #include <linux/vmalloc.h>
 
-void * __vmalloc_node(unsigned long size,unsigned long align,gfp_t gfp_mask,int node,const void * caller)
+void * __vmalloc_node_range(unsigned long size,unsigned long align,unsigned long start,unsigned long end,gfp_t gfp_mask,pgprot_t prot,unsigned long vm_flags,int node,const void * caller)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/printk.h>
+
+int _printk_deferred(const char * fmt,...)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -142,7 +171,7 @@ void * __vmalloc_node(unsigned long size,unsigned long align,gfp_t gfp_mask,int 
 
 #include <linux/random.h>
 
-void add_bootloader_randomness(const void * buf,unsigned int size)
+void __init add_bootloader_randomness(const void * buf,size_t len)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -223,11 +252,6 @@ void bust_spinlocks(int yes)
 {
 	lx_emul_trace_and_stop(__func__);
 }
-
-
-#include <linux/clk-provider.h>
-
-const struct clk_ops clk_fixed_factor_ops;
 
 
 #include <linux/clk-provider.h>
@@ -326,11 +350,6 @@ void console_lock(void)
 }
 
 
-#include <linux/printk.h>
-
-int console_printk[] = {};
-
-
 #include <linux/console.h>
 
 void console_unblank(void)
@@ -347,6 +366,14 @@ void console_unlock(void)
 }
 
 
+#include <linux/printk.h>
+
+void console_verbose(void)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
 #include <linux/fs.h>
 
 struct file * dentry_open(const struct path * path,int flags,const struct cred * cred)
@@ -358,6 +385,14 @@ struct file * dentry_open(const struct path * path,int flags,const struct cred *
 #include <linux/property.h>
 
 int device_add_software_node(struct device * dev,const struct software_node * node)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/property.h>
+
+int device_create_managed_software_node(struct device * dev,const struct property_entry * properties,const struct software_node * parent)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -485,15 +520,7 @@ void dma_buf_unmap_attachment(struct dma_buf_attachment * attach,struct sg_table
 
 #include <linux/dma-buf.h>
 
-int dma_buf_vmap(struct dma_buf * dmabuf,struct dma_buf_map * map)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/dma-buf.h>
-
-void dma_buf_vunmap(struct dma_buf * dmabuf,struct dma_buf_map * map)
+void dma_buf_vunmap(struct dma_buf * dmabuf,struct iosys_map * map)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -504,102 +531,9 @@ void dma_buf_vunmap(struct dma_buf * dmabuf,struct dma_buf_map * map)
 bool dma_default_coherent;
 
 
-#include <linux/dma-fence.h>
+#include <linux/dma-mapping.h>
 
-int dma_fence_add_callback(struct dma_fence * fence,struct dma_fence_cb * cb,dma_fence_func_t func)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/dma-fence.h>
-
-struct dma_fence * dma_fence_allocate_private_stub(void)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/dma-fence-chain.h>
-
-int dma_fence_chain_find_seqno(struct dma_fence ** pfence,uint64_t seqno)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/dma-fence-chain.h>
-
-void dma_fence_chain_init(struct dma_fence_chain * chain,struct dma_fence * prev,struct dma_fence * fence,uint64_t seqno)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/dma-fence-chain.h>
-
-const struct dma_fence_ops dma_fence_chain_ops;
-
-
-#include <linux/dma-fence-chain.h>
-
-struct dma_fence * dma_fence_chain_walk(struct dma_fence * fence)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/dma-fence.h>
-
-struct dma_fence * dma_fence_get_stub(void)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/dma-fence.h>
-
-void dma_fence_init(struct dma_fence * fence,const struct dma_fence_ops * ops,spinlock_t * lock,u64 context,u64 seqno)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/dma-fence.h>
-
-void dma_fence_release(struct kref * kref)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/dma-fence.h>
-
-bool dma_fence_remove_callback(struct dma_fence * fence,struct dma_fence_cb * cb)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/dma-fence.h>
-
-int dma_fence_signal(struct dma_fence * fence)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/dma-fence.h>
-
-int dma_fence_signal_timestamp(struct dma_fence * fence,ktime_t timestamp)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/dma-fence.h>
-
-signed long dma_fence_wait_timeout(struct dma_fence * fence,bool intr,signed long timeout)
+void dma_free_pages(struct device * dev,size_t size,struct page * page,dma_addr_t dma_handle,enum dma_data_direction dir)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -608,6 +542,14 @@ signed long dma_fence_wait_timeout(struct dma_fence * fence,bool intr,signed lon
 #include <linux/dma-mapping.h>
 
 int dma_get_sgtable_attrs(struct device * dev,struct sg_table * sgt,void * cpu_addr,dma_addr_t dma_addr,size_t size,unsigned long attrs)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/dma-mapping.h>
+
+int dma_map_sgtable(struct device * dev,struct sg_table * sgt,enum dma_data_direction dir,unsigned long attrs)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -629,9 +571,49 @@ int dma_mmap_pages(struct device * dev,struct vm_area_struct * vma,size_t size,s
 }
 
 
-#include <linux/dma-resv.h>
+#include <asm-generic/softirq_stack.h>
 
-void dma_resv_fini(struct dma_resv * obj)
+void do_softirq_own_stack(void)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <drm/display/drm_hdmi_helper.h>
+
+int drm_hdmi_infoframe_set_hdr_metadata(struct hdmi_drm_infoframe * frame,const struct drm_connector_state * conn_state)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <drm/display/drm_scdc_helper.h>
+
+ssize_t drm_scdc_read(struct i2c_adapter * adapter,u8 offset,void * buffer,size_t size)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <drm/display/drm_scdc_helper.h>
+
+bool drm_scdc_set_high_tmds_clock_ratio(struct i2c_adapter * adapter,bool set)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <drm/display/drm_scdc_helper.h>
+
+bool drm_scdc_set_scrambling(struct i2c_adapter * adapter,bool enable)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <drm/display/drm_scdc_helper.h>
+
+ssize_t drm_scdc_write(struct i2c_adapter * adapter,u8 offset,const void * buffer,size_t size)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -653,9 +635,57 @@ void emergency_restart(void)
 }
 
 
+#include <linux/extcon.h>
+
+struct extcon_dev * extcon_get_edev_by_phandle(struct device * dev,int index)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/extcon.h>
+
+int extcon_get_state(struct extcon_dev * edev,const unsigned int id)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/extcon.h>
+
+int extcon_register_notifier_all(struct extcon_dev * edev,struct notifier_block * nb)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/extcon.h>
+
+int extcon_unregister_notifier_all(struct extcon_dev * edev,struct notifier_block * nb)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/fb.h>
+
+int fb_deferred_io_mmap(struct fb_info * info,struct vm_area_struct * vma)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
 #include <linux/file.h>
 
 void fd_install(unsigned int fd,struct file * file)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/rcuwait.h>
+
+void finish_rcuwait(struct rcuwait * w)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -669,22 +699,6 @@ struct kobject *firmware_kobj;
 #include <linux/file.h>
 
 void fput(struct file * file)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/property.h>
-
-struct fwnode_handle * fwnode_create_software_node(const struct property_entry * properties,const struct fwnode_handle * parent)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/property.h>
-
-void fwnode_remove_software_node(struct fwnode_handle * fwnode)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -706,22 +720,6 @@ const u8 guid_index[16] = {};
 #include <linux/hdmi.h>
 
 void hdmi_avi_infoframe_init(struct hdmi_avi_infoframe * frame)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/hdmi.h>
-
-ssize_t hdmi_avi_infoframe_pack(struct hdmi_avi_infoframe * frame,void * buffer,size_t size)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/hdmi.h>
-
-int hdmi_drm_infoframe_init(struct hdmi_drm_infoframe * frame)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -806,6 +804,14 @@ int insert_resource(struct resource * parent,struct resource * new)
 
 #include <linux/sched.h>
 
+void __sched io_schedule(void)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/sched.h>
+
 void io_schedule_finish(int token)
 {
 	lx_emul_trace_and_stop(__func__);
@@ -820,6 +826,11 @@ int io_schedule_prepare(void)
 }
 
 
+#include <linux/swiotlb.h>
+
+struct io_tlb_mem io_tlb_default_mem;
+
+
 #include <linux/ioport.h>
 
 struct resource iomem_resource;
@@ -828,6 +839,14 @@ struct resource iomem_resource;
 #include <linux/ioport.h>
 
 struct resource ioport_resource;
+
+
+#include <asm-generic/io.h>
+
+void __iomem * ioremap_prot(phys_addr_t phys_addr,size_t size,unsigned long prot)
+{
+	lx_emul_trace_and_stop(__func__);
+}
 
 
 #include <linux/fs.h>
@@ -847,6 +866,14 @@ bool irq_wait_for_poll(struct irq_desc * desc)
 
 #include <linux/irq_work.h>
 
+bool irq_work_queue(struct irq_work * work)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/irq_work.h>
+
 void irq_work_tick(void)
 {
 	lx_emul_trace_and_stop(__func__);
@@ -856,14 +883,6 @@ void irq_work_tick(void)
 #include <linux/property.h>
 
 bool is_software_node(const struct fwnode_handle * fwnode)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/mm.h>
-
-bool is_vmalloc_addr(const void * x)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -890,6 +909,14 @@ void kill_anon_super(struct super_block * sb)
 }
 
 
+#include <linux/slab.h>
+
+void * kmem_cache_alloc_lru(struct kmem_cache * cachep,struct list_lru * lru,gfp_t flags)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
 #include <linux/kmsg_dump.h>
 
 void kmsg_dump(enum kmsg_dump_reason reason)
@@ -901,6 +928,14 @@ void kmsg_dump(enum kmsg_dump_reason reason)
 #include <linux/kobject.h>
 
 int kobject_synth_uevent(struct kobject * kobj,const char * buf,size_t count)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/rcutree.h>
+
+void kvfree_call_rcu(struct rcu_head * head,rcu_callback_t func)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -929,6 +964,11 @@ unsigned long lpj_fine;
 
 #include <linux/memblock.h>
 
+struct memblock memblock;
+
+
+#include <linux/memblock.h>
+
 int __init_memblock memblock_add(phys_addr_t base,phys_addr_t size)
 {
 	lx_emul_trace_and_stop(__func__);
@@ -937,23 +977,15 @@ int __init_memblock memblock_add(phys_addr_t base,phys_addr_t size)
 
 #include <linux/memblock.h>
 
+void __init memblock_cap_memory_range(phys_addr_t base,phys_addr_t size)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/memblock.h>
+
 int __init_memblock memblock_clear_nomap(phys_addr_t base,phys_addr_t size)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/memblock.h>
-
-phys_addr_t __init_memblock memblock_find_in_range(phys_addr_t start,phys_addr_t end,phys_addr_t size,phys_addr_t align)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/memblock.h>
-
-int __init_memblock memblock_free(phys_addr_t base,phys_addr_t size)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -985,6 +1017,30 @@ int __init_memblock memblock_mark_nomap(phys_addr_t base,phys_addr_t size)
 
 #include <linux/memblock.h>
 
+bool __init_memblock memblock_overlaps_region(struct memblock_type * type,phys_addr_t base,phys_addr_t size)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/memblock.h>
+
+phys_addr_t __init memblock_phys_alloc_range(phys_addr_t size,phys_addr_t align,phys_addr_t start,phys_addr_t end)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/memblock.h>
+
+int __init_memblock memblock_phys_free(phys_addr_t base,phys_addr_t size)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/memblock.h>
+
 int __init_memblock memblock_reserve(phys_addr_t base,phys_addr_t size)
 {
 	lx_emul_trace_and_stop(__func__);
@@ -1002,14 +1058,6 @@ ssize_t memory_read_from_buffer(void * to,size_t count,loff_t * ppos,const void 
 #include <linux/irq.h>
 
 struct irq_chip no_irq_chip;
-
-
-#include <linux/fs.h>
-
-loff_t no_llseek(struct file * file,loff_t offset,int whence)
-{
-	lx_emul_trace_and_stop(__func__);
-}
 
 
 #include <linux/fs.h>
@@ -1039,14 +1087,6 @@ void note_interrupt(struct irq_desc * desc,irqreturn_t action_ret)
 #include <linux/clk-provider.h>
 
 void of_clk_del_provider(struct device_node * np)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/clk.h>
-
-struct clk * of_clk_get_by_name(struct device_node * np,const char * name)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -1109,17 +1149,17 @@ unsigned long phys_initrd_size;
 phys_addr_t phys_initrd_start;
 
 
-#include <linux/printk.h>
+#include <linux/sysctl.h>
 
-int printk_deferred(const char * fmt,...)
+int proc_dointvec_minmax(struct ctl_table * table,int write,void * buffer,size_t * lenp,loff_t * ppos)
 {
 	lx_emul_trace_and_stop(__func__);
 }
 
 
-#include <linux/printk.h>
+#include <linux/sysctl.h>
 
-void printk_safe_flush_on_panic(void)
+int proc_douintvec(struct ctl_table * table,int write,void * buffer,size_t * lenp,loff_t * ppos)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -1136,30 +1176,6 @@ void put_pid(struct pid * pid)
 #include <linux/file.h>
 
 void put_unused_fd(unsigned int fd)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <asm-generic/qrwlock.h>
-
-void queued_read_lock_slowpath(struct qrwlock * lock)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <asm-generic/qspinlock.h>
-
-void queued_spin_lock_slowpath(struct qspinlock * lock,u32 val)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <asm-generic/qrwlock.h>
-
-void queued_write_lock_slowpath(struct qrwlock * lock)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -1210,9 +1226,17 @@ int reset_control_assert(struct reset_control * rstc)
 }
 
 
-#include <linux/reset.h>
+#include <linux/reset-controller.h>
 
-void reset_control_put(struct reset_control * rstc)
+void reset_controller_unregister(struct reset_controller_dev * rcdev)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/seq_file.h>
+
+void seq_printf(struct seq_file * m,const char * f,...)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -1242,14 +1266,6 @@ struct scatterlist * sg_next(struct scatterlist * sg)
 }
 
 
-#include <linux/mm.h>
-
-void show_mem(unsigned int filter,nodemask_t * nodemask)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
 #include <linux/sched/debug.h>
 
 void show_state_filter(unsigned int state_filter)
@@ -1261,6 +1277,14 @@ void show_state_filter(unsigned int state_filter)
 #include <linux/siphash.h>
 
 u64 siphash_1u64(const u64 first,const siphash_key_t * key)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/smp.h>
+
+void smp_call_function_many(const struct cpumask * mask,smp_call_func_t func,void * info,bool wait)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -1287,14 +1311,6 @@ void smp_send_stop(void)
 bool static_key_initialized;
 
 
-#include <linux/string_helpers.h>
-
-int string_escape_mem(const char * src,size_t isz,char * dst,size_t osz,unsigned int flags,const char * only)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
 #include <linux/printk.h>
 
 int suppress_printk;
@@ -1316,6 +1332,11 @@ struct dma_fence * sync_file_get_fence(int fd)
 }
 
 
+#include <linux/sysctl.h>
+
+const int sysctl_vals[] = {};
+
+
 #include <linux/sysfs.h>
 
 void sysfs_notify(struct kobject * kobj,const char * dir,const char * attr)
@@ -1327,14 +1348,6 @@ void sysfs_notify(struct kobject * kobj,const char * dir,const char * attr)
 #include <linux/clockchips.h>
 
 void tick_broadcast(const struct cpumask * mask)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/vt_kern.h>
-
-void unblank_screen(void)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -1390,26 +1403,3 @@ void wake_q_add_safe(struct wake_q_head * head,struct task_struct * task)
 	lx_emul_trace_and_stop(__func__);
 }
 
-
-#include <linux/wait_bit.h>
-
-void wake_up_var(void * var)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/rcutree.h>
-
-void rcu_irq_enter_irqson(void)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/rcutree.h>
-
-void rcu_irq_exit_irqson(void)
-{
-	lx_emul_trace_and_stop(__func__);
-}

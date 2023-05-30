@@ -34,24 +34,23 @@ SRC_CC  += lx_emul/io_port.cc
 SRC_CC  += lx_emul/irq.cc
 SRC_C   += lx_emul/shadow/arch/arm64/kernel/smp.c
 SRC_C   += lx_emul/shadow/arch/arm64/mm/ioremap.c
+SRC_C   += lx_emul/shadow/drivers/char/random.c
 SRC_C   += lx_emul/shadow/kernel/dma/mapping.c
 SRC_C   += lx_emul/shadow/kernel/irq/spurious.c
 SRC_C   += lx_emul/shadow/kernel/rcu/srcutree.c
 SRC_C   += lx_emul/shadow/kernel/rcu/tree.c
-SRC_C   += lx_emul/shadow/kernel/sched/loadavg.c
 SRC_C   += lx_emul/shadow/kernel/smp.c
 SRC_C   += lx_emul/shadow/kernel/stop_machine.c
-SRC_C   += lx_emul/shadow/lib/cpumask.c
 SRC_C   += lx_emul/shadow/lib/devres.c
 SRC_C   += lx_emul/shadow/lib/smp_processor_id.c
 SRC_C   += lx_emul/shadow/mm/memblock.c
+SRC_C   += lx_emul/shadow/mm/slub.c
 SRC_CC  += lx_kit/device.cc
 SRC_CC  += lx_kit/memory_dma.cc
 
 
 # Turn off some warnings
 CC_OPT_drivers/gpu/drm/drm_plane_helper += -Wno-uninitialized
-CC_OPT_drivers/gpu/drm/sun4i/sun4i_frontend += -DPHYS_OFFSET=0
 
 #
 # Generate driver-specific device-tree binary data

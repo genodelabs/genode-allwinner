@@ -53,3 +53,16 @@ void cdev_init(struct cdev * cdev,const struct file_operations * fops)
 {
 	lx_emul_usb_register_devio(fops);
 }
+
+
+#include <linux/interrupt.h>
+
+void do_softirq_own_stack(void)
+{
+	/*
+	 * We have no IRQ stack to switch to anyway,
+	 * so we stay here in contrast to the original
+	 * implementation
+	 */
+	__do_softirq();
+}

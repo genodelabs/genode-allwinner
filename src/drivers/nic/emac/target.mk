@@ -3,6 +3,7 @@ TARGET   = $(DRIVER)_nic_drv
 REQUIRES = arm_v8a
 LIBS     = base a64_lx_emul
 SRC_CC  += main.cc
+SRC_CC  += lx_emul/random_dummy.cc
 SRC_C    = lx_user.c pmic.c
 SRC_C   += lx_emul/shadow/drivers/clk/clk.c
 SRC_C   += lx_emul/shadow/drivers/clk/clkdev.c

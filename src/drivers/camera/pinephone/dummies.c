@@ -14,14 +14,6 @@
 #include <lx_emul.h>
 
 
-#include <linux/wait_bit.h>
-
-void __init wait_bit_init(void)
-{
-	lx_emul_trace(__func__);
-}
-
-
 #include <linux/prandom.h>
 
 DEFINE_PER_CPU(unsigned long, net_rand_noise);
@@ -34,23 +26,6 @@ struct kernfs_node * kernfs_find_and_get_ns(struct kernfs_node * parent,const ch
 {
 	lx_emul_trace(__func__);
 	return NULL;
-}
-
-
-#include <linux/random.h>
-
-void get_random_bytes(void * buf,int nbytes)
-{
-	lx_emul_trace(__func__);
-}
-
-
-#include <linux/random.h>
-
-int __must_check get_random_bytes_arch(void * buf,int nbytes)
-{
-	lx_emul_trace(__func__);
-	return 0;
 }
 
 
@@ -129,10 +104,23 @@ int reset_control_deassert(struct reset_control * rstc)
 }
 
 
-
 #include <linux/skbuff.h>
 
-void skb_init()
+void __init skb_init(void)
+{
+	lx_emul_trace(__func__);
+}
+
+
+#include <net/net_namespace.h>
+
+void __init net_ns_init(void)
+{
+	lx_emul_trace(__func__);
+}
+
+
+void rt_mutex_setprio(struct task_struct *p, struct task_struct *pi_task)
 {
 	lx_emul_trace(__func__);
 }

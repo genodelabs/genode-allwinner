@@ -2,13 +2,13 @@ LICENSE   := GPLv2
 VERSION   := git
 DOWNLOADS := a64_linux.archive
 
-REV(a64_linux) := orange-pi-5.14-20211103-1304
+REV(a64_linux) := orange-pi-6.1-20230214-2103
 URL(a64_linux) := https://github.com/megous/linux/archive/${REV(a64_linux)}.tar.gz
-SHA(a64_linux) := 8722d06938f59d4eb81fddd2a1f50eebf526c4085e310a1e48bc6ef24332ad1f
+SHA(a64_linux) := af0253c5c377b591d0f4576f69c5f3a71fb25cb3abfa068f90216c8478969679
 DIR(a64_linux) := src/linux
 
-PATCHES := src/a64_linux/rsb_timeout.patch \
-           src/a64_linux/gc2145_no_debug.patch \
+PATCHES := \
+           src/a64_linux/csi_ov5640_pm.patch \
            src/a64_linux/remove_usbphy_role_switch.patch \
            src/a64_linux/usb_message.patch
 
