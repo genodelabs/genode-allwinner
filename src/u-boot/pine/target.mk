@@ -44,6 +44,7 @@ $(BL31_BIN_FILE):
 	                   CROSS_COMPILE=$(CROSS_DEV_PREFIX) \
 	                   BUILD_BASE=$(PWD)/$(PRG_REL_DIR)/arm_trusted_firmware \
 	                   PLAT=sun50i_a64 DEBUG=0 LOG_LEVEL=0 \
+	                   LDFLAGS=--no-warn-rwx-segments \
 	                   bl31
 
 
