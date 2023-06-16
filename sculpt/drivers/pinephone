@@ -96,6 +96,14 @@
 				<device name="mmc1"/>
 			</policy>
 
+			<policy label="power -> ">
+				<device name="rintc"/>
+			</policy>
+
+			<policy label="button -> ">
+				<device name="keyadc"/>
+			</policy>
+
 		</config>
 		<route> <any-service> <parent/> </any-service> </route>
 	</start>
@@ -328,12 +336,23 @@
 		<resource name="RAM" quantum="1M"/>
 		<binary name="pinephone_power_drv"/>
 		<route>
-			<service name="Scp"> <child name="platform_drv"/> </service>
+			<service name="Scp">      <child name="platform_drv"/> </service>
+			<service name="Platform"> <child name="platform_drv"/> </service>
 			<service name="Report"> <parent label="power"/> </service>
 			<service name="ROM" label="system"> <parent label="system"/> </service>
 			<any-service> <parent/> </any-service>
 		</route>
 		<config period_ms="10000" system_rom="system"/>
+	</start>
+
+	<start name="button">
+		<resource name="RAM" quantum="1M"/>
+		<binary name="pinephone_button_drv"/>
+		<route>
+			<service name="Platform"> <child name="platform_drv"/> </service>
+			<any-service> <parent/> </any-service>
+		</route>
+		<config/>
 	</start>
 
 	<start name="dynamic_config">

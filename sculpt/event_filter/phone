@@ -1,9 +1,15 @@
 <config>
 	<output>
-		<touch-key>
-			<input name="touch"/>
-			<tap xpos="0" ypos="400" width="25" height="600" key="KEY_DASHBOARD"/>
-		</touch-key>
+		<merge>
+			<touch-key>
+				<input name="touch"/>
+				<tap xpos="0" ypos="400" width="25" height="600" key="KEY_DASHBOARD"/>
+			</touch-key>
+			<input name="power"/>
+			<input name="button"/>
+		</merge>
 	</output>
-	<policy label="touch" input="touch"/>
+	<policy label="touch"  input="touch"/>
+	<policy label="power"  input="power"/>
+	<policy label="button" input="button"/>
 </config>

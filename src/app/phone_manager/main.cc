@@ -1142,7 +1142,7 @@ struct Sculpt::Main : Input_event_handler,
 			_touched = false;
 		}
 
-		ev.handle_press([&] (Input::Keycode, Codepoint code) {
+		ev.handle_press([&] (Input::Keycode key, Codepoint code) {
 
 			need_generate_dialog = true;
 			if (_software_add_dialog_has_keyboard_focus())
@@ -1151,6 +1151,22 @@ struct Sculpt::Main : Input_event_handler,
 				_software_update_dialog.dialog.handle_key(code);
 			else if (_network_dialog_has_keyboard_focus())
 				_network.handle_key_press(code);
+
+			/* handle volume up/down buttons */
+			{
+				bool const volume_up   = (key == Input::KEY_VOLUMEUP);
+				bool const volume_down = (key == Input::KEY_VOLUMEDOWN);
+
+				unsigned level = _audio_volume.value;
+
+				if (volume_up)   level = min(level + 10, 100u);
+				if (volume_down) level = (level >= 10 ? level - 10 : 0);
+
+				if (volume_up || volume_down) {
+					select_volume_level(level);
+					_section_enabled(_device_section_dialog, true);
+				}
+			}
 		});
 
 		if (need_generate_dialog)
