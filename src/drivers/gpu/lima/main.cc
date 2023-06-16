@@ -989,7 +989,7 @@ static struct task_struct *create_gpu_task(void *args)
 	_lx_user_task_args.create_task = true;
 
 	lx_emul_task_unblock(lx_user_task);
-	Lx_kit::env().scheduler.schedule();
+	Lx_kit::env().scheduler.execute();
 
 	return _lx_user_task_args.new_gpu_task;
 }
@@ -1074,7 +1074,7 @@ struct Gpu::Session_component : public Genode::Session_object<Gpu::Session>
 			_lx_task_args._completed_request = &_completed_request;
 
 			lx_emul_task_unblock(_lx_task);
-			Lx_kit::env().scheduler.schedule();
+			Lx_kit::env().scheduler.execute();
 
 			if (block == Blocking_request::YES)
 				for (;;) {
@@ -1083,6 +1083,8 @@ struct Gpu::Session_component : public Genode::Session_object<Gpu::Session>
 						break;
 
 					_ep.wait_and_dispatch_one_io_signal();
+
+					Lx_kit::env().scheduler.execute();
 				}
 
 			if (_completed_request.success) {
@@ -1103,7 +1105,7 @@ struct Gpu::Session_component : public Genode::Session_object<Gpu::Session>
 
 			// XXX must not return prematurely
 			lx_emul_task_unblock(_lx_task);
-			Lx_kit::env().scheduler.schedule();
+			Lx_kit::env().scheduler.execute();
 
 			bool const success = _lx_task_args._local_request->success;
 			_lx_task_args._local_request = nullptr;
