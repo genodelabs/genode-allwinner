@@ -1,4 +1,8 @@
-build { core init timer server/report_rom drivers/platform/a64 drivers/power/pinephone }
+build {
+	core init timer
+	server/report_rom server/event_dump
+	drivers/platform/a64 drivers/power/pinephone
+}
 
 create_boot_directory
 
@@ -28,24 +32,39 @@ install_config {
 			<config verbose="yes"/>
 		</start>
 
+		<start name="event_dump">
+			<resource name="RAM" quantum="1M"/>
+			<provides> <service name="Event"/> </provides>
+			<config/>
+			<route> <any-service> <parent/> </any-service> </route>
+		</start>
+
 		<start name="a64_platform_drv" caps="150" managing_system="yes">
 			<resource name="RAM" quantum="1M"/>
 			<provides> <service name="Platform"/> <service name="Scp"/> </provides>
 			<route> <any-service> <parent/> </any-service> </route>
-			<config devices_rom="config"/>
+			<config devices_rom="config">
+				<device name="rintc">
+					<io_mem address="0x1f00c00" size="0x400"/>
+					<irq number="64"/>
+				</device>
+				<policy label="pinephone_power_drv -> "> <device name="rintc"/> </policy>
+			</config>
 		</start>
 
 		<start name="pinephone_power_drv">
 			<resource name="RAM" quantum="1M"/>
 			<route>
-				<service name="Timer">  <child name="timer"/>            </service>
-				<service name="Scp">    <child name="a64_platform_drv"/> </service>
-				<service name="Report"> <child name="report_rom"/>       </service>
+				<service name="Timer">     <child name="timer"/>            </service>
+				<service name="Scp">       <child name="a64_platform_drv"/> </service>
+				<service name="Platform">  <child name="a64_platform_drv"/> </service>
+				<service name="Report">    <child name="report_rom"/>       </service>
+				<service name="Event">     <child name="event_dump"/>       </service>
 				<service name="ROM" label="system"> <parent label="config"/> </service>
 				<any-service> <parent/> </any-service>
 			</route>
 			<!-- supported 'state' attribute values are 'reset', 'poweroff' -->
-			<config period_ms="1000" system_rom="config" state=""/>
+			<config period_ms="3000" system_rom="config" state=""/>
 		</start>
 
 	</config>

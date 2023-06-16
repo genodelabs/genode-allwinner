@@ -172,4 +172,8 @@
 		<io_mem address="0x01c21800" size="0x400"/>
 		<irq number="62"/>
 	</device>
+	<device name="rintc">
+		<io_mem address="0x1f00c00" size="0x400"/>
+		<irq number="64"/>
+	</device>
 </devices>

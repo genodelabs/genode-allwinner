@@ -14,7 +14,10 @@
 /* Genode includes */
 #include <base/component.h>
 #include <base/attached_rom_dataspace.h>
+#include <input/keycodes.h>
 #include <os/reporter.h>
+#include <platform_session/device.h>
+#include <event_session/connection.h>
 #include <scp_session/connection.h>
 #include <timer_session/connection.h>
 
@@ -24,6 +27,8 @@ namespace Power {
 
 	struct Scp;
 	struct Pmic_info;
+	struct Pmic;
+	struct Rintc;
 	struct Main;
 
 	using Token = Genode::Token<Scanner_policy_identifier_with_underline>;
@@ -74,6 +79,53 @@ struct Power::Scp : Noncopyable
 		);
 		return response;
 	}
+};
+
+
+/**
+ * Utility to access PMIC registers via Genode's 'Register' framework
+ */
+struct Power::Pmic : Register_set<Pmic>
+{
+	Scp &_scp;
+
+	struct Scp_hex : Hex
+	{
+		template <typename T>
+		explicit Scp_hex(T value) : Hex(value, OMIT_PREFIX) { }
+	};
+
+	using Request = String<64>;
+
+	template <typename T>
+	void _write(off_t const offset, T const value)
+	{
+		Request const request { Scp_hex(value), " ", Scp_hex(offset), " pmic!" };
+
+		_scp.execute(request.string());
+	}
+
+	template <typename T>
+	T _read(off_t const &offset) const
+	{
+		Request const request { Scp_hex(offset), " pmic@ ." };
+
+		Scp::Response const response = _scp.execute(request.string());
+
+		Token t { response.string() };
+		t = t.eat_whitespace();
+
+		uint8_t value = 0;
+		ascii_to_unsigned(t.start(), value, 16);
+		return value;
+	}
+
+	struct Irq_status_5 : Register<0x4c, 8>
+	{
+		struct Poksirq : Bitfield<4, 1> { };  /* short press on power button */
+	};
+
+	Pmic(Scp &scp) : Register_set<Pmic>(*this), _scp(scp) { }
 };
 
 
@@ -150,9 +202,45 @@ struct Power::Pmic_info
 };
 
 
+/*
+ * Nested interrupt controller that forwards the PMIC's IRQ (ENMI) to the GIC's
+ * interrupt 64.
+ */
+struct Power::Rintc
+{
+	struct Mmio : Platform::Device::Mmio
+	{
+		struct Ctrl    : Register<0x0c, 32> { struct Pmic : Bitfield<0, 1> { }; };
+		struct Pending : Register<0x10, 32> { struct Pmic : Bitfield<0, 1> { }; };
+		struct Enable  : Register<0x40, 32> { struct Pmic : Bitfield<0, 1> { }; };
+		struct Mask    : Register<0x50, 32> { struct Pmic : Bitfield<0, 1> { }; };
+
+		using Platform::Device::Mmio::Mmio;
+
+	} _mmio;
+
+	Platform::Device::Irq  _irq;
+
+	Rintc(Platform::Device &device, Signal_context_capability sigh)
+	: _mmio(device), _irq(device) { _irq.sigh(sigh); }
+
+	void ack()
+	{
+		/* clear interrupt at rintc */
+		_mmio.write<Mmio::Enable::Pmic>(1);
+		_mmio.write<Mmio::Pending::Pmic>(1);
+
+		/* clear interrupt at GIC */
+		_irq.ack();
+	}
+};
+
+
 struct Power::Main
 {
 	Env &_env;
+
+	Event::Connection _event { _env }; /* for reporting the power button */
 
 	Timer::Connection _timer { _env };
 
@@ -178,6 +266,43 @@ struct Power::Main
 	void _gen_battery(Xml_generator &, Scp &) const;
 
 	Pmic_info _pmic_info { };
+
+	Pmic _pmic { _scp };
+
+	Platform::Connection _platform { _env };
+
+	Platform::Device _rintc_device { _platform };
+
+	Signal_handler<Main> _rintc_handler {
+		_env.ep(), *this, &Main::_handle_rintc };
+
+	Rintc _rintc { _rintc_device, _rintc_handler };
+
+	void _handle_rintc()
+	{
+		if (_pmic.read<Pmic::Irq_status_5::Poksirq>()) {
+
+			_event.with_batch([&] (Event::Session_client::Batch &batch) {
+				batch.submit( Input::Press   { Input::KEY_POWER });
+				batch.submit( Input::Release { Input::KEY_POWER });
+			});
+
+			uint8_t value = 0;
+			Pmic::Irq_status_5::Poksirq::set(value, 1);
+			_pmic.write<Pmic::Irq_status_5>(value);
+		}
+
+		_scp.execute("clear_pmic_irqs");
+
+		_rintc.ack();
+
+		/*
+		 * The PMIC interrupt triggers whenever something interesting happens,
+		 * e.g., when connecting AC or when inserting the battery. Immediately
+		 * reflect the new status in the power report.
+		 */
+		_update_power_report();
+	}
 
 	void _update_power_report()
 	{
@@ -364,6 +489,9 @@ struct Power::Main
 			"  7c pmic@ 10 * 7d pmic@ + .decimal " /* discharge current */
 			"  b9 pmic@ 7f and .decimal "          /* battery capacity (percent) */
 			"; "
+
+			/* clear all PMIC interrupt status bits */
+			": clear_pmic_irqs 48 4 FOR dup ff swap pmic! 1 + NEXT drop ; "
 		);
 
 		/*
