@@ -147,3 +147,12 @@ bool is_vmalloc_addr(const void * x)
 	lx_emul_trace(__func__);
 	return false;
 }
+
+
+
+#include <linux/skbuff.h>
+
+void skb_init()
+{
+	lx_emul_trace(__func__);
+}

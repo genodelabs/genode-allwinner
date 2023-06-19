@@ -195,8 +195,6 @@ void lx_user_init(void)
 {
 	pid_t pid;
 
-	skb_init();
-
 	pid = kernel_thread(user_task_function, NULL, CLONE_FS | CLONE_FILES);
 
 	user_task_struct_ptr = find_task_by_pid_ns(pid, NULL);

@@ -267,3 +267,12 @@ void __check_object_size(const void * ptr,unsigned long n,bool to_user)
 {
 	lx_emul_trace(__func__);
 }
+
+
+
+#include <linux/skbuff.h>
+
+void skb_init()
+{
+	lx_emul_trace(__func__);
+}

@@ -127,3 +127,12 @@ int reset_control_deassert(struct reset_control * rstc)
 	lx_emul_trace(__func__);
 	return 0;
 }
+
+
+
+#include <linux/skbuff.h>
+
+void skb_init()
+{
+	lx_emul_trace(__func__);
+}
