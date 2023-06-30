@@ -35,6 +35,7 @@
 #include <model/file_operation_queue.h>
 #include <model/index_update_queue.h>
 #include <model/presets.h>
+#include <model/screensaver.h>
 #include <menu_view.h>
 #include <managed_config.h>
 #include <gui.h>
@@ -90,6 +91,7 @@ struct Sculpt::Main : Input_event_handler,
                       Software_add_dialog::Action,
                       Depot_users_dialog::Action,
                       Component::Construction_action,
+                      Screensaver::Action,
                       Software_status
 {
 	Env &_env;
@@ -138,6 +140,8 @@ struct Sculpt::Main : Input_event_handler,
 
 		unsigned brightness;
 
+		bool display;
+
 		static System from_xml(Xml_node const &node)
 		{
 			return System {
@@ -145,7 +149,8 @@ struct Sculpt::Main : Input_event_handler,
 				.storage       = node.attribute_value("storage", false),
 				.state         = node.attribute_value("state",   State()),
 				.power_profile = node.attribute_value("power_profile", Power_profile()),
-				.brightness    = node.attribute_value("brightness", 0u)
+				.brightness    = node.attribute_value("brightness", 0u),
+				.display       = node.attribute_value("display", true)
 			};
 		}
 
@@ -157,10 +162,15 @@ struct Sculpt::Main : Input_event_handler,
 			if (state.length() > 1)
 				xml.attribute("state", state);
 
-			if (power_profile.length() > 1)
-				xml.attribute("power_profile", power_profile);
+			if (power_profile.length() > 1) {
+				if (power_profile == "performance" && !display)
+					xml.attribute("power_profile", "economic");
+				else
+					xml.attribute("power_profile", power_profile);
+			}
 
 			xml.attribute("brightness", brightness);
+			xml.attribute("display", display ? "yes" : "no");
 		}
 
 		bool operator != (System const &other) const
@@ -169,7 +179,8 @@ struct Sculpt::Main : Input_event_handler,
 			    || (other.storage       != storage)
 			    || (other.state         != state)
 			    || (other.power_profile != power_profile)
-			    || (other.brightness    != brightness);
+			    || (other.brightness    != brightness)
+			    || (other.display       != display);
 		}
 
 	} _system { };
@@ -227,6 +238,17 @@ struct Sculpt::Main : Input_event_handler,
 		_verbose_modem = config.attribute_value("verbose_modem", false);
 	}
 
+	Screensaver _screensaver { _env, *this };
+
+	/**
+	 * Screensaver::Action interface
+	 */
+	void screensaver_changed() override
+	{
+		_system.display = _screensaver.display_enabled();
+		_update_managed_system_config();
+	}
+
 	Attached_rom_dataspace _leitzentrale_rom { _env, "leitzentrale" };
 
 	Signal_handler<Main> _leitzentrale_handler {
@@ -237,6 +259,9 @@ struct Sculpt::Main : Input_event_handler,
 		_leitzentrale_rom.update();
 
 		_leitzentrale_visible = _leitzentrale_rom.xml().attribute_value("enabled", false);
+
+		/* disable automatic blanking while the application runtime is visible */
+		_screensaver.blank_after_some_time(_leitzentrale_visible);
 
 		_handle_window_layout();
 	}
@@ -1167,6 +1192,9 @@ struct Sculpt::Main : Input_event_handler,
 					_section_enabled(_device_section_dialog, true);
 				}
 			}
+
+			if (key == Input::KEY_POWER)
+				_screensaver.force_toggle();
 		});
 
 		if (need_generate_dialog)

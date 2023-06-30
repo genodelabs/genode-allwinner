@@ -39,7 +39,7 @@
 				<device name="pio"/>
 			</policy>
 
-			<policy label="fb_drv -> " info="yes">
+			<policy label="dynamic -> fb_drv -> " info="yes">
 				<device name="dphy"/>
 				<device name="dsi"/>
 				<device name="syscon"/>
@@ -49,7 +49,7 @@
 				<device name="tcon1"/>
 			</policy>
 
-			<policy label="goodix_touch_drv -> " info="yes">
+			<policy label="dynamic -> goodix_touch_drv -> " info="yes">
 				<device name="i2c0"/>
 			</policy>
 
@@ -129,15 +129,15 @@
 			<in     name="touchscreen-int"      bank="H" index="4" irq="falling"/>
 			<out    name="touchscreen-reset"    bank="H" index="11"/>
 
-			<policy label="goodix_touch_drv -> PH11" pin="touchscreen-reset"/>
-			<policy label="goodix_touch_drv -> PH4"  pin="touchscreen-int"/>
+			<policy label="dynamic -> goodix_touch_drv -> PH11" pin="touchscreen-reset"/>
+			<policy label="dynamic -> goodix_touch_drv -> PH4"  pin="touchscreen-int"/>
 
 			<select name="lcd-pwm"   bank="L" index="10" function="2"/>
 			<out    name="backlight" bank="H" index="10" default="0"/>
 			<out    name="lcd-reset" bank="D" index="23" default="0"/>
 
-			<policy label="fb_drv -> PH10" pin="backlight"/>
-			<policy label="fb_drv -> PD23" pin="lcd-reset"/>
+			<policy label="dynamic -> fb_drv -> PH10" pin="backlight"/>
+			<policy label="dynamic -> fb_drv -> PD23" pin="lcd-reset"/>
 
 			<!-- modem -->
 			<out name="4g-pwr-bat" bank="L" index="7" />
@@ -221,44 +221,6 @@
 			<policy label="runtime -> wifi -> PL2" pin="wifi_pwrseq"/>
 
 		</config>
-	</start>
-
-	<start name="fb_drv" caps="250">
-		<binary name="de_fb_drv"/>
-		<resource name="RAM" quantum="20M"/>
-		<resource name="CPU" quantum="90"/>
-		<route>
-			<service name="ROM" label="dtb"> <parent label="de-pinephone.dtb"/> </service>
-			<service name="RM">          <parent/> </service>
-			<service name="ROM">         <parent/> </service>
-			<service name="PD">          <parent/> </service>
-			<service name="CPU">         <parent/> </service>
-			<service name="LOG">         <parent/> </service>
-			<service name="Timer">       <parent/> </service>
-			<service name="Capture">     <parent/> </service>
-			<service name="Platform">    <child name="platform_drv"/> </service>
-			<service name="Pin_control"> <child name="a64_pio_drv"/>  </service>
-		</route>
-	</start>
-
-	<start name="goodix_touch_drv" caps="250">
-		<resource name="RAM" quantum="10M"/>
-		<resource name="CPU" quantum="10"/>
-		<route>
-			<service name="ROM" label="dtb"> <parent label="goodix-pinephone.dtb"/> </service>
-			<service name="RM">          <parent/> </service>
-			<service name="ROM">         <parent/> </service>
-			<service name="PD">          <parent/> </service>
-			<service name="CPU">         <parent/> </service>
-			<service name="LOG">         <parent/> </service>
-			<service name="Timer">       <parent/> </service>
-			<service name="Platform">    <child name="platform_drv"/> </service>
-			<service name="Pin_control"> <child name="a64_pio_drv"/>  </service>
-			<service name="IRQ">
-				<child name="a64_pio_drv" label="goodix_touch_drv -> PH4"/> </service>
-			<service name="Event">
-				<child name="event_filter" label="touch"/> </service>
-		</route>
 	</start>
 
 	<!-- toggle key mappings depending on the numlock state -->
@@ -366,6 +328,9 @@
 			<input name="storage_enabled" rom="system" node="system">
 				<attribute name="storage" /> </input>
 
+			<input name="display_enabled" rom="system" node="system">
+				<attribute name="display" /> </input>
+
 			<output node="config">
 				<inline>
 					<parent-provides>
@@ -376,6 +341,10 @@
 						<service name="Timer"/>
 						<service name="Report"/>
 						<service name="Platform"/>
+						<service name="Capture"/>
+						<service name="Event"/>
+						<service name="Pin_control"/>
+						<service name="IRQ"/>
 					</parent-provides>
 
 					<service name="Block">
@@ -384,6 +353,50 @@
 					<service name="Usb">
 						<default-policy> <child name="usb_host_drv"/> </default-policy> </service>
 				</inline>
+
+				<if>
+					<has_value input="display_enabled" value="yes" />
+					<then>
+						<inline>
+							<start name="fb_drv" caps="250">
+								<binary name="de_fb_drv"/>
+								<resource name="RAM" quantum="20M"/>
+								<resource name="CPU" quantum="90"/>
+								<route>
+									<service name="ROM" label="dtb"> <parent label="de-pinephone.dtb"/> </service>
+									<service name="ROM">         <parent/> </service>
+									<service name="PD">          <parent/> </service>
+									<service name="CPU">         <parent/> </service>
+									<service name="LOG">         <parent/> </service>
+									<service name="Timer">       <parent/> </service>
+									<service name="Capture">     <parent/> </service>
+									<service name="Platform">    <parent/> </service>
+									<service name="Pin_control"> <parent/> </service>
+								</route>
+							</start>
+
+							<start name="goodix_touch_drv" caps="250">
+								<resource name="RAM" quantum="10M"/>
+								<resource name="CPU" quantum="10"/>
+								<route>
+									<service name="ROM" label="dtb"> <parent label="goodix-pinephone.dtb"/> </service>
+									<service name="RM">          <parent/> </service>
+									<service name="ROM">         <parent/> </service>
+									<service name="PD">          <parent/> </service>
+									<service name="CPU">         <parent/> </service>
+									<service name="LOG">         <parent/> </service>
+									<service name="Timer">       <parent/> </service>
+									<service name="Platform">    <parent/> </service>
+									<service name="Pin_control"> <parent/> </service>
+									<service name="Event">       <parent/> </service>
+									<service name="IRQ">
+										<parent label="goodix_touch_drv -> PH4"/> </service>
+								</route>
+							</start>
+
+						</inline>
+					</then>
+				</if>
 
 				<if>
 					<has_value input="usb_enabled" value="yes" />
@@ -441,15 +454,19 @@
 		</route>
 	</start>
 
-	<start name="dynamic" caps="800">
+	<start name="dynamic" caps="2300">
 		<binary name="init"/>
-		<resource name="RAM" quantum="36M"/>
+		<resource name="RAM" quantum="67M"/>
+		<resource name="CPU" quantum="100"/>
 		<provides> <service name="Usb"/> <service name="Block"/> </provides>
 		<route>
 			<service name="ROM" label="config"> <child name="dynamic_config"/> </service>
 			<service name="Report" label_last="block_devices">
 				<parent label="block_devices"/> </service>
-			<service name="Platform"> <child name="platform_drv"/> </service>
+			<service name="Platform">    <child name="platform_drv"/> </service>
+			<service name="Pin_control"> <child name="a64_pio_drv"/>  </service>
+			<service name="IRQ">         <child name="a64_pio_drv"/>  </service>
+			<service name="Event"> <child name="event_filter" label="touch"/> </service>
 			<any-service> <parent/> </any-service>
 		</route>
 	</start>
