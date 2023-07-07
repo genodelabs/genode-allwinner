@@ -29,7 +29,6 @@ set build_components {
 	lib/vfs_jitterentropy
 
 	test/lwip/http_srv
-	lib/vfs_lwip
 }
 
 append_if $debug_driver build_components {
@@ -310,7 +309,6 @@ install_config {
 					<dir name="dev"> <log/> <null/> <rtc/>
 						<jitterentropy name="random"/>
 						<jitterentropy name="urandom"/>
-						<wifi/>
 					</dir>
 					<dir name="firmware">
 						<tar name="wifi_firmware.tar"/>
