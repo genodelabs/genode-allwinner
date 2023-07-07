@@ -32,11 +32,19 @@ struct Touchscreen_driver::Main
 	Env                   &_env;
 	Attached_rom_dataspace _dtb_rom { _env, "dtb" };
 
+	Signal_handler<Main> _signal_handler {
+		_env.ep(), *this, &Main::_handle_signal };
+
+	void _handle_signal()
+	{
+		Lx_kit::env().scheduler.execute();
+	}
+
 	Main(Env &env) : _env(env)
 	{
 		log("--- touchscreen driver started ---");
 
-		Lx_kit::initialize(_env);
+		Lx_kit::initialize(_env, _signal_handler);
 		_env.exec_static_constructors();
 
 		genode_event_init(genode_env_ptr(env),

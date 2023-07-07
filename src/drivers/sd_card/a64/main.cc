@@ -26,7 +26,7 @@
 using namespace Genode;
 
 
-struct Main : private Entrypoint::Io_progress_handler
+struct Main
 {
 	Env                  & env;
 	Attached_rom_dataspace dtb_rom        { env, "dtb"           };
@@ -36,14 +36,6 @@ struct Main : private Entrypoint::Io_progress_handler
 	Signal_handler<Main>   signal_handler { env.ep(), *this,
 	                                        &Main::handle_signal };
 	Sliced_heap            sliced_heap    { env.ram(), env.rm()  };
-
-	/**
-	 * Entrypoint::Io_progress_handler
-	 */
-	void handle_io_progress() override
-	{
-		genode_block_notify_peers();
-	}
 
 	void handle_config()
 	{
@@ -56,13 +48,15 @@ struct Main : private Entrypoint::Io_progress_handler
 	{
 		lx_user_handle_io();
 		Lx_kit::env().scheduler.execute();
+
+		genode_block_notify_peers();
 	}
 
 	Main(Env & env) : env(env)
 	{
 		config.sigh(config_handler);
 
-		Lx_kit::initialize(env);
+		Lx_kit::initialize(env, signal_handler);
 		env.exec_static_constructors();
 
 		genode_block_init(genode_env_ptr(env),
@@ -74,8 +68,6 @@ struct Main : private Entrypoint::Io_progress_handler
 		handle_config();
 
 		lx_emul_start_kernel(dtb_rom.local_addr<void>());
-
-		env.ep().register_io_progress_handler(*this);
 	}
 };
 

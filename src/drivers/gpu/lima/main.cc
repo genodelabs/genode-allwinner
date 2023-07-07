@@ -1771,11 +1771,19 @@ struct Driver::Main
 		_config_rom.xml().attribute_value("dtb", Dtb_name("dtb")) };
 	Attached_rom_dataspace _dtb_rom { _env, _dtb_name.string() };
 
+	Signal_handler<Main> _signal_handler {
+		_env.ep(), *this, &Main::_handle_signal };
+
+	void _handle_signal()
+	{
+		Lx_kit::env().scheduler.execute();
+	}
+
 	Main(Env &env) : _env { env }
 	{
 		log("--- Lima GPU driver started ---");
 
-		Lx_kit::initialize(_env);
+		Lx_kit::initialize(_env, _signal_handler);
 		_env.exec_static_constructors();
 
 		_lx_user_task_args.create_task  = false;

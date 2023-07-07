@@ -26,7 +26,7 @@
 using namespace Genode;
 
 
-struct Main : private Entrypoint::Io_progress_handler
+struct Main
 {
 	Env                  & env;
 	Attached_rom_dataspace dtb_rom        { env, "dtb"           };
@@ -34,18 +34,12 @@ struct Main : private Entrypoint::Io_progress_handler
 	                                        &Main::handle_signal };
 	Sliced_heap            sliced_heap    { env.ram(), env.rm()  };
 
-	/**
-	 * Entrypoint::Io_progress_handler
-	 */
-	void handle_io_progress() override
-	{
-		genode_usb_notify_peers();
-	}
-
 	void handle_signal()
 	{
 		lx_user_handle_io();
 		Lx_kit::env().scheduler.execute();
+
+		genode_usb_notify_peers();
 	}
 
 	Main(Env & env) : env(env)
@@ -54,7 +48,7 @@ struct Main : private Entrypoint::Io_progress_handler
 			Lx_kit::Initial_config config { env };
 		}
 
-		Lx_kit::initialize(env);
+		Lx_kit::initialize(env, signal_handler);
 		env.exec_static_constructors();
 
 		genode_usb_init(genode_env_ptr(env),
@@ -63,8 +57,6 @@ struct Main : private Entrypoint::Io_progress_handler
 		                &lx_emul_usb_rpc_callbacks);
 
 		lx_emul_start_kernel(dtb_rom.local_addr<void>());
-
-		env.ep().register_io_progress_handler(*this);
 	}
 };
 

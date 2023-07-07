@@ -127,7 +127,7 @@ struct Main
 
 	Main(Env & env) : env(env)
 	{
-		Lx_kit::initialize(env);
+		Lx_kit::initialize(env, signal_handler);
 		env.exec_static_constructors();
 
 		_update_config();

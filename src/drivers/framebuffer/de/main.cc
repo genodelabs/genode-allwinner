@@ -76,9 +76,17 @@ struct Framebuffer::Driver
 	Signal_handler<Driver> timer_handler { env.ep(), *this,
 	                                       &Driver::handle_timer };
 
+	Signal_handler<Driver> _signal_handler {
+		env.ep(), *this, &Driver::_handle_signal };
+
+	void _handle_signal()
+	{
+		Lx_kit::env().scheduler.execute();
+	}
+
 	Driver(Env & env) : env(env)
 	{
-		Lx_kit::initialize(env);
+		Lx_kit::initialize(env, _signal_handler);
 		env.exec_static_constructors();
 	}
 
