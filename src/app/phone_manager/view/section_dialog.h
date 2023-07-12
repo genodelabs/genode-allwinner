@@ -20,7 +20,7 @@
 namespace Sculpt { struct Section_dialog; }
 
 
-struct Sculpt::Section_dialog : Noncopyable, Dialog
+struct Sculpt::Section_dialog : Noncopyable, Deprecated_dialog
 {
 	using Frame_id = String<16>;
 

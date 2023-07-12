@@ -219,7 +219,7 @@ struct Sculpt::Component_add_dialog
 
 	Hover_result hover(Xml_node const &hover)
 	{
-		Dialog::Hover_result const hover_result = Dialog::any_hover_changed(
+		Deprecated_dialog::Hover_result const hover_result = Deprecated_dialog::any_hover_changed(
 			_item       .match(hover, "hbox", "name"),
 			_launch_item.match(hover, "button", "name"),
 			_route_item .match(hover, "frame", "vbox", "hbox", "name"));
@@ -227,7 +227,7 @@ struct Sculpt::Component_add_dialog
 		_pd_route.hover(hover, "frame", "vbox", "hbox", "name");
 
 		if (_resources.constructed() &&
-		    hover_result == Dialog::Hover_result::UNMODIFIED)
+		    hover_result == Deprecated_dialog::Hover_result::UNMODIFIED)
 			return _resources->match_sub_dialog(hover, "frame", "vbox", "frame", "vbox");
 
 		return hover_result;

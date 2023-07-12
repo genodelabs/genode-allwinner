@@ -255,7 +255,7 @@ struct Sculpt::Software_add_dialog : private Index_menu_dialog::Policy
 
 	Hover_result hover(Xml_node const &hover)
 	{
-		return Dialog::any_hover_changed(
+		return Deprecated_dialog::any_hover_changed(
 			match_sub_dialog(hover, _users, "vbox", "frame", "vbox"),
 			match_sub_dialog(hover, _menu,  "vbox", "float", "frame", "vbox"),
 			match_sub_dialog(hover, _pkg,  "vbox", "float", "frame", "vbox"),

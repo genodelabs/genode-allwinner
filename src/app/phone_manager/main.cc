@@ -69,12 +69,12 @@ namespace Sculpt { struct Main; }
 
 
 struct Sculpt::Main : Input_event_handler,
-                      Dialog::Generator,
+                      Deprecated_dialog::Generator,
                       Runtime_config_generator,
                       Storage::Target_user,
                       Network::Action,
                       Graph::Action,
-                      Dialog,
+                      Deprecated_dialog,
                       Depot_query,
                       Component::Construction_info,
                       Menu_view::Hover_update_handler,
@@ -679,14 +679,14 @@ struct Sculpt::Main : Input_event_handler,
 		         _popup.state, _deploy._children };
 
 	/**
-	 * Dialog interface
+	 * Deprecated_dialog interface
 	 */
 	Hover_result hover(Xml_node) override;
 
 	void reset() override { }
 
 	/**
-	 * Dialog interface
+	 * Deprecated_dialog interface
 	 */
 	void generate(Xml_generator &xml) const override
 	{
@@ -789,7 +789,7 @@ struct Sculpt::Main : Input_event_handler,
 	}
 
 	/**
-	 * Dialog::Generator interface
+	 * Deprecated_dialog::Generator interface
 	 */
 	void generate_dialog() override
 	{
@@ -2123,7 +2123,7 @@ void Sculpt::Main::_handle_gui_mode()
 }
 
 
-Sculpt::Dialog::Hover_result Sculpt::Main::hover(Xml_node hover)
+Sculpt::Deprecated_dialog::Hover_result Sculpt::Main::hover(Xml_node hover)
 {
 	Hover_result result = Hover_result::UNMODIFIED;
 

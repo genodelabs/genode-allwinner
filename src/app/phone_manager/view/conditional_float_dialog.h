@@ -43,7 +43,7 @@ struct Sculpt::Conditional_float_dialog : Noncopyable
 		hover.with_optional_sub_node("float", [&] (Xml_node const &hover) {
 			dialog_hover = dialog.hover(hover); });
 
-		return Dialog::any_hover_changed(float_hover, dialog_hover);
+		return Deprecated_dialog::any_hover_changed(float_hover, dialog_hover);
 	}
 
 	void generate_conditional(Xml_generator &xml, bool condition) const

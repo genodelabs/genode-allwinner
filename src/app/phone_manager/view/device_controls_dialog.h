@@ -192,7 +192,7 @@ struct Sculpt::Device_controls_dialog
 		if (_dragged)
 			_select_brightness_or_volume_level();
 
-		return Dialog::any_hover_changed(level_result, control_result, mic_result);
+		return Deprecated_dialog::any_hover_changed(level_result, control_result, mic_result);
 	}
 
 	bool hovered() const { return _level._hovered.valid(); }

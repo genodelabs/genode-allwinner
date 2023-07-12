@@ -205,7 +205,7 @@ struct Sculpt::Device_power_dialog
 
 	Hover_result hover(Xml_node hover)
 	{
-		return Dialog::any_hover_changed(
+		return Deprecated_dialog::any_hover_changed(
 			_choice .match(hover, "vbox", "float", "frame", "vbox", "hbox", "name"),
 			_confirm.match(hover, "vbox", "float", "frame", "vbox", "hbox",
 			                      "float", "hbox", "button", "name")
