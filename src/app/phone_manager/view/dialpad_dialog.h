@@ -27,7 +27,6 @@ struct Sculpt::Dialpad_dialog
 	struct Action : Interface
 	{
 		virtual void append_dial_digit(Dialed_number::Digit) = 0;
-		virtual void remove_last_dial_digit() = 0;
 	};
 
 	Action &_action;
@@ -61,7 +60,7 @@ struct Sculpt::Dialpad_dialog
 
 				unsigned row_count = 0;
 
-				struct Button { Hoverable_item::Id id; bool visible; };
+				struct Button { Hoverable_item::Id id; };
 
 				auto gen_row = [&] (Xml_generator &xml, Button const &left,
 				                                        Button const &middle,
@@ -73,19 +72,14 @@ struct Sculpt::Dialpad_dialog
 
 							bool const touched = _button.hovered(_clicked);
 
-							if (touched && button.visible && _button.hovered(button.id))
+							if (touched && _button.hovered(button.id))
 								xml.attribute("selected", "yes");
-
-							if (!button.visible)
-								xml.attribute("style", "invisible");
 
 							xml.node("vbox", [&] {
 								gen_spacer("above");
 								xml.node("label", [&] {
-									if (button.visible) {
-										xml.attribute("text", button.id);
-										xml.attribute("font", "title/regular");
-									}
+									xml.attribute("text", button.id);
+									xml.attribute("font", "title/regular");
 								});
 								gen_spacer("below");
 							});
@@ -122,12 +116,10 @@ struct Sculpt::Dialpad_dialog
 
 					gen_spacer("below");
 
-					gen_row(xml, Button{"1", true}, Button{"2", true}, Button{"3", true});
-					gen_row(xml, Button{"4", true}, Button{"5", true}, Button{"6", true});
-					gen_row(xml, Button{"7", true}, Button{"8", true}, Button{"9", true});
-					gen_row(xml, Button{"C", _dialed_number.at_least_one_digit()},
-					             Button{"0", true},
-					             Button{"#", true});
+					gen_row(xml, Button{"1"}, Button{"2"}, Button{"3"});
+					gen_row(xml, Button{"4"}, Button{"5"}, Button{"6"});
+					gen_row(xml, Button{"7"}, Button{"8"}, Button{"9"});
+					gen_row(xml, Button{"*"}, Button{"0"}, Button{"#"});
 				});
 			});
 		});
@@ -144,12 +136,9 @@ struct Sculpt::Dialpad_dialog
 	{
 		_clicked = _button._hovered;
 
-		for (unsigned i = 0; i < 10; i++)
-			if (_button.hovered(i))
-				_action.append_dial_digit(Dialed_number::Digit{i});
+		Dialed_number::Digit const digit { _button._hovered.string()[0] };
 
-		if (_button.hovered("C"))
-			_action.remove_last_dial_digit();
+		_action.append_dial_digit(digit);
 	}
 
 	void clack() { _clicked = Hoverable_item::Id(); }

@@ -37,6 +37,7 @@ struct Sculpt::Current_call_dialog
 		virtual void toggle_speaker() = 0;
 		virtual void initiate_call() = 0;
 		virtual void cancel_initiated_call() = 0;
+		virtual void remove_last_dial_digit() = 0;
 	};
 
 	Action &_action;
@@ -115,7 +116,7 @@ struct Sculpt::Current_call_dialog
 		});
 	}
 
-	void _gen_initiate_call(Xml_generator &xml) const
+	void _gen_call_operations(Xml_generator &xml) const
 	{
 		auto gen_vspace = [&] (auto name)
 		{
@@ -130,18 +131,27 @@ struct Sculpt::Current_call_dialog
 		gen_named_node(xml, "float", "center", [&] {
 			xml.node("hbox", [&] {
 
-				if (_dialed_number.suitable_for_call()) {
-					_gen_button(xml, "initiate", _clicked == "initiate",
-					            " Initiate Call ");
+				gen_named_node(xml, "button", "clear", [&] {
+					if (!_dialed_number.at_least_one_digit())
+						xml.attribute("style", "unimportant");
+					else if (_clicked == "clear")
+						xml.attribute("selected", "yes");
+					xml.node("label", [&] {
+						xml.attribute("text", " Clear "); });
+				});
 
-				} else {
+				gen_named_node(xml, "label", "hspace", [&] {
+					xml.attribute("text", "");
+					xml.attribute("min_ex", 2); });
 
-					gen_named_node(xml, "button", "initiate", [&] {
-						xml.attribute("style", "invisible");
-						xml.node("label", [&] {
-							xml.attribute("text", " "); });
-					});
-				}
+				gen_named_node(xml, "button", "initiate", [&] {
+					if (!_dialed_number.suitable_for_call())
+						xml.attribute("style", "unimportant");
+					else if (_clicked == "initiate")
+						xml.attribute("selected", "yes");
+					xml.node("label", [&] {
+						xml.attribute("text", " Initiate Call "); });
+				});
 			});
 		});
 		gen_vspace("right");
@@ -154,7 +164,9 @@ struct Sculpt::Current_call_dialog
 			if (_current_call.none()) {
 				xml.attribute("style", "invisible");
 				xml.node("hbox", [&] {
-					_gen_initiate_call(xml); });
+
+					_gen_call_operations(xml);
+				});
 
 			} else {
 
@@ -182,6 +194,7 @@ struct Sculpt::Current_call_dialog
 		if (_button.hovered("hang up"))  _action.hang_up();
 		if (_button.hovered("initiate")) _action.initiate_call();
 		if (_button.hovered("cancel"))   _action.cancel_initiated_call();
+		if (_button.hovered("clear"))    _action.remove_last_dial_digit();
 	}
 
 	void clack() { _clicked = Hoverable_item::Id(); }

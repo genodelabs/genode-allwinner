@@ -26,7 +26,20 @@ struct Sculpt::Dialed_number : Noncopyable
 {
 	public:
 
-		struct Digit { unsigned value; };
+		struct Digit
+		{
+			char value;
+
+			bool valid() const { return (value >= '0' && value <= '9')
+			                         || (value == '#')
+			                         || (value == '*'); }
+
+			void print(Output &out) const
+			{
+				if (valid())
+					Genode::print(out, Char(value));
+			}
+		};
 
 	private:
 
@@ -40,13 +53,13 @@ struct Sculpt::Dialed_number : Noncopyable
 		void print(Output &out) const
 		{
 			for (unsigned i = 0; i < _length; i++)
-				Genode::print(out, _digits[i].value);
+				Genode::print(out, _digits[i]);
 		}
 
 		void append_digit(Digit d)
 		{
 			/* ignore out-of-range digit values */
-			if (d.value > 9)
+			if (!d.valid())
 				return;
 
 			if (_length < CAPACITY) {

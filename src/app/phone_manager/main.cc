@@ -1896,7 +1896,7 @@ struct Sculpt::Main : Input_event_handler,
 	}
 
 	/**
-	 * Dialpad_dialog::Action interface
+	 * Current_call_dialog::Action interface
 	 */
 	void remove_last_dial_digit() override
 	{
