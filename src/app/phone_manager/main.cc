@@ -722,8 +722,6 @@ struct Sculpt::Main : Input_event_handler,
 			_storage_section_dialog.generate(xml);
 
 			gen_named_node(xml, "float", "storage dialog", [&] {
-				xml.attribute("east", "yes");
-				xml.attribute("west", "yes");
 				if (!_storage_section_dialog.selected())
 					return;
 
@@ -731,6 +729,9 @@ struct Sculpt::Main : Input_event_handler,
 					xml.node("vbox", [&] {
 						_storage_dialog.gen_block_devices(xml);
 						_storage_dialog.gen_usb_storage_devices(xml);
+
+						/* enforce minimum width */
+						xml.node("label", [&] { xml.attribute("min_ex", 35); });
 					});
 				});
 			});
