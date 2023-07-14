@@ -2108,6 +2108,8 @@ void Sculpt::Main::_handle_gui_mode()
 {
 	Framebuffer::Mode const mode = _gui.mode();
 
+	_screensaver.display_driver_ready(mode.area.count() > 1);
+
 	if (mode.area.count() > 1)
 		_gui_mode_ready = true;
 
