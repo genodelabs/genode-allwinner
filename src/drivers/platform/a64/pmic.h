@@ -49,8 +49,16 @@ struct Driver::Pmic : private Noncopyable
 	};
 
 	Power gpio0_ldo { _powers, "pmic-gpio0", _scp,
-	                  "3 90 pmic!",
-	                  "7 90 pmic!" };
+	                  "1a 91 pmic!  3 90 pmic!  a udelay ",
+	                  /*
+	                   * Keep pin powered to mitigate panel flickering when
+	                   * waking up from the screensaver. By reducing the
+	                   * voltage, we decrease the power draw by about 40 mW.
+	                   * Disabling the pin would save us another 20 mW but
+	                   * the flickering issue stands in the way.
+	                   */
+	                  "8 91 pmic!  a udelay "
+	};
 
 	Power csi_power { _powers, "pmic-csi", _scp,
 	                  /* ALDO1, set bit 5 in output control 3 */
