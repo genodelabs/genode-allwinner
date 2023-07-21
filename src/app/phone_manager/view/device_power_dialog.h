@@ -16,142 +16,119 @@
 
 #include <util/formatted_output.h>
 #include <view/dialog.h>
-#include <view/hoverable_item.h>
-#include <view/activatable_item.h>
 #include <model/power_state.h>
 
 namespace Sculpt { struct Device_power_dialog; }
 
 
-struct Sculpt::Device_power_dialog
+struct Sculpt::Device_power_dialog : Widget<Vbox>
 {
-	Power_state const &_power_state;
+	using Label = Dialog::Label;
 
-	struct Action : Interface
+	enum class Option { UNKNOWN, PERFORMANCE, ECONOMIC, REBOOT, OFF };
+
+	Option _selected_option { Option::UNKNOWN };
+
+	struct Conditional_confirm : Widget<Right_floating_hbox>
 	{
-		virtual void activate_performance_power_profile() = 0;
-		virtual void activate_economic_power_profile() = 0;
-		virtual void trigger_device_reboot() = 0;
-		virtual void trigger_device_off() = 0;
-	};
+		Hosted<Right_floating_hbox, Deferred_action_button> _button { Id { } };
 
-	Action &_action;
-
-	Device_power_dialog(Power_state const &power_state, Action &action)
-	:
-		_power_state(power_state), _action(action)
-	{ }
-
-	using Hover_result = Hoverable_item::Hover_result;
-
-	using Id   = Hoverable_item::Id;
-	using Text = String<64>;
-
-	Id _selected  { };
-	Id _confirmed { };
-
-	Hoverable_item   _choice  { };
-	Activatable_item _confirm { };
-
-	bool _power_profile_active(Id const &id) const
-	{
-		switch (_power_state.profile) {
-		case Power_state::Profile::PERFORMANCE: return (id == "performance");
-		case Power_state::Profile::ECONOMIC:    return (id == "economic");
-		case Power_state::Profile::UNKNOWN:     break;
-		}
-		return false;
-	}
-
-	struct Entry_attr
-	{
-		bool need_confirmation;
-	};
-
-	void _gen_horizontal_spacer(Xml_generator &xml) const
-	{
-		gen_named_node(xml, "label", "spacer", [&] {
-			xml.attribute("min_ex", 35); });
-	}
-
-	void _gen_entry(Xml_generator &xml, Id const &id, Text const &text,
-	                Entry_attr attr) const
-	{
-		bool const any_selected = _selected.length() > 1;
-
-		gen_named_node(xml, "hbox", id, [&] () {
-
-			gen_named_node(xml, "float", "left", [&] () {
-				xml.attribute("west", "yes");
-
-				xml.node("hbox", [&] () {
-					gen_named_node(xml, "float", "radio", [&] () {
-						gen_named_node(xml, "button", "button", [&] () {
-
-							if (_selected == id || (!any_selected && _power_profile_active(id)))
-								xml.attribute("selected", "yes");
-
-							xml.attribute("style", "radio");
-
-							xml.node("hbox", [&] () { });
-						});
-					});
-					gen_named_node(xml, "label", "name", [&] () {
-						xml.attribute("text", Text(" ", text)); });
-				});
-			});
-
-			gen_named_node(xml, "hbox", "middle", [&] () { });
-
-			bool const ask_confirm = attr.need_confirmation && (_selected == id);
-
-			gen_named_node(xml, "float", "right", [&] () {
-				xml.attribute("east", "yes");
-
-				gen_named_node(xml, "hbox", "right", [&] () {
-
-					gen_named_node(xml, "button", id, [&] () {
-
-						if (ask_confirm)
-							_confirm.gen_button_attr(xml, id);
-						else
-							xml.attribute("style", "invisible");
-
-						gen_named_node(xml, "label", "name", [&] () {
-							xml.attribute("text", "Confirm");
-							if (!ask_confirm)
-								xml.attribute("style", "invisible");
-						});
-					});
-				});
-			});
-		});
-	}
-
-	void _gen_power_options(Xml_generator &xml) const
-	{
-		gen_named_node(xml, "float", "options", [&] {
-			xml.node("frame", [&] {
-				xml.node("vbox", [&] {
-					_gen_entry(xml, "performance", "Performance", { .need_confirmation = false });
-					_gen_entry(xml, "economic",    "Economic",    { .need_confirmation = false });
-					_gen_entry(xml, "reboot",      "Reboot",      { .need_confirmation = true });
-					_gen_entry(xml, "off",         "Power down",  { .need_confirmation = true });
-
-					_gen_horizontal_spacer(xml);
-				});
-			});
-		});
-	}
-
-	void _gen_battery_info(Xml_generator &xml) const
-	{
-		auto gen_value = [&] (auto label, double value, auto unit)
+		void view(Scope<Right_floating_hbox> &s, bool condition) const
 		{
-			gen_named_node(xml, "label", "label", [&] {
-				xml.attribute("text", label);
-				xml.attribute("min_ex", "23");
+			s.widget(_button, [&] (Scope<Button> &s) {
+
+				if (!condition)
+					s.attribute("style", "invisible");
+
+				s.sub_scope<Label>("Confirm", [&] (auto &s) {
+					if (!condition) s.attribute("style", "invisible"); });
 			});
+		}
+
+		void click(Clicked_at const &at) { _button.propagate(at); }
+
+		template <typename FN>
+		void clack(Clacked_at const &at, FN const &confirmed_fn)
+		{
+			_button.propagate(at, confirmed_fn);
+		}
+	};
+
+	struct Power_options : Widget<Float>
+	{
+		struct Entry : Widget<Hbox>
+		{
+			struct Attr { bool need_confirm; };
+
+			Hosted<Hbox, Radio_select_button<Option>> _radio;
+			Hosted<Hbox, Conditional_confirm>         _confirm { Id { "confirm" } };
+
+			Entry(Option const option) : _radio(Id { "radio" }, option) { }
+
+			void view(Scope<Hbox> &s, Option const &selected, Attr attr) const
+			{
+				s.widget(_radio, selected, s.id.value);
+				s.widget(_confirm, attr.need_confirm && (selected == _radio.value));
+			}
+
+			template <typename FN>
+			void click(Clicked_at const &at, Option const &selected, FN const &fn)
+			{
+				_radio.propagate(at, fn);
+
+				if (selected == _radio.value)
+					_confirm.propagate(at);
+			}
+
+			template <typename FN>
+			void clack(Clacked_at const &at, FN const &fn)
+			{
+				_confirm.propagate(at, [&] { fn(_radio.value); });
+			}
+		};
+
+		Hosted<Float, Frame, Vbox, Entry>
+			_performance { Id { "Performance" }, Option::PERFORMANCE },
+			_economic    { Id { "Economic"    }, Option::ECONOMIC    },
+			_reboot      { Id { "Reboot"      }, Option::REBOOT      },
+			_off         { Id { "Power down"  }, Option::OFF         };
+
+		void view(Scope<Float> &s, Option const &selected) const
+		{
+			s.sub_scope<Frame>([&] (Scope<Float, Frame> &s) {
+				s.sub_scope<Vbox>([&] (Scope<Float, Frame, Vbox> &s) {
+					s.widget(_performance, selected, Entry::Attr { .need_confirm = false });
+					s.widget(_economic,    selected, Entry::Attr { .need_confirm = false });
+					s.widget(_reboot,      selected, Entry::Attr { .need_confirm = true  });
+					s.widget(_off,         selected, Entry::Attr { .need_confirm = true  });
+					s.sub_scope<Min_ex>(35);
+				});
+			});
+		}
+
+		template <typename FN>
+		void click(Clicked_at const &at, Option const &selected, FN const &fn)
+		{
+			_performance.propagate(at, selected, fn);
+			_economic   .propagate(at, selected, fn);
+			_reboot     .propagate(at, selected, fn);
+			_off        .propagate(at, selected, fn);
+		}
+
+		template <typename FN>
+		void clack(Clacked_at const &at, FN const &fn)
+		{
+			_reboot.propagate(at, fn);
+			_off   .propagate(at, fn);
+		}
+	};
+
+	template <typename LABEL, typename UNIT>
+	static void _view_battery_value(Scope<> &s, LABEL const &label, double value, UNIT const &unit)
+	{
+		s.sub_scope<Hbox>([&] (Scope<Hbox> &s) {
+			s.sub_scope<Label>(label, [&] (Scope<Hbox, Label> &s) {
+				s.attribute("min_ex", 23); });
 
 			auto pretty_value = [] (double value, auto unit)
 			{
@@ -168,78 +145,73 @@ struct Sculpt::Device_power_dialog
 				            hundredth, " ", unit);
 			};
 
-			gen_named_node(xml, "label", "value", [&] {
-				xml.attribute("min_ex", "8");
-				xml.attribute("text", pretty_value(value, unit));
-			});
+			s.sub_scope<Label>(pretty_value(value, unit), [&] (Scope<Hbox, Label> &s) {
+				s.attribute("min_ex", 8); });
+		});
+	}
+
+	Hosted<Vbox, Power_options> _power_options { Id { "options" } };
+
+	void view(Scope<Vbox> &s, Power_state const &power_state) const
+	{
+		auto curr_selection = [&]
+		{
+			if (_selected_option == Option::UNKNOWN) {
+
+				if (power_state.profile == Power_state::Profile::PERFORMANCE)
+					return Option::PERFORMANCE;
+
+				if (power_state.profile == Power_state::Profile::ECONOMIC)
+					return Option::ECONOMIC;
+			}
+			return _selected_option;
 		};
 
-		gen_named_node(xml, "float", "battery", [&] {
-			xml.node("frame", [&] {
-				xml.attribute("style", "unimportant");
-				xml.node("vbox", [&] {
-					xml.node("hbox", [&] {
-						if (_power_state.charging)
-							gen_value("   Battery charge current ",
-							          _power_state.battery.charge_current, "A");
-						else
-							gen_value("   Battery power draw ",
-							          _power_state.battery.power_draw, "W");
-					});
-					_gen_horizontal_spacer(xml);
+		s.widget(_power_options, curr_selection());
+
+		if (power_state.battery_present) {
+			s.sub_scope<Centered_info_vbox>([&] (Scope<Vbox, Centered_info_vbox> &s) {
+
+				s.as_new_scope([&] (Scope<> &s) {
+					if (power_state.charging)
+						_view_battery_value(s, "   Battery charge current ",
+						                    power_state.battery.charge_current, "A");
+					else
+						_view_battery_value(s, "   Battery power draw ",
+						                    power_state.battery.power_draw, "W");
 				});
+
+				s.sub_scope<Min_ex>(35);
 			});
+		}
+	}
+
+	struct Action : Interface
+	{
+		virtual void activate_performance_power_profile() = 0;
+		virtual void activate_economic_power_profile() = 0;
+		virtual void trigger_device_reboot() = 0;
+		virtual void trigger_device_off() = 0;
+	};
+
+	void click(Clicked_at const &at, Action &action)
+	{
+		_power_options.propagate(at, _selected_option, [&] (Option const selected) {
+
+			_selected_option = selected;
+
+			if (selected == Option::PERFORMANCE) action.activate_performance_power_profile();
+			if (selected == Option::ECONOMIC)    action.activate_economic_power_profile();
 		});
 	}
 
-	void generate(Xml_generator &xml) const
+	void clack(Clacked_at const &at, Action &action)
 	{
-		gen_named_node(xml, "vbox", "vbox", [&] {
+		_power_options.propagate(at, [&] (Option const confirmed) {
 
-			_gen_power_options(xml);
-
-			if (_power_state.battery_present)
-				_gen_battery_info(xml);
+			if (confirmed == Option::REBOOT) action.trigger_device_reboot();
+			if (confirmed == Option::OFF)    action.trigger_device_off();
 		});
-	}
-
-	Hover_result hover(Xml_node hover)
-	{
-		return Deprecated_dialog::any_hover_changed(
-			_choice .match(hover, "vbox", "float", "frame", "vbox", "hbox", "name"),
-			_confirm.match(hover, "vbox", "float", "frame", "vbox", "hbox",
-			                      "float", "hbox", "button", "name")
-		);
-	}
-
-	bool hovered() const { return _choice._hovered.valid(); }
-
-	void click()
-	{
-		if (_confirm.hovered(_selected))
-			_confirm.propose_activation_on_click();
-
-		if (_choice._hovered.valid())
-			_selected = _choice._hovered;
-
-		if (_choice.hovered("performance"))
-			_action.activate_performance_power_profile();
-
-		if (_choice.hovered("economic"))
-			_action.activate_economic_power_profile();
-	}
-
-	void clack()
-	{
-		_confirm.confirm_activation_on_clack();
-
-		if (_confirm.activated("reboot"))
-			_action.trigger_device_reboot();
-
-		if (_confirm.activated("off"))
-			_action.trigger_device_off();
-
-		_confirm.reset();
 	}
 };
 

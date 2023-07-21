@@ -26,7 +26,8 @@
 namespace Sculpt { struct Software_add_dialog; }
 
 
-struct Sculpt::Software_add_dialog : private Index_menu_dialog::Policy
+struct Sculpt::Software_add_dialog : private Index_menu_dialog::Policy,
+                                     Widget_interface<Vbox>
 {
 	using Depot_users         = Depot_users_dialog::Depot_users;
 	using User                = Depot_users_dialog::User;

@@ -20,128 +20,63 @@
 namespace Sculpt { struct Dialpad_dialog; }
 
 
-struct Sculpt::Dialpad_dialog
+struct Sculpt::Dialpad_dialog : Widget<Centered_dialog_vbox>
 {
-	Dialed_number const &_dialed_number;
+	Hosted<Centered_dialog_vbox, Pin_row>
+		_rows[4] { { Id { "r1" }, "1", "2", "3" },
+		           { Id { "r2" }, "4", "5", "6" },
+		           { Id { "r3" }, "7", "8", "9" },
+		           { Id { "r4" }, "*", "0", "#" } };
+
+	void view(Scope<Centered_dialog_vbox> &s, Dialed_number const &dialed_number) const
+	{
+		using Text = String<64>;
+
+		Text digits(dialed_number);
+
+		/* if number grows too large, show the tail end */
+		if (digits.length() > 28)
+			digits = Text("...", Cstring(digits.string() + digits.length() - 27));
+
+		s.sub_scope<Min_ex>(20);
+		s.sub_scope<Vgap>();
+		s.sub_scope<Button>([&] (auto &) {
+			s.attribute("style", "invisible");
+			s.sub_scope<Float>([&] (auto &s) {
+				s.attribute("west", "yes");
+				s.template sub_scope<Dialog::Label>("    Dial", [&] (auto &s) {
+					s.attribute("font", "title/regular");
+					if (digits.length() > 12)
+						s.attribute("style", "invisible");
+				});
+			});
+			s.sub_scope<Float>([&] (auto &s) {
+				s.template sub_scope<Dialog::Label>(Text("   ", digits), [&] (auto &s) {
+					s.attribute("min_ex", 15);
+					if (digits.length() < 20)
+						s.attribute("font", "title/regular"); });
+				s.template sub_scope<Dialog::Label>(" ", [&] (auto &s) {
+					s.attribute("font", "title/regular"); });
+			});
+		});
+		s.sub_scope<Vgap>();
+
+		for (auto const &row : _rows)
+			s.widget(row);
+	}
 
 	struct Action : Interface
 	{
 		virtual void append_dial_digit(Dialed_number::Digit) = 0;
 	};
 
-	Action &_action;
-
-	using Hover_result = Hoverable_item::Hover_result;
-
-	Hoverable_item _button { };
-
-	Hoverable_item::Id _clicked { };
-
-	Dialpad_dialog(Dialed_number const &dialed_number, Action &action)
-	:
-		_dialed_number(dialed_number), _action(action)
-	{ }
-
-	void generate(Xml_generator &xml) const
+	void click(Clicked_at const &at, Action &action)
 	{
-		auto gen_spacer = [&] (auto id)
-		{
-			gen_named_node(xml, "label", id, [&] {
-				xml.attribute("min_ex", 10);
-				xml.attribute("text", "");
-			});
-		};
-
-		gen_named_node(xml, "float", "dialpad", [&] {
-
-			xml.node("frame", [&] {
-
-				xml.attribute("style", "important");
-
-				unsigned row_count = 0;
-
-				struct Button { Hoverable_item::Id id; };
-
-				auto gen_row = [&] (Xml_generator &xml, Button const &left,
-				                                        Button const &middle,
-				                                        Button const &right)
-				{
-					auto gen_button = [&] (Xml_generator &xml, Button const &button)
-					{
-						gen_named_node(xml, "button", button.id, [&] {
-
-							bool const touched = _button.hovered(_clicked);
-
-							if (touched && _button.hovered(button.id))
-								xml.attribute("selected", "yes");
-
-							xml.node("vbox", [&] {
-								gen_spacer("above");
-								xml.node("label", [&] {
-									xml.attribute("text", button.id);
-									xml.attribute("font", "title/regular");
-								});
-								gen_spacer("below");
-							});
-						});
-					};
-
-					gen_named_node(xml, "hbox", String<10>(row_count), [&] {
-						gen_button(xml, left);
-						gen_button(xml, middle);
-						gen_button(xml, right);
-					});
-
-					row_count++;
-				};
-
-				xml.node("vbox", [&] {
-					gen_named_node(xml, "label", "hspacer", [&] {
-						xml.attribute("min_ex", 20); });
-
-					gen_spacer("above");
-
-					gen_named_node(xml, "hbox", "number", [&] {
-						gen_named_node(xml, "label", "number", [&] {
-							xml.attribute("min_ex", 5);
-							xml.attribute("text", " Dial ");
-							xml.attribute("font", "title/regular");
-						});
-						gen_named_node(xml, "label", "entry", [&] {
-							xml.attribute("min_ex", 10);
-							xml.attribute("text", String<64>(" ", _dialed_number, " "));
-							xml.attribute("font", "title/regular");
-						});
-					});
-
-					gen_spacer("below");
-
-					gen_row(xml, Button{"1"}, Button{"2"}, Button{"3"});
-					gen_row(xml, Button{"4"}, Button{"5"}, Button{"6"});
-					gen_row(xml, Button{"7"}, Button{"8"}, Button{"9"});
-					gen_row(xml, Button{"*"}, Button{"0"}, Button{"#"});
-				});
-			});
-		});
+		for (auto &row : _rows)
+			row.propagate(at, [&] (auto const &label) {
+				Dialed_number::Digit const digit { label.string()[0] };
+				action.append_dial_digit(digit); });
 	}
-
-	Hover_result hover(Xml_node hover)
-	{
-		return _button.match(hover, "float", "frame", "vbox", "hbox", "button", "name");
-	}
-
-	bool hovered() const { return _button._hovered.valid(); }
-
-	void click()
-	{
-		_clicked = _button._hovered;
-
-		Dialed_number::Digit const digit { _button._hovered.string()[0] };
-
-		_action.append_dial_digit(digit);
-	}
-
-	void clack() { _clicked = Hoverable_item::Id(); }
 };
 
 #endif /* _VIEW__DIALPAD_DIALOG_H_ */

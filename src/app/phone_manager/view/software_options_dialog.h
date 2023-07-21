@@ -21,7 +21,7 @@
 namespace Sculpt { struct Software_options_dialog; }
 
 
-struct Sculpt::Software_options_dialog
+struct Sculpt::Software_options_dialog : Widget<Vbox>
 {
 	Runtime_info const &_runtime_info;
 	Launchers    const &_launchers;

@@ -73,48 +73,45 @@ struct Sculpt::Modem_state
 
 	bool pin_rejected() const { return _pin_state == Pin_state::REJECTED; }
 
-	void gen_power_message(Xml_generator &xml) const
+	using Power_message = String<128>;
+
+	Power_message power_message() const
 	{
-		using Msg = String<128>;
+		using Msg = Power_message;
 
-		auto msg = [&]
-		{
-			switch (_power) {
-			case Power::STARTING_UP:   return Msg(" starting up (",   _startup_seconds,  ") ");
-			case Power::SHUTTING_DOWN: return Msg(" shutting down (", _shutdown_seconds, ") ");
-			case Power::ON:
+		switch (_power) {
+		case Power::STARTING_UP:   return Msg(" starting up (",   _startup_seconds,  ") ");
+		case Power::SHUTTING_DOWN: return Msg(" shutting down (", _shutdown_seconds, ") ");
+		case Power::ON:
 
-				switch (_pin_state) {
+			switch (_pin_state) {
 
-				case Pin_state::REQUIRED:
-					return Msg(" PIN required");
+			case Pin_state::REQUIRED:
+				return Msg(" PIN required");
 
-				case Pin_state::REJECTED:
-					return (_pin_remaining_attempts == 1)
-					     ? Msg(" PIN rejected (one more try) ")
-					     : Msg(" PIN rejected (", _pin_remaining_attempts, " more tries) ");
+			case Pin_state::REJECTED:
+				return (_pin_remaining_attempts == 1)
+				     ? Msg(" PIN rejected (one more try) ")
+				     : Msg(" PIN rejected (", _pin_remaining_attempts, " more tries) ");
 
-				case Pin_state::CHECKING:
-					return Msg(" checking PIN ... ");
+			case Pin_state::CHECKING:
+				return Msg(" checking PIN ... ");
 
-				case Pin_state::OK:
-					return Msg(" ready ");
+			case Pin_state::OK:
+				return Msg(" ready ");
 
-				case Pin_state::PUK_NEEDED:
-					return Msg(" PUK needed, giving up. ");
+			case Pin_state::PUK_NEEDED:
+				return Msg(" PUK needed, giving up. ");
 
-				case Pin_state::UNKNOWN:
-					break;
-				}
-				return Msg(" unknown PIN state ");
-
-			case Power::OFF:           return Msg(" powered off ");
-			case Power::UNAVAILABLE:   break;
+			case Pin_state::UNKNOWN:
+				break;
 			}
-			return Msg(" unavailable" );
-		};
+			return Msg(" unknown PIN state ");
 
-		xml.attribute("text", msg());
+		case Power::OFF:           return Msg(" powered off ");
+		case Power::UNAVAILABLE:   break;
+		}
+		return Msg(" unavailable" );
 	}
 
 	bool operator != (Modem_state const &other) const

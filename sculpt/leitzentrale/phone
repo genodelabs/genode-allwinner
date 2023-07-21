@@ -45,10 +45,10 @@
 					<policy label="decorator -> pointer"         report="wm -> pointer"/>
 					<policy label="manager -> window_list"       report="wm -> window_list"/>
 					<policy label="manager -> decorator_margins" report="decorator -> decorator_margins"/>
-					<policy label="runtime -> leitzentrale -> menu_view -> dialog"
-					        report="manager -> menu_dialog"/>
-					<policy label="manager -> menu_view_hover"
-					        report="runtime -> leitzentrale -> menu_view -> hover"/>
+					<policy label="runtime -> leitzentrale -> main_view -> dialog"
+					        report="manager -> main_dialog"/>
+					<policy label="manager -> main_view_hover"
+					        report="runtime -> leitzentrale -> main_view -> hover"/>
 				</config>
 			</start>
 
@@ -89,7 +89,7 @@
 						<dir name="dev"> <log/> </dir>
 					</vfs>
 					<policy label="log" decoration="yes" motion="20"/>
-					<policy label="runtime -> leitzentrale -> menu_view"      decoration="no" motion="0"/>
+					<policy label="runtime -> leitzentrale -> main_view"      decoration="no" motion="0"/>
 					<policy label="runtime -> leitzentrale -> touch_keyboard" decoration="no" motion="20"/>
 					<policy label_prefix="logo" decoration="no"/>
 					<default-policy/>

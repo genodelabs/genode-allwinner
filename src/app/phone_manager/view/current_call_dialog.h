@@ -20,7 +20,7 @@
 namespace Sculpt { struct Current_call_dialog; }
 
 
-struct Sculpt::Current_call_dialog
+struct Sculpt::Current_call_dialog : Widget<Frame>
 {
 	Current_call  const &_current_call;
 	Dialed_number const &_dialed_number;

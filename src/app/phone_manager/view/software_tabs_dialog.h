@@ -16,11 +16,12 @@
 
 #include <view/dialog.h>
 #include <model/presets.h>
+#include <model/software_status.h>
 
 namespace Sculpt { struct Software_tabs_dialog; }
 
 
-struct Sculpt::Software_tabs_dialog
+struct Sculpt::Software_tabs_dialog : Widget<Frame>
 {
 	using Hover_result = Hoverable_item::Hover_result;
 

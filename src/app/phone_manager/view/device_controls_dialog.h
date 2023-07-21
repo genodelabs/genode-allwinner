@@ -15,7 +15,6 @@
 #define _VIEW__DEVICE_CONTROLS_DIALOG_H_
 
 #include <view/dialog.h>
-#include <view/hoverable_item.h>
 #include <model/power_state.h>
 #include <model/mic_state.h>
 #include <model/audio_volume.h>
@@ -23,195 +22,129 @@
 namespace Sculpt { struct Device_controls_dialog; }
 
 
-struct Sculpt::Device_controls_dialog
+struct Sculpt::Device_controls_dialog : Widget<Vbox>
 {
-	Power_state  const &_power_state;
-	Mic_state    const &_mic_state;
-	Audio_volume const &_audio_volume;
+	struct Level : Widget<Frame>
+	{
+		struct Bar : Widget<Right_floating_hbox>
+		{
+			void view(Scope<Right_floating_hbox> &s, unsigned const percent) const
+			{
+				for (unsigned i = 0; i < 10; i++) {
+					s.sub_scope<Button>(Id { i }, [&] (Scope<Right_floating_hbox, Button> &s) {
+
+						if (s.hovered()) s.attribute("hovered", "yes");
+
+						if (i*10 <= percent)
+							s.attribute("selected", "yes");
+						else
+							s.attribute("style", "unimportant");
+
+						s.sub_scope<Dialog::Label>(" ");
+					});
+				}
+			}
+
+			template <typename FN>
+			void click(Clicked_at const &at, FN const &fn)
+			{
+				Id const id = at.matching_id<Right_floating_hbox, Button>();
+				unsigned value = 0;
+				if (!ascii_to(id.value.string(), value))
+					return;
+
+				unsigned const percent = max(10u, min(100u, value*10 + 9));
+				fn(percent);
+			}
+		};
+
+		Hosted<Frame, Bar> _bar { Id { "bar" } };
+
+		void view(Scope<Frame> &s, unsigned const percent) const
+		{
+			s.attribute("style", "important");
+
+			s.sub_scope<Left_floating_text>(s.id.value);
+			s.widget(_bar, percent);
+		}
+
+		template <typename FN>
+		void click(Clicked_at const &at, FN const &fn) { _bar.propagate(at, fn); }
+	};
+
+	Hosted<Vbox, Level> _brightness { Id { "Brightness" } },
+	                    _volume     { Id { "Volume" } };
+
+	struct Mic_choice : Widget<Frame>
+	{
+		using Mic_button = Hosted<Frame, Right_floating_hbox, Select_button<Mic_state> >;
+
+		Mic_button _off   { Id { " Off " },   Mic_state::OFF   },
+		           _phone { Id { " Phone " }, Mic_state::PHONE },
+		           _on    { Id { " On " },    Mic_state::ON    };
+
+		void view(Scope<Frame> &s, Mic_state state) const
+		{
+			s.attribute("style", "important");
+
+			s.sub_scope<Left_floating_text>(s.id.value);
+			s.sub_scope<Right_floating_hbox>([&] (Scope<Frame, Right_floating_hbox> &s) {
+				s.widget(_off,   state);
+				s.widget(_phone, state);
+				s.widget(_on,    state);
+			});
+		}
+
+		template <typename FN>
+		void click(Clicked_at const &at, FN const &fn)
+		{
+			_off  .propagate(at, [&] { fn(Mic_state::OFF);   });
+			_phone.propagate(at, [&] { fn(Mic_state::PHONE); });
+			_on   .propagate(at, [&] { fn(Mic_state::ON);    });
+		}
+	};
+
+	Hosted<Vbox, Mic_choice> _mic_choice { Id { "Microphone" } };
+
+	void view(Scope<Vbox> &s,
+	          Power_state  const &power,
+	          Mic_state    const &mic,
+	          Audio_volume const &audio) const
+	{
+		s.widget(_brightness, power.brightness);
+		s.sub_scope<Vgap>();
+		s.widget(_volume, audio.value);
+		s.sub_scope<Vgap>();
+		s.widget(_mic_choice, mic);
+	}
 
 	struct Action : Interface
 	{
 		virtual void select_brightness_level(unsigned) = 0;
-
 		virtual void select_volume_level(unsigned) = 0;
-
 		virtual void select_mic_policy(Mic_state const &) = 0;
 	};
 
-	Action &_action;
-
-	Device_controls_dialog(Power_state  const &power_state,
-	                       Mic_state    const &mic_state,
-	                       Audio_volume const &audio_volume,
-	                       Action &action)
-	:
-		_power_state(power_state), _mic_state(mic_state),
-		_audio_volume(audio_volume),_action(action)
-	{ }
-
-	using Hover_result = Hoverable_item::Hover_result;
-
-	using Id = Hoverable_item::Id;
-
-
-	/**********************************
-	 ** Brightness and volume levels **
-	 **********************************/
-
-	Hoverable_item _control { };
-	Hoverable_item _level { };
-
-	bool _dragged = false;
-
-	void _gen_level(Xml_generator &xml, unsigned const percent,
-	                char const *control_id, char const *text) const
+	void _click_or_drag(Clicked_at const &at, Action &action)
 	{
-		gen_named_node(xml, "frame", control_id, [&] {
+		_brightness.propagate(at, [&] (unsigned percent) {
+			action.select_brightness_level(percent); });
 
-			xml.attribute("style", "important");
-
-			gen_named_node(xml, "float", "label", [&] {
-				xml.attribute("west", "yes");
-				gen_named_node(xml, "label", "label", [&] {
-					xml.attribute("text", String<30>("  ", text));
-					xml.attribute("min_ex", "15");
-				});
-			});
-
-			gen_named_node(xml, "float", "onoff", [&] {
-				xml.attribute("east", "yes");
-				gen_named_node(xml, "hbox", "range", [&] {
-
-					for (unsigned i = 0; i < 10; i++) {
-
-						gen_named_node(xml, "button", Id(i), [&] {
-
-							if (i*10 <= percent)
-								xml.attribute("selected", "yes");
-							else
-								xml.attribute("style", "unimportant");
-
-							xml.node("label", [&] {
-								xml.attribute("text", " "); });
-						});
-					}
-				});
-			});
-		});
+		_volume.propagate(at, [&] (unsigned percent) {
+			action.select_volume_level(percent); });
 	}
 
-	void _select_brightness_or_volume_level()
+	void click(Clicked_at const &at, Action &action)
 	{
-		unsigned value = 0;
-		if (!ascii_to(_level._hovered.string(), value))
-			return;
+		_click_or_drag(at, action);
 
-		unsigned const percent = max(10u, min(100u, value*10 + 9));
-
-		if (_control.hovered("brightness"))
-			_action.select_brightness_level(percent);
-
-		if (_control.hovered("volume"))
-			_action.select_volume_level(percent);
+		_mic_choice.propagate(at, [&] (Mic_state policy) {
+			action.select_mic_policy(policy); });
 	}
 
-
-	/****************
-	 ** Mic policy **
-	 ****************/
-
-	Hoverable_item _mic_choice { };
-
-	void _gen_mic_policy(Xml_generator &xml) const
+	void drag(Dragged_at const &at, Action &action)
 	{
-		gen_named_node(xml, "frame", "mic", [&] {
-
-			xml.attribute("style", "important");
-
-			gen_named_node(xml, "float", "label", [&] {
-				xml.attribute("west", "yes");
-				gen_named_node(xml, "label", "label", [&] {
-					xml.attribute("text", "  Microphone");
-					xml.attribute("min_ex", "15");
-				});
-			});
-
-			gen_named_node(xml, "float", "onoff", [&] {
-				xml.attribute("east", "yes");
-				gen_named_node(xml, "hbox", "onoff", [&] {
-
-					auto gen_option = [&] (auto id, bool selected, auto text)
-					{
-						gen_named_node(xml, "button", id, [&] {
-
-							if (selected)
-								xml.attribute("selected", "yes");
-
-							xml.node("label", [&] {
-								xml.attribute("text", text); });
-						});
-					};
-
-					gen_option("off",   (_mic_state == Mic_state::OFF),   "  Off  ");
-					gen_option("phone", (_mic_state == Mic_state::PHONE), "  Phone  ");
-					gen_option("on",    (_mic_state == Mic_state::ON),    "  On  ");
-				});
-			});
-		});
-	}
-
-
-	void generate(Xml_generator &xml) const
-	{
-		auto gen_space = [&] (auto const &id)
-		{
-			gen_named_node(xml, "label", id, [&] {
-				xml.attribute("text", " "); });
-		};
-
-		gen_named_node(xml, "vbox", "vbox", [&] {
-			_gen_level(xml, _power_state.brightness, "brightness", "Brightness");
-			gen_space("below brightness");
-			_gen_level(xml, _audio_volume.value,     "volume",     "Volume");
-			gen_space("below volume");
-			_gen_mic_policy(xml);
-		});
-	}
-
-	Hover_result hover(Xml_node hover)
-	{
-		Hover_result const level_result =
-			_level.match(hover, "vbox", "frame", "float", "hbox", "button", "name");
-
-		Hover_result const control_result =
-			_control.match(hover, "vbox", "frame", "name");
-
-		Hover_result const mic_result =
-			_mic_choice.match(hover, "vbox", "frame", "float", "hbox", "button", "name");
-
-		if (_dragged)
-			_select_brightness_or_volume_level();
-
-		return Deprecated_dialog::any_hover_changed(level_result, control_result, mic_result);
-	}
-
-	bool hovered() const { return _level._hovered.valid(); }
-
-	void click()
-	{
-		_dragged = true;
-		_select_brightness_or_volume_level();
-
-		if (_control.hovered("mic")) {
-			if (_mic_choice.hovered("off"))   _action.select_mic_policy(Mic_state::OFF);
-			if (_mic_choice.hovered("phone")) _action.select_mic_policy(Mic_state::PHONE);
-			if (_mic_choice.hovered("on"))    _action.select_mic_policy(Mic_state::ON);
-		}
-	}
-
-	void clack()
-	{
-		_dragged = false;
+		_click_or_drag(clicked_at(at), action);
 	}
 };
 

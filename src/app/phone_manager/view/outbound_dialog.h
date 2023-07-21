@@ -19,7 +19,7 @@
 namespace Sculpt { struct Outbound_dialog; }
 
 
-struct Sculpt::Outbound_dialog
+struct Sculpt::Outbound_dialog : Widget<Frame>
 {
 	Modem_state   const &_state;
 	Current_call  const &_current_call;

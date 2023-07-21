@@ -15,12 +15,13 @@
 #define _VIEW__MODEM_POWER_DIALOG_H_
 
 #include <view/dialog.h>
+#include <model/modem_state.h>
 
 
 namespace Sculpt { struct Modem_power_dialog; }
 
 
-struct Sculpt::Modem_power_dialog
+struct Sculpt::Modem_power_dialog : Widget<Frame>
 {
 	Modem_state const &_state;
 

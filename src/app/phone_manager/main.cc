@@ -36,25 +36,20 @@
 #include <model/index_update_queue.h>
 #include <model/presets.h>
 #include <model/screensaver.h>
-#include <menu_view.h>
 #include <managed_config.h>
 #include <gui.h>
 #include <storage.h>
 #include <network.h>
 #include <deploy.h>
 #include <graph.h>
-#include <view/device_section_dialog.h>
+#include <view/selectable_title_bar.h>
 #include <view/device_controls_dialog.h>
 #include <view/device_power_dialog.h>
-#include <view/phone_section_dialog.h>
 #include <view/modem_power_dialog.h>
 #include <view/pin_dialog.h>
 #include <view/dialpad_dialog.h>
 #include <view/current_call_dialog.h>
 #include <view/outbound_dialog.h>
-#include <view/storage_section_dialog.h>
-#include <view/network_section_dialog.h>
-#include <view/software_section_dialog.h>
 #include <view/software_tabs_dialog.h>
 #include <view/software_presets_dialog.h>
 #include <view/software_options_dialog.h>
@@ -62,22 +57,22 @@
 #include <view/software_update_dialog.h>
 #include <view/software_version_dialog.h>
 #include <view/software_status_dialog.h>
-#include <view/download_status.h>
+#include <view/download_status_dialog.h>
+#include <view/conditional_float_dialog.h>
 #include <runtime/touch_keyboard.h>
+#include <dialog/distant_runtime.h>
 
 namespace Sculpt { struct Main; }
 
 
 struct Sculpt::Main : Input_event_handler,
-                      Deprecated_dialog::Generator,
                       Runtime_config_generator,
-                      Storage::Target_user,
+                      Deploy::Action,
+                      Storage::Action,
                       Network::Action,
                       Graph::Action,
-                      Deprecated_dialog,
                       Depot_query,
                       Component::Construction_info,
-                      Menu_view::Hover_update_handler,
                       Device_controls_dialog::Action,
                       Device_power_dialog::Action,
                       Modem_power_dialog::Action,
@@ -279,11 +274,10 @@ struct Sculpt::Main : Input_event_handler,
 		return _prepare_version.value != _prepare_completed.value;
 	}
 
-
-	Storage _storage { _env, _heap, _child_states, *this, *this, *this };
+	Storage _storage { _env, _heap, _child_states, *this, *this };
 
 	/**
-	 * Storage::Target_user interface
+	 * Storage::Action interface
 	 */
 	void use_storage_target(Storage_target const &target) override
 	{
@@ -297,6 +291,11 @@ struct Sculpt::Main : Input_event_handler,
 		generate_runtime_config();
 	}
 
+	/**
+	 * Storage::Action interface
+	 */
+	void refresh_storage_dialog() override { _generate_dialog(); }
+
 	Pci_info _pci_info { .wifi_present  = true,
 	                     .modem_present = true };
 
@@ -307,7 +306,7 @@ struct Sculpt::Main : Input_event_handler,
 	 */
 	void update_network_dialog() override
 	{
-		generate_dialog();
+		_generate_dialog();
 	}
 
 
@@ -371,7 +370,7 @@ struct Sculpt::Main : Input_event_handler,
 
 	bool _software_tab_watches_depot()
 	{
-		if (!_software_section_dialog.selected())
+		if (!_software_title_bar.selected())
 			return false;
 
 		return _software_tabs_dialog.dialog.add_selected()
@@ -443,10 +442,10 @@ struct Sculpt::Main : Input_event_handler,
 	{
 		_index_rom.update();
 
-		bool const software_add_dialog_shown = _software_section_dialog.selected()
+		bool const software_add_dialog_shown = _software_title_bar.selected()
 		                                    && _software_tabs_dialog.dialog.add_selected();
 		if (software_add_dialog_shown)
-			generate_dialog();
+			_generate_dialog();
 	}
 
 	/**
@@ -488,7 +487,7 @@ struct Sculpt::Main : Input_event_handler,
 			component.try_apply_blueprint(blueprint); });
 
 		_deploy.handle_deploy();
-		generate_dialog();
+		_generate_dialog();
 	}
 
 
@@ -505,7 +504,7 @@ struct Sculpt::Main : Input_event_handler,
 	void _handle_scan()
 	{
 		_scan_rom.update();
-		generate_dialog();
+		_generate_dialog();
 		_software_update_dialog.dialog.sanitize_user_selection();
 	}
 
@@ -516,7 +515,7 @@ struct Sculpt::Main : Input_event_handler,
 	void _handle_image_index()
 	{
 		_image_index_rom.update();
-		generate_dialog();
+		_generate_dialog();
 	}
 
 	Attached_rom_dataspace _launcher_listing_rom {
@@ -544,12 +543,17 @@ struct Sculpt::Main : Input_event_handler,
 				_presets.update_from_xml(dir);   /* iterate over <file> nodes */
 		});
 
-		generate_dialog();
+		_generate_dialog();
 		_deploy._handle_managed_deploy();
 	}
 
 	Deploy _deploy { _env, _heap, _child_states, _runtime_state, *this, *this, *this,
 	                 _launcher_listing_rom, _blueprint_rom, _download_queue };
+
+	/**
+	 * Deploy::Action interface
+	 */
+	void refresh_deploy_dialog() override { _generate_dialog(); }
 
 	Attached_rom_dataspace _manual_deploy_rom { _env, "config -> deploy" };
 
@@ -573,6 +577,8 @@ struct Sculpt::Main : Input_event_handler,
 
 	bool _leitzentrale_visible = false;
 
+	Color const _background_color { 62, 62, 67, 255 };
+
 	Affinity::Space _affinity_space { 1, 1 };
 
 	Sim_pin _sim_pin { };
@@ -585,194 +591,259 @@ struct Sculpt::Main : Input_event_handler,
 
 	Power_state _power_state { };
 
-	Registry<Registered<Section_dialog> > _section_dialogs { };
+	enum class Section { NONE, DEVICE, PHONE, STORAGE, NETWORK, SOFTWARE };
+
+	Section _selected_section { Section::NONE };
+
+	using Title_bar = Selectable_title_bar<Section>;
 
 	/*
 	 * Device section
 	 */
 
-	Device_section_dialog _device_section_dialog { _section_dialogs, _power_state };
+	Hosted<Vbox, Title_bar> _device_title_bar {
+		Id { "Device" }, _selected_section, Section::DEVICE };
 
-	Conditional_float_dialog<Device_controls_dialog>
-		_device_controls_dialog { "devicecontrols", _power_state, _mic_state,
-		                          _audio_volume, *this };
+	Conditional_dialog<Device_controls_dialog>
+		_device_controls_dialog { Id { "devicecontrols" } };
 
-	Conditional_float_dialog<Device_power_dialog>
-		_device_power_dialog { "devicepower", _power_state, *this };
+	Conditional_dialog<Device_power_dialog>
+		_device_power_dialog { Id { "devicepower" } };
 
 	/*
 	 * Phone section
 	 */
 
-	Phone_section_dialog _phone_section_dialog { _section_dialogs, _modem_state };
+	Hosted<Vbox, Title_bar> _phone_title_bar {
+		Id { "Phone" }, _selected_section, Section::PHONE };
 
-	Conditional_float_dialog<Modem_power_dialog>
-		_modem_power_dialog { "modempower", _modem_state, *this };
+	Conditional_dialog<Modem_power_dialog>
+		_modem_power_dialog { Id { "modempower" }, _modem_state, *this };
 
-	Conditional_float_dialog<Pin_dialog>
-		_pin_dialog { "pin", _sim_pin, *this };
+	Conditional_dialog<Pin_dialog>
+		_pin_dialog { Id { "pin" } };
 
-	Conditional_float_dialog<Dialpad_dialog>
-		_dialpad_dialog { "dialpad", _dialed_number, *this };
+	Conditional_dialog<Dialpad_dialog>
+		_dialpad_dialog { Id { "dialpad" } };
 
-	Conditional_float_dialog<Current_call_dialog>
-		_current_call_dialog { "call", _current_call, _dialed_number, *this };
+	Conditional_dialog<Current_call_dialog>
+		_current_call_dialog { Id { "call" }, _current_call, _dialed_number, *this };
 
-	Conditional_float_dialog<Outbound_dialog>
-		_outbound_dialog { "outbound", _modem_state, _current_call, *this };
+	Conditional_dialog<Outbound_dialog>
+		_outbound_dialog { Id { "outbound" }, _modem_state, _current_call, *this };
 
 	/*
 	 * Storage section
 	 */
 
-	Storage_section_dialog _storage_section_dialog  { _section_dialogs };
+	Hosted<Vbox, Title_bar> _storage_title_bar {
+		Id { "Storage" }, _selected_section, Section::STORAGE };
 
-	Storage_dialog _storage_dialog {
-		_storage._storage_devices, _storage._sculpt_partition };
+	struct Storage_dialog : Widget<Float>
+	{
+		Hosted<Float, Frame, Block_devices_dialog> _block_devices;
+
+		template <typename... ARGS>
+		Storage_dialog(ARGS &&... args) : _block_devices(Id { "devices" }, args...) { }
+
+		void view(Scope<Float> &s) const
+		{
+			s.sub_scope<Frame>([&] (Scope<Float, Frame> &s) {
+				s.widget(_block_devices); });
+		}
+
+		template <typename... ARGS>
+		void click(ARGS &&... args) { _block_devices.propagate(args...); }
+
+		template <typename... ARGS>
+		void clack(ARGS &&... args) { _block_devices.propagate(args...); }
+
+		void reset_operation() { _block_devices.reset_operation(); }
+	};
+
+	Conditional_dialog<Storage_dialog> _storage_dialog {
+		Id { "storage_dialog" }, _storage._storage_devices, _storage._sculpt_partition };
 
 	/*
 	 * Network section
 	 */
 
-	Network_section_dialog _network_section_dialog  {
-		_section_dialogs, _network._nic_target, _network._nic_state };
+	Hosted<Vbox, Title_bar> _network_title_bar  {
+		Id { "Network" }, _selected_section, Section::NETWORK };
 
 	/*
 	 * Software section
 	 */
 
-	Software_section_dialog _software_section_dialog { _section_dialogs, *this };
+	Hosted<Vbox, Title_bar> _software_title_bar {
+		Id { "Software" }, _selected_section, Section::SOFTWARE };
 
-	Conditional_float_dialog<Software_tabs_dialog>
-		_software_tabs_dialog { "software_tabs", _storage._sculpt_partition,
+	Conditional_dialog<Software_tabs_dialog>
+		_software_tabs_dialog { Id { "software_tabs" }, _storage._sculpt_partition,
 		                        _presets, *this };
 
-	Conditional_float_dialog<Software_presets_dialog>
-		_software_presets_dialog { "software_presets", _presets, *this };
+	Conditional_dialog<Software_presets_dialog>
+		_software_presets_dialog { Id { "software_presets" }, _presets, *this };
 
-	Conditional_float_dialog<Software_options_dialog>
-		_software_options_dialog { "software_options", _runtime_state, _launchers, *this };
+	Conditional_dialog<Software_options_dialog>
+		_software_options_dialog { Id { "software_options" }, _runtime_state, _launchers, *this };
 
-	Conditional_float_dialog<Software_add_dialog>
-		_software_add_dialog { "software_add", _build_info, _sculpt_version,
+	Conditional_dialog<Software_add_dialog>
+		_software_add_dialog { Id { "software_add" }, _build_info, _sculpt_version,
 		                       _network._nic_state, _index_update_queue,
 		                       _index_rom, _download_queue,
 		                       _cached_runtime_config,
 		                       *this, _scan_rom, *this, *this, *this };
 
-	Conditional_float_dialog<Software_update_dialog>
-		_software_update_dialog { "software_update", _build_info,
+	Conditional_dialog<Software_update_dialog>
+		_software_update_dialog { Id { "software_update" }, _build_info,
 		                          _network._nic_state, _download_queue,
 		                          _index_update_queue, _file_operation_queue,
 		                          _scan_rom, _image_index_rom, *this, *this };
 
-	Conditional_float_dialog<Software_version_dialog>
-		_software_version_dialog { "software_version", _build_info };
+	Conditional_dialog<Software_version_dialog>
+		_software_version_dialog { Id { "software_version" }, _build_info };
 
-	Conditional_float_dialog<Software_status_dialog>
-		_software_status_dialog { "software_status", *this };
+	Conditional_dialog<Software_status_dialog>
+		_software_status_dialog { Id { "software_status" }, *this };
 
-	Conditional_float_dialog<Graph>
-		_graph { "graph",
+	Conditional_dialog<Graph>
+		_graph { Id { "graph" },
 		         _runtime_state, _cached_runtime_config, _storage._storage_devices,
 		         _storage._sculpt_partition, _storage._ram_fs_state,
 		         _popup.state, _deploy._children };
 
-	/**
-	 * Deprecated_dialog interface
-	 */
-	Hover_result hover(Xml_node) override;
-
-	void reset() override { }
-
-	/**
-	 * Deprecated_dialog interface
-	 */
-	void generate(Xml_generator &xml) const override
+	template <typename MAIN, typename FN>
+	static void for_each_title_bar(MAIN &main, FN const &fn)
 	{
-		xml.node("vbox", [&] {
+		fn(main._device_title_bar);
+		fn(main._phone_title_bar);
+		fn(main._storage_title_bar);
+		fn(main._network_title_bar);
+		fn(main._software_title_bar);
+	}
 
-			_device_section_dialog.generate(xml);
+	void _propagate_hover(Xml_node const &);
 
-			_device_controls_dialog.generate_conditional(xml, _device_section_dialog.selected());
+	void _view_main_dialog(Scope<> &s) const
+	{
+		/* skip generating the dialog at boot time */
+		if (!_gui_mode_ready)
+			return;
 
-			_device_power_dialog.generate_conditional(xml, _device_section_dialog.selected());
+		s.sub_scope<Vbox>([&] (Scope<Vbox> &s) {
+
+			Xml_generator &xml = s.xml;
+
+			s.widget(_device_title_bar, [&] (auto &s) {
+				_device_title_bar.view_status(s, _power_state.summary()); });
+
+			s.widget(_device_controls_dialog, _device_title_bar.selected(),
+			         _power_state, _mic_state, _audio_volume);
+
+			s.widget(_device_power_dialog, _device_title_bar.selected(), _power_state);
 
 			if (_power_state.modem_present()) {
 
-				_phone_section_dialog.generate(xml);
-				_modem_power_dialog.generate_conditional(xml, _phone_section_dialog.selected());
-				_pin_dialog.generate_conditional(xml, _phone_section_dialog.selected()
-				                                   && _modem_state.ready()
-				                                   && _modem_state.pin_required());
+				s.widget(_phone_title_bar, [&] (auto &s) {
 
-				_outbound_dialog.generate_conditional(xml, _phone_section_dialog.selected()
+					auto phone_status_message = [&] () -> String<128>
+					{
+						if (!_modem_state.ready() || !_modem_state.pin_ok())
+							return _modem_state.power_message();
+
+						return "ready";
+					};
+					_phone_title_bar.view_status(s, phone_status_message());
+				});
+
+				_modem_power_dialog.generate_conditional(xml, _phone_title_bar.selected());
+
+				s.widget(_pin_dialog, _phone_title_bar.selected()
+				                   && _modem_state.ready()
+				                   && _modem_state.pin_required(), _sim_pin);
+
+				_outbound_dialog.generate_conditional(xml, _phone_title_bar.selected()
 				                                        && _modem_state.ready()
 				                                        && _modem_state.pin_ok());
 
-				_dialpad_dialog.generate_conditional(xml, _phone_section_dialog.selected()
-				                                       && _modem_state.ready()
-				                                       && _modem_state.pin_ok());
+				s.widget(_dialpad_dialog, _phone_title_bar.selected()
+				                      && _modem_state.ready()
+				                      && _modem_state.pin_ok(),
+				         _dialed_number);
 
-				_current_call_dialog.generate_conditional(xml, _phone_section_dialog.selected()
+				_current_call_dialog.generate_conditional(xml, _phone_title_bar.selected()
 				                                            && _modem_state.ready()
 				                                            && _modem_state.pin_ok());
 			}
 
-			_storage_section_dialog.generate(xml);
+			s.widget(_storage_title_bar, [&] (auto &s) {
+				_storage_title_bar.view_status(s, " "); });
 
-			gen_named_node(xml, "float", "storage dialog", [&] {
-				if (!_storage_section_dialog.selected())
-					return;
+			s.widget(_storage_dialog, _storage_title_bar.selected());
 
-				xml.node("frame", [&] {
-					xml.node("vbox", [&] {
-						_storage_dialog.gen_block_devices(xml);
-						_storage_dialog.gen_usb_storage_devices(xml);
+			s.widget(_network_title_bar, [&] (auto &s) {
 
-						/* enforce minimum width */
-						xml.node("label", [&] { xml.attribute("min_ex", 35); });
-					});
-				});
+				auto network_status_message = [&]
+				{
+					switch (_network._nic_target.type()) {
+					case Nic_target::Type::UNDEFINED:
+					case Nic_target::Type::OFF:
+						break;
+
+					case Nic_target::Type::DISCONNECTED:
+						return "disconnected";
+
+					case Nic_target::Type::WIRED:
+						return _network._nic_state.ready() ? "LAN" : "LAN ...";
+
+					case Nic_target::Type::WIFI:
+						return _network._nic_state.ready() ? "WLAN" : "WLAN ...";
+
+					case Nic_target::Type::MODEM:
+						return _network._nic_state.ready() ? "mobile" : "mobile ...";
+					}
+					return "off";
+				};
+				_network_title_bar.view_status(s, network_status_message());
 			});
-
-			_network_section_dialog.generate(xml);
 
 			gen_named_node(xml, "float", "net settings", [&] {
 				xml.attribute("east", "yes");
 				xml.attribute("west", "yes");
-				if (_network_section_dialog.selected())
+				if (_network_title_bar.selected())
 					_network.dialog.generate(xml);
 			});
 
-			_software_section_dialog.generate(xml);
+			s.widget(_software_title_bar, [&] (auto &s) {
+				_software_title_bar.view_status(s, _software_status_message()); });
 
-			_software_tabs_dialog.generate_conditional(xml, _software_section_dialog.selected());
+			_software_tabs_dialog.generate_conditional(xml, _software_title_bar.selected());
 
-			_graph.generate_conditional(xml, _software_section_dialog.selected()
-			                              && _software_tabs_dialog.dialog.runtime_selected());
+			s.widget(_graph, _software_title_bar.selected()
+			              && _software_tabs_dialog.dialog.runtime_selected());
 
-			_software_presets_dialog.generate_conditional(xml, _software_section_dialog.selected()
+			_software_presets_dialog.generate_conditional(xml, _software_title_bar.selected()
 			                                                && _software_tabs_dialog.dialog.presets_selected()
 			                                                && _storage._sculpt_partition.valid());
 
-			_software_options_dialog.generate_conditional(xml, _software_section_dialog.selected()
+			_software_options_dialog.generate_conditional(xml, _software_title_bar.selected()
 			                                                && _software_tabs_dialog.dialog.options_selected()
 			                                                && _storage._sculpt_partition.valid());
 
-			_software_add_dialog.generate_conditional(xml, _software_section_dialog.selected()
+			_software_add_dialog.generate_conditional(xml, _software_title_bar.selected()
 			                                            && _software_tabs_dialog.dialog.add_selected()
 			                                            && _storage._sculpt_partition.valid());
 
-			_software_update_dialog.generate_conditional(xml, _software_section_dialog.selected()
+			_software_update_dialog.generate_conditional(xml, _software_title_bar.selected()
 			                                               && _software_tabs_dialog.dialog.update_selected()
 			                                               && _storage._sculpt_partition.valid());
 
-			_software_version_dialog.generate_conditional(xml, _software_section_dialog.selected()
+			_software_version_dialog.generate_conditional(xml, _software_title_bar.selected()
 			                                                && _software_tabs_dialog.dialog.update_selected()
 			                                                && !_touch_keyboard.visible);
 
-			_software_status_dialog.generate_conditional(xml, _software_section_dialog.selected()
+			_software_status_dialog.generate_conditional(xml, _software_title_bar.selected()
 			                                               && _software_tabs_dialog.dialog.status_selected());
 
 			/*
@@ -788,17 +859,14 @@ struct Sculpt::Main : Input_event_handler,
 		});
 	}
 
-	/**
-	 * Deprecated_dialog::Generator interface
-	 */
-	void generate_dialog() override
+	void _generate_dialog()
 	{
 		/* detect need for touch keyboard */
 		bool const orig_touch_keyboard_visible = _touch_keyboard.visible;
 
 		_touch_keyboard.visible = touch_keyboard_needed();
 
-		_main_menu_view.generate();
+		_main_view.refresh();
 
 		if (orig_touch_keyboard_visible != _touch_keyboard.visible)
 			_handle_window_layout();
@@ -870,7 +938,7 @@ struct Sculpt::Main : Input_event_handler,
 	{
 		_manually_managed_runtime = !config.has_type("empty");
 		generate_runtime_config();
-		generate_dialog();
+		_generate_dialog();
 	}
 
 	void _generate_runtime_config(Xml_generator &) const;
@@ -929,7 +997,7 @@ struct Sculpt::Main : Input_event_handler,
 
 	bool _depot_user_selection_visible() const
 	{
-		if (!_software_section_dialog.selected())
+		if (!_software_title_bar.selected())
 			return false;
 
 		return _software_tabs_dialog.dialog.update_selected()
@@ -938,21 +1006,21 @@ struct Sculpt::Main : Input_event_handler,
 
 	bool _software_add_dialog_has_keyboard_focus() const
 	{
-		return _software_section_dialog.selected()
+		return _software_title_bar.selected()
 		    && _software_tabs_dialog.dialog.add_selected()
 		    && _software_add_dialog.dialog.keyboard_needed();
 	}
 
 	bool _software_update_dialog_has_keyboard_focus() const
 	{
-		return _software_section_dialog.selected()
+		return _software_title_bar.selected()
 		    && _software_tabs_dialog.dialog.update_selected()
 		    && _software_update_dialog.dialog.keyboard_needed();
 	}
 
 	bool _network_dialog_has_keyboard_focus() const
 	{
-		return _network_section_dialog.selected()
+		return _network_title_bar.selected()
 		    && _network.dialog.need_keyboard_focus_for_passphrase();
 	}
 
@@ -987,7 +1055,7 @@ struct Sculpt::Main : Input_event_handler,
 	{
 		_runtime_config_rom.update();
 		_cached_runtime_config.update_from_xml(_runtime_config_rom.xml());
-		generate_dialog(); /* update graph */
+		_generate_dialog(); /* update graph */
 	}
 
 
@@ -995,178 +1063,118 @@ struct Sculpt::Main : Input_event_handler,
 	 ** Interactive operations **
 	 ****************************/
 
-	Constructible<Input::Seq_number> _clicked_seq_number { };
-	Constructible<Input::Seq_number> _clacked_seq_number { };
+	Dialog::Distant_runtime _dialog_runtime { _env };
 
-	void _section_enabled(Section_dialog &section, bool enabled)
+	struct Main_dialog : Dialog::Top_level_dialog
 	{
-		/* reset all sections to the default */
-		_section_dialogs.for_each([&] (Section_dialog &dialog) {
-			dialog.detail = Section_dialog::Detail::DEFAULT; });
+		Main &_main;
 
-		/* select specified section if enabled */
-		bool any_selected = false;
-		_section_dialogs.for_each([&] (Section_dialog &dialog) {
-			if ((&dialog == &section) && enabled) {
-				dialog.detail = Section_dialog::Detail::SELECTED;
-				any_selected = true;
-			}
+		Main_dialog(Main &main) : Top_level_dialog("main"), _main(main) { }
+
+		void view(Scope<> &s) const override { _main._view_main_dialog(s); }
+
+		void click(Clicked_at const &at) override { _main._click(at); }
+		void clack(Clacked_at const &at) override { _main._clack(at); }
+		void drag (Dragged_at const &at) override { _main._drag(at); }
+
+	} _main_dialog { *this };
+
+	Dialog::Distant_runtime::View
+		_main_view { _dialog_runtime, _main_dialog,
+		             { .opaque      = true,
+		               .background  = _background_color,
+		               .initial_ram = { 12*1024*1024 } } };
+
+	void _click(Clicked_at const &at)
+	{
+		_propagate_hover(at._location);
+
+		/* toggle sections */
+		for_each_title_bar(*this, [&] (auto &title_bar) {
+			title_bar.propagate(at, [&] {
+				if (title_bar.selected())
+					_selected_section = Section::NONE;
+				else
+					_selected_section = title_bar.value;
+			});
 		});
 
-		/* minimize unselected sections if any section is selected */
-		_section_dialogs.for_each([&] (Section_dialog &dialog) {
-			if (dialog.detail != Section_dialog::Detail::SELECTED)
-				dialog.detail = any_selected
-				              ? Section_dialog::Detail::MINIMIZED
-				              : Section_dialog::Detail::DEFAULT; });
-	}
+		_device_controls_dialog.propagate(at, *this);
+		_device_power_dialog   .propagate(at, *this);
 
-	void _try_handle_click()
-	{
-		if (!_clicked_seq_number.constructed())
-			return;
+		if (_modem_power_dialog.hovered())
+			_modem_power_dialog.click();
 
-		Input::Seq_number const seq = *_clicked_seq_number;
+		_pin_dialog    .propagate(at, _sim_pin, *this);
+		_dialpad_dialog.propagate(at, *this);
 
-		if (_main_menu_view.hovered(seq)) {
+		_storage_dialog.propagate(at, *this);
 
-			/* determine clicked section */
-			Section_dialog *clicked_ptr = nullptr;
-			_section_dialogs.for_each([&] (Section_dialog &dialog) {
-				if (dialog.hovered())
-					clicked_ptr = &dialog; });
+		if (_outbound_dialog.hovered())
+			_outbound_dialog.click();
 
-			/* toggle clicked section dialog */
-			if (clicked_ptr)
-				_section_enabled(*clicked_ptr, !clicked_ptr->selected());
+		if (_current_call_dialog.hovered())
+			_current_call_dialog.click();
 
-			if (_device_controls_dialog.hovered())
-				_device_controls_dialog.click();
+		if (_network.dialog.hovered)
+			_network.dialog.click(_network);
 
-			if (_device_power_dialog.hovered())
-				_device_power_dialog.click();
+		if (_software_tabs_dialog.hovered()) {
+			_software_tabs_dialog.click();
 
-			if (_modem_power_dialog.hovered())
-				_modem_power_dialog.click();
-
-			if (_pin_dialog.hovered())
-				_pin_dialog.click();
-
-			if (_dialpad_dialog.hovered())
-				_dialpad_dialog.click();
-
-			if (_outbound_dialog.hovered())
-				_outbound_dialog.click();
-
-			if (_current_call_dialog.hovered())
-				_current_call_dialog.click();
-
-			if (_storage_dialog.hovered)
-				_storage_dialog.click(*this);
-
-			if (_network.dialog.hovered)
-				_network.dialog.click(_network);
-
-			if (_software_tabs_dialog.hovered()) {
-				_software_tabs_dialog.click();
-
-				/* refresh list of depot users */
-				trigger_depot_query();
-			}
-
-			if (_graph.hovered())
-				_graph.dialog.click(*this);
-
-			if (_software_presets_dialog.hovered())
-				_software_presets_dialog.click();
-
-			if (_software_options_dialog.hovered())
-				_software_options_dialog.click();
-
-			if (_software_add_dialog.hovered())
-				_software_add_dialog.click();
-
-			if (_software_update_dialog.hovered())
-				_software_update_dialog.click();
-
-			_clicked_seq_number.destruct();
-			generate_dialog();
-		}
-	}
-
-	void _try_handle_clack()
-	{
-		if (!_clacked_seq_number.constructed())
-			return;
-
-		Input::Seq_number const seq = *_clacked_seq_number;
-
-		if (_main_menu_view.hovered(seq)) {
-
-			_device_controls_dialog.clack();
-			_device_power_dialog.clack();
-			_pin_dialog.clack();
-			_dialpad_dialog.clack();
-			_current_call_dialog.clack();
-			_software_presets_dialog.clack();
-			_software_add_dialog.clack();
-			_software_update_dialog.clack();
-
-			if (_storage_dialog.hovered)
-				_storage_dialog.clack(*this);
-
-			if (_graph.hovered())
-				_graph.dialog.clack(*this, _storage);
-
-			_clacked_seq_number.destruct();
-			generate_dialog();
-		}
-	}
-
-	/**
-	 * Menu_view::Hover_update_handler interface
-	 */
-	void menu_view_hover_updated() override
-	{
-		/* take first hover report as indicator that the GUI is ready */
-		if (!_system.storage && _runtime_state.present_in_runtime("menu_view")) {
-			_enter_second_driver_stage();
-
-			/* once the basic GUI is up, it is time to spawn the touch keyboard */
-			_touch_keyboard.started = true;
-			generate_runtime_config();
+			/* refresh list of depot users */
+			trigger_depot_query();
 		}
 
-		if (_clicked_seq_number.constructed())
-			_try_handle_click();
+		if (_software_presets_dialog.hovered())
+			_software_presets_dialog.click();
 
-		if (_clacked_seq_number.constructed())
-			_try_handle_clack();
+		if (_software_options_dialog.hovered())
+			_software_options_dialog.click();
+
+		if (_software_add_dialog.hovered())
+			_software_add_dialog.click();
+
+		if (_software_update_dialog.hovered())
+			_software_update_dialog.click();
+
+		_graph.propagate(at, *this);
+
+		_generate_dialog();
 	}
 
-	/* true while touched, used to issue only one click per touch sequence */
-	bool _touched = false;
+	void _clack(Clacked_at const &at)
+	{
+		_propagate_hover(at._location);
+
+		_device_power_dialog.propagate(at, *this);
+
+		_current_call_dialog.clack();
+		_software_presets_dialog.clack();
+		_software_add_dialog.clack();
+		_software_update_dialog.clack();
+
+		_storage_dialog.propagate(at, *this);
+
+		_graph.propagate(at, *this, _storage);
+
+		_generate_dialog();
+	}
+
+	void _drag(Dragged_at const &at)
+	{
+		_device_controls_dialog.propagate(at, *this);
+	}
 
 	/**
 	 * Input_event_handler interface
 	 */
 	void handle_input_event(Input::Event const &ev) override
 	{
+		Dialog::Event::Seq_number const seq_number { _global_input_seq_number.value };
+		_dialog_runtime.route_input_event(seq_number, ev);
+
 		bool need_generate_dialog = false;
-
-		if (ev.key_press(Input::BTN_LEFT) || ev.touch()) {
-			if (!_touched) {
-				_clicked_seq_number.construct(_global_input_seq_number);
-				_try_handle_click();
-				_touched = true;
-			}
-		}
-
-		if (ev.key_release(Input::BTN_LEFT) || ev.touch_release()) {
-			_clacked_seq_number.construct(_global_input_seq_number);
-			_try_handle_clack();
-			_touched = false;
-		}
 
 		ev.handle_press([&] (Input::Keycode key, Codepoint code) {
 
@@ -1190,7 +1198,7 @@ struct Sculpt::Main : Input_event_handler,
 
 				if (volume_up || volume_down) {
 					select_volume_level(level);
-					_section_enabled(_device_section_dialog, true);
+					_selected_section = Section::DEVICE;
 				}
 			}
 
@@ -1199,16 +1207,8 @@ struct Sculpt::Main : Input_event_handler,
 		});
 
 		if (need_generate_dialog)
-			generate_dialog();
+			_generate_dialog();
 	}
-
-	Color const _background_color { 62, 62, 67, 255 };
-
-	Menu_view _main_menu_view { _env, _child_states, *this, "menu_view",
-	                             Ram_quota{12*1024*1024}, Cap_quota{150},
-	                             "menu_dialog", "menu_view_hover", *this,
-	                             Menu_view::Alpha::OPAQUE,
-	                             _background_color };
 
 	void _handle_window_layout();
 
@@ -1237,7 +1237,7 @@ struct Sculpt::Main : Input_event_handler,
 	void _reset_storage_dialog_operation()
 	{
 		_graph.dialog.reset_storage_operation();
-		_storage_dialog.reset_operation();
+		_storage_dialog.dialog.reset_operation();
 	}
 
 	/*
@@ -1330,7 +1330,7 @@ struct Sculpt::Main : Input_event_handler,
 	/*
 	 * Graph::Action interface
 	 */
-	void toggle_launcher_selector(Rect) override { }
+	void open_popup_dialog(Rect) override { }
 
 	bool _network_missing() const {
 		return _deploy.update_needed() && !_network._nic_state.ready(); }
@@ -1348,10 +1348,7 @@ struct Sculpt::Main : Input_event_handler,
 		    || _download_queue.any_failed_download();
 	}
 
-	/**
-	 * Software_status interface
-	 */
-	Software_status::Message software_status_message() const override
+	char const *_software_status_message() const
 	{
 		if (_update_running())
 			return "install ...";
@@ -1367,60 +1364,36 @@ struct Sculpt::Main : Input_event_handler,
 	 */
 	void generate_software_status(Xml_generator &xml) const override
 	{
-		xml.node("vbox", [&] () {
-			if (_manually_managed_runtime)
-				return;
+		with_dummy_scope(xml, [&] (Scope<> &s) {
+			s.sub_scope<Vbox>([&] (Scope<Vbox> &s) {
 
-			auto gen_network_diagnostics = [&] (Xml_generator &xml)
-			{
-				if (!_network_missing())
+				if (_manually_managed_runtime)
 					return;
 
-				gen_named_node(xml, "hbox", "network", [&] () {
-					gen_named_node(xml, "float", "left", [&] () {
-						xml.attribute("west", "yes");
-						xml.node("label", [&] () {
-							xml.attribute("text", "network needed for installation");
-							xml.attribute("font", "annotation/regular");
-						});
+				if (_diagnostics_available()) {
+
+					Hosted<Vbox, Titled_frame> diag { Id { "Diagnostics" } };
+					s.widget(diag, Titled_frame::Attr { .min_ex = 40 }, [&] {
+
+						if (_network_missing())
+							s.sub_scope<Left_annotation>("network needed for installation");
+
+						s.as_new_scope([&] (Scope<> &s) { _deploy.view_diag(s); });
 					});
-				});
-			};
+				}
 
-			if (_diagnostics_available()) {
-				gen_named_node(xml, "frame", "diagnostics", [&] () {
-					xml.node("vbox", [&] () {
+				Xml_node const state = _update_state_rom.xml();
 
-						gen_named_node(xml, "label", "top", [&] () {
-							xml.attribute("min_ex", "40");
-							xml.attribute("text", ""); });
+				bool const download_in_progress =
+					_update_running() && state.attribute_value("progress", false);
 
-						xml.node("label", [&] () {
-							xml.attribute("text", "Diagnostics"); });
-
-						xml.node("float", [&] () {
-							xml.node("vbox", [&] () {
-								gen_network_diagnostics(xml);
-								_deploy.gen_child_diagnostics(xml);
-							});
-						});
-
-						gen_named_node(xml, "label", "bottom", [&] () {
-							xml.attribute("text", " "); });
-					});
-				});
-			}
-
-			Xml_node const state = _update_state_rom.xml();
-
-			bool const download_in_progress =
-				(_update_running() && state.attribute_value("progress", false));
-
-			if (download_in_progress || _download_queue.any_failed_download())
-				gen_download_status(xml, state, _download_queue);
+				if (download_in_progress || _download_queue.any_failed_download()) {
+					Hosted<Vbox, Download_status_dialog> download_status { Id { "Download" } };
+					s.widget(download_status, state, _download_queue);
+				}
+			});
 		});
 	}
-
 
 	/**
 	 * Software_presets_dialog::Action interface
@@ -1667,11 +1640,11 @@ struct Sculpt::Main : Input_event_handler,
 		if (orig_power_state.summary() != _power_state.summary())
 			regenerate_dialog = true;
 
-		if (_device_section_dialog.selected())
+		if (_device_title_bar.selected())
 			regenerate_dialog = true;
 
 		if (regenerate_dialog)
-			generate_dialog();
+			_generate_dialog();
 	}
 
 	/**
@@ -1815,7 +1788,7 @@ struct Sculpt::Main : Input_event_handler,
 		}
 
 		if (regenerate_dialog)
-			generate_dialog();
+			_generate_dialog();
 	}
 
 	void _generate_modem_config()
@@ -2003,6 +1976,8 @@ struct Sculpt::Main : Input_event_handler,
 		_system_config.with_manual_config([&] (Xml_node const &system) {
 			_system = System::from_xml(system); });
 
+		_update_managed_system_config();
+
 		/*
 		 * Read static platform information
 		 */
@@ -2018,7 +1993,7 @@ struct Sculpt::Main : Input_event_handler,
 
 		_generate_modem_config();
 		generate_runtime_config();
-		generate_dialog();
+		_generate_dialog();
 	}
 };
 
@@ -2052,11 +2027,24 @@ void Sculpt::Main::_handle_window_layout()
 	Decorator_margins const margins(_decorator_margins.xml());
 
 	typedef String<128> Label;
-	Label const menu_view_label     ("runtime -> leitzentrale -> menu_view");
+	Label const main_view_label     ("runtime -> leitzentrale -> main_view");
 	Label const touch_keyboard_label("runtime -> leitzentrale -> touch_keyboard");
 
 	_window_list.update();
 	Xml_node const window_list = _window_list.xml();
+
+	/*
+	 * Take presence of main view as trigger for second driver stage.
+	 *
+	 * Once after the basic GUI is up, spawn storage drivers and touch keyboard.
+	 */
+	if (!_system.storage) {
+		_with_window(window_list, main_view_label, [&] (Xml_node) {
+			_enter_second_driver_stage();
+			_touch_keyboard.started = true;
+			generate_runtime_config();
+		});
+	}
 
 	auto win_size = [&] (Xml_node win) {
 		return Area(win.attribute_value("width",  0U),
@@ -2095,7 +2083,7 @@ void Sculpt::Main::_handle_window_layout()
 			gen_window(win, Rect(pos, size));
 		});
 
-		_with_window(window_list, menu_view_label, [&] (Xml_node win) {
+		_with_window(window_list, main_view_label, [&] (Xml_node win) {
 			Area  const size = win_size(win);
 			Point const pos(_leitzentrale_visible ? 0 : int(size.w()), 0);
 			gen_window(win, Rect(pos, size));
@@ -2116,44 +2104,26 @@ void Sculpt::Main::_handle_gui_mode()
 	_handle_window_layout();
 
 	_screen_size = mode.area;
-	_main_menu_view.min_width  = _screen_size.w();
-	_main_menu_view.min_height = _screen_size.h();
+	_main_view.min_width  = _screen_size.w();
+	_main_view.min_height = _screen_size.h();
 
 	generate_runtime_config();
 }
 
 
-Sculpt::Deprecated_dialog::Hover_result Sculpt::Main::hover(Xml_node hover)
+void Sculpt::Main::_propagate_hover(Xml_node const &hover)
 {
-	Hover_result result = Hover_result::UNMODIFIED;
-
-	_section_dialogs.for_each([&] (Section_dialog &dialog) {
-		result = any_hover_changed(result, dialog.hover(Xml_node("<empty/>"))); });
-
 	hover.with_optional_sub_node("vbox", [&] (Xml_node const &vbox) {
-		_section_dialogs.for_each([&] (Section_dialog &dialog) {
-			result = any_hover_changed(result, dialog.hover(vbox)); });
-
-		result = any_hover_changed(result,
-			_device_controls_dialog .hover(vbox),
-			_device_power_dialog    .hover(vbox),
-			_modem_power_dialog     .hover(vbox),
-			_pin_dialog             .hover(vbox),
-			_dialpad_dialog         .hover(vbox),
-			_current_call_dialog    .hover(vbox),
-			_outbound_dialog        .hover(vbox),
-			_graph                  .hover(vbox),
-			_software_tabs_dialog   .hover(vbox),
-			_software_presets_dialog.hover(vbox),
-			_software_options_dialog.hover(vbox),
-			_software_add_dialog    .hover(vbox),
-			_software_update_dialog .hover(vbox),
-			_storage_dialog.match_sub_dialog(vbox, "float", "frame", "vbox"),
-			_network.dialog.match_sub_dialog(vbox, "float")
-		);
+		_modem_power_dialog     .hover(vbox);
+		_current_call_dialog    .hover(vbox);
+		_outbound_dialog        .hover(vbox);
+		_software_tabs_dialog   .hover(vbox);
+		_software_presets_dialog.hover(vbox);
+		_software_options_dialog.hover(vbox);
+		_software_add_dialog    .hover(vbox);
+		_software_update_dialog .hover(vbox);
+		_network.dialog.match_sub_dialog(vbox, "float");
 	});
-
-	return result;
 }
 
 
@@ -2184,7 +2154,7 @@ void Sculpt::Main::_handle_update_state()
 		_deploy.reattempt_after_installation();
 	}
 
-	generate_dialog();
+	_generate_dialog();
 }
 
 
@@ -2362,11 +2332,14 @@ void Sculpt::Main::_handle_runtime_state()
 		regenerate_dialog   = true;
 	}
 
-	if (_software_section_dialog.selected() && _software_tabs_dialog.dialog.options_selected())
+	if (_dialog_runtime.apply_runtime_state(state))
+		reconfigure_runtime = true;
+
+	if (_software_title_bar.selected() && _software_tabs_dialog.dialog.options_selected())
 		regenerate_dialog = true;
 
 	if (regenerate_dialog)
-		generate_dialog();
+		_generate_dialog();
 
 	if (reconfigure_runtime)
 		generate_runtime_config();
@@ -2421,7 +2394,7 @@ void Sculpt::Main::_generate_runtime_config(Xml_generator &xml) const
 		xml.attribute("height", _affinity_space.height());
 	});
 
-	_main_menu_view.gen_start_node(xml);
+	_dialog_runtime.gen_start_nodes(xml);
 
 	_touch_keyboard.gen_start_node(xml);
 

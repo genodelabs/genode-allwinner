@@ -21,10 +21,7 @@ namespace Sculpt { struct Software_status; }
 
 struct Sculpt::Software_status : Interface
 {
-	using Message = String<64>;
-
 	virtual bool    software_status_available() const = 0;
-	virtual Message software_status_message()   const = 0;
 	virtual void    generate_software_status(Xml_generator &) const = 0;
 };
 

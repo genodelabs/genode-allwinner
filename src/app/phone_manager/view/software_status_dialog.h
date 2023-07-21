@@ -19,7 +19,7 @@
 namespace Sculpt { struct Software_status_dialog; }
 
 
-struct Sculpt::Software_status_dialog
+struct Sculpt::Software_status_dialog : Widget<Float>
 {
 	Software_status const &_status;
 
