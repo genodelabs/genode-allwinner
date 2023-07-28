@@ -79,12 +79,12 @@ struct Sculpt::Software_tabs_dialog
 					});
 				};
 
+				gen_tab("status",  Choice::STATUS,  "Status",  status_avail);
 				gen_tab("presets", Choice::PRESETS, "Presets", presets_avail);
 				gen_tab("runtime", Choice::RUNTIME, "Runtime", true);
 				gen_tab("add",     Choice::ADD,     "Add",     add_avail);
 				gen_tab("options", Choice::OPTIONS, "Options", options_avail);
 				gen_tab("update",  Choice::UPDATE,  "Update",  update_avail);
-				gen_tab("status",  Choice::STATUS,  "Status",  status_avail);
 			});
 		});
 	}
