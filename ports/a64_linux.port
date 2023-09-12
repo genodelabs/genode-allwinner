@@ -2,9 +2,9 @@ LICENSE   := GPLv2
 VERSION   := git
 DOWNLOADS := a64_linux.archive
 
-REV(a64_linux) := orange-pi-6.1-20230214-2103
-URL(a64_linux) := https://github.com/megous/linux/archive/${REV(a64_linux)}.tar.gz
-SHA(a64_linux) := af0253c5c377b591d0f4576f69c5f3a71fb25cb3abfa068f90216c8478969679
+REV(a64_linux) := 40561fa3c8b8467fc74ead6cbb409c90dbb01fdb
+URL(a64_linux) := https://github.com/cnuke/a64_linux/archive/${REV(a64_linux)}.tar.gz
+SHA(a64_linux) := 6b2d09492df402fb96fd9d0e504f942f1cd3e9e84fe3a853ead791b3d5cfd394
 DIR(a64_linux) := src/linux
 
 PATCHES := \
