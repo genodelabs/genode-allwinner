@@ -13,4 +13,5 @@ LICENSE.wifi_drv:
 
 a64_wifi_firmware.tar: ucode_files LICENSE.wifi_drv
 	tar --mtime='2023-05-10 00:00Z' --remove-files \
+	    --owner=0 --group=0 --numeric-owner --mode='go=' \
 	    -cf $@ -C . *.*
