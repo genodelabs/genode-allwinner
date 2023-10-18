@@ -506,6 +506,7 @@ struct Sculpt::Main : Input_event_handler,
 		_scan_rom.update();
 		_generate_dialog();
 		_software_update_dialog.dialog.sanitize_user_selection();
+		_software_add_dialog.dialog.sanitize_user_selection();
 	}
 
 	Attached_rom_dataspace _image_index_rom { _env, "report -> runtime/depot_query/image_index" };

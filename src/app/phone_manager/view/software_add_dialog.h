@@ -328,6 +328,8 @@ struct Sculpt::Software_add_dialog : private Index_menu_dialog::Policy,
 	}
 
 	void handle_key(Codepoint c) { _users.handle_key(c); }
+
+	void sanitize_user_selection() { _users.sanitize_unfold_state(); }
 };
 
 #endif /* _VIEW__SOFTWARE_ADD_DIALOG_H_ */
