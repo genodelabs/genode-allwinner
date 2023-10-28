@@ -32,7 +32,7 @@ struct Pio_driver::Pin_declaration : List_model<Pin_declaration>::Element
 	Name const name;
 
 	/**
-	 * Expected by 'update_list_model_from_xml'
+	 * List_model::Element
 	 */
 	static bool type_matches(Xml_node const &node)
 	{
@@ -44,7 +44,7 @@ struct Pio_driver::Pin_declaration : List_model<Pin_declaration>::Element
 	}
 
 	/**
-	 * Expected by 'update_list_model_from_xml'
+	 * List_model::Element
 	 */
 	bool matches(Xml_node const &node) const
 	{
@@ -307,7 +307,7 @@ void Pio_driver::Main::_handle_config()
 		pin.update_from_xml(node, _pio);
 	};
 
-	update_list_model_from_xml(_pins, _config.xml(), create, destroy, update);
+	_pins.update_from_xml(_config.xml(), create, destroy, update);
 
 	/*
 	 * Re-assign sessions to pins
