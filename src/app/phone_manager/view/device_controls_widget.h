@@ -1,5 +1,5 @@
 /*
- * \brief  Device controls (e.g., brightness) dialog
+ * \brief  Device controls (e.g., brightness) widget
  * \author Norman Feske
  * \date   2022-11-22
  */
@@ -11,18 +11,18 @@
  * under the terms of the GNU Affero General Public License version 3.
  */
 
-#ifndef _VIEW__DEVICE_CONTROLS_DIALOG_H_
-#define _VIEW__DEVICE_CONTROLS_DIALOG_H_
+#ifndef _VIEW__DEVICE_CONTROLS_WIDGET_H_
+#define _VIEW__DEVICE_CONTROLS_WIDGET_H_
 
 #include <view/dialog.h>
 #include <model/power_state.h>
 #include <model/mic_state.h>
 #include <model/audio_volume.h>
 
-namespace Sculpt { struct Device_controls_dialog; }
+namespace Sculpt { struct Device_controls_widget; }
 
 
-struct Sculpt::Device_controls_dialog : Widget<Vbox>
+struct Sculpt::Device_controls_widget : Widget<Vbox>
 {
 	struct Level : Widget<Frame>
 	{
@@ -40,13 +40,12 @@ struct Sculpt::Device_controls_dialog : Widget<Vbox>
 						else
 							s.attribute("style", "unimportant");
 
-						s.sub_scope<Dialog::Label>(" ");
+						s.sub_scope<Label>(" ");
 					});
 				}
 			}
 
-			template <typename FN>
-			void click(Clicked_at const &at, FN const &fn)
+			void click(Clicked_at const &at, auto const &fn)
 			{
 				Id const id = at.matching_id<Right_floating_hbox, Button>();
 				unsigned value = 0;
@@ -68,8 +67,7 @@ struct Sculpt::Device_controls_dialog : Widget<Vbox>
 			s.widget(_bar, percent);
 		}
 
-		template <typename FN>
-		void click(Clicked_at const &at, FN const &fn) { _bar.propagate(at, fn); }
+		void click(Clicked_at const &at, auto const &fn) { _bar.propagate(at, fn); }
 	};
 
 	Hosted<Vbox, Level> _brightness { Id { "Brightness" } },
@@ -95,12 +93,11 @@ struct Sculpt::Device_controls_dialog : Widget<Vbox>
 			});
 		}
 
-		template <typename FN>
-		void click(Clicked_at const &at, FN const &fn)
+		void click(Clicked_at const &at, auto const &fn)
 		{
-			_off  .propagate(at, [&] { fn(Mic_state::OFF);   });
-			_phone.propagate(at, [&] { fn(Mic_state::PHONE); });
-			_on   .propagate(at, [&] { fn(Mic_state::ON);    });
+			_off  .propagate(at, [&] (Mic_state s) { fn(s); });
+			_phone.propagate(at, [&] (Mic_state s) { fn(s); });
+			_on   .propagate(at, [&] (Mic_state s) { fn(s); });
 		}
 	};
 
@@ -148,4 +145,4 @@ struct Sculpt::Device_controls_dialog : Widget<Vbox>
 	}
 };
 
-#endif /* _VIEW__DEVICE_CONTROLS_DIALOG_H_ */
+#endif /* _VIEW__DEVICE_CONTROLS_WIDGET_H_ */

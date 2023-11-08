@@ -18,11 +18,13 @@
 
 namespace Sculpt {
 
+	enum class Alpha { OPAQUE, ALPHA };
+
 	struct Touch_keyboard_attr
 	{
-		unsigned         min_width, min_height;
-		Menu_view::Alpha alpha;
-		Color            background;
+		unsigned min_width, min_height;
+		Alpha    alpha;
+		Color    background;
 	};
 
 	static inline void gen_touch_keyboard(Xml_generator &, Touch_keyboard_attr);
@@ -43,7 +45,7 @@ void Sculpt::gen_touch_keyboard(Xml_generator &xml, Touch_keyboard_attr const at
 			xml.attribute("min_width",  attr.min_width);
 			xml.attribute("min_height", attr.min_height);
 
-			if (attr.alpha == Menu_view::Alpha::OPAQUE)
+			if (attr.alpha == Alpha::OPAQUE)
 				xml.attribute("opaque", "yes");
 
 			xml.attribute("background", String<20>(attr.background));

@@ -1,5 +1,5 @@
 /*
- * \brief  Dialpad dialog
+ * \brief  Dialpad widget
  * \author Norman Feske
  * \date   2022-06-29
  */
@@ -11,16 +11,16 @@
  * under the terms of the GNU Affero General Public License version 3.
  */
 
-#ifndef _VIEW__DIALPAD_DIALOG_H_
-#define _VIEW__DIALPAD_DIALOG_H_
+#ifndef _VIEW__DIALPAD_WIDGET_H_
+#define _VIEW__DIALPAD_WIDGET_H_
 
 #include <view/dialog.h>
 #include <model/dialed_number.h>
 
-namespace Sculpt { struct Dialpad_dialog; }
+namespace Sculpt { struct Dialpad_widget; }
 
 
-struct Sculpt::Dialpad_dialog : Widget<Centered_dialog_vbox>
+struct Sculpt::Dialpad_widget : Widget<Centered_dialog_vbox>
 {
 	Hosted<Centered_dialog_vbox, Pin_row>
 		_rows[4] { { Id { "r1" }, "1", "2", "3" },
@@ -40,23 +40,27 @@ struct Sculpt::Dialpad_dialog : Widget<Centered_dialog_vbox>
 
 		s.sub_scope<Min_ex>(20);
 		s.sub_scope<Vgap>();
-		s.sub_scope<Button>([&] (auto &) {
+		s.sub_scope<Button>([&] (Scope<Centered_dialog_vbox, Button> &s) {
 			s.attribute("style", "invisible");
-			s.sub_scope<Float>([&] (auto &s) {
+			s.sub_scope<Float>([&] (Scope<Centered_dialog_vbox, Button, Float> &s) {
 				s.attribute("west", "yes");
-				s.template sub_scope<Dialog::Label>("    Dial", [&] (auto &s) {
+				s.sub_scope<Label>("   Dial", [&] (auto &s) {
 					s.attribute("font", "title/regular");
 					if (digits.length() > 12)
 						s.attribute("style", "invisible");
 				});
 			});
-			s.sub_scope<Float>([&] (auto &s) {
-				s.template sub_scope<Dialog::Label>(Text("   ", digits), [&] (auto &s) {
-					s.attribute("min_ex", 15);
-					if (digits.length() < 20)
+			s.sub_scope<Hbox>([&] (Scope<Centered_dialog_vbox, Button, Hbox> &s) {
+				if (digits.length() <= 12)
+					s.sub_scope<Min_ex>(16);
+				s.sub_scope<Float>([&] (Scope<Centered_dialog_vbox, Button, Hbox, Float> &s) {
+					s.sub_scope<Label>(Text(digits), [&] (auto &s) {
+						s.attribute("min_ex", 15);
+						if (digits.length() < 20)
+							s.attribute("font", "title/regular"); });
+					s.sub_scope<Label>(" ", [&] (auto &s) {
 						s.attribute("font", "title/regular"); });
-				s.template sub_scope<Dialog::Label>(" ", [&] (auto &s) {
-					s.attribute("font", "title/regular"); });
+				});
 			});
 		});
 		s.sub_scope<Vgap>();
@@ -79,4 +83,4 @@ struct Sculpt::Dialpad_dialog : Widget<Centered_dialog_vbox>
 	}
 };
 
-#endif /* _VIEW__DIALPAD_DIALOG_H_ */
+#endif /* _VIEW__DIALPAD_WIDGET_H_ */

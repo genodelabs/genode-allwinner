@@ -122,6 +122,7 @@ struct Sculpt::Current_call
 	bool accepted() const { return state == State::ACCEPTED; }
 	bool active()   const { return state == State::ACTIVE;   }
 	bool none()     const { return state == State::NONE;     }
+	bool canceled() const { return state == State::CANCELED; }
 
 	void accept()
 	{

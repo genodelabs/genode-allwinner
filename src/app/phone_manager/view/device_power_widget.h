@@ -1,5 +1,5 @@
 /*
- * \brief  Device power-control dialog
+ * \brief  Device power-control widget
  * \author Norman Feske
  * \date   2022-11-18
  */
@@ -11,20 +11,18 @@
  * under the terms of the GNU Affero General Public License version 3.
  */
 
-#ifndef _VIEW__DEVICE_POWER_DIALOG_H_
-#define _VIEW__DEVICE_POWER_DIALOG_H_
+#ifndef _VIEW__DEVICE_POWER_WIDGET_H_
+#define _VIEW__DEVICE_POWER_WIDGET_H_
 
 #include <util/formatted_output.h>
 #include <view/dialog.h>
 #include <model/power_state.h>
 
-namespace Sculpt { struct Device_power_dialog; }
+namespace Sculpt { struct Device_power_widget; }
 
 
-struct Sculpt::Device_power_dialog : Widget<Vbox>
+struct Sculpt::Device_power_widget : Widget<Vbox>
 {
-	using Label = Dialog::Label;
-
 	enum class Option { UNKNOWN, PERFORMANCE, ECONOMIC, REBOOT, OFF };
 
 	Option _selected_option { Option::UNKNOWN };
@@ -47,8 +45,7 @@ struct Sculpt::Device_power_dialog : Widget<Vbox>
 
 		void click(Clicked_at const &at) { _button.propagate(at); }
 
-		template <typename FN>
-		void clack(Clacked_at const &at, FN const &confirmed_fn)
+		void clack(Clacked_at const &at, auto const &confirmed_fn)
 		{
 			_button.propagate(at, confirmed_fn);
 		}
@@ -71,8 +68,7 @@ struct Sculpt::Device_power_dialog : Widget<Vbox>
 				s.widget(_confirm, attr.need_confirm && (selected == _radio.value));
 			}
 
-			template <typename FN>
-			void click(Clicked_at const &at, Option const &selected, FN const &fn)
+			void click(Clicked_at const &at, Option const &selected, auto const &fn)
 			{
 				_radio.propagate(at, fn);
 
@@ -80,8 +76,7 @@ struct Sculpt::Device_power_dialog : Widget<Vbox>
 					_confirm.propagate(at);
 			}
 
-			template <typename FN>
-			void clack(Clacked_at const &at, FN const &fn)
+			void clack(Clacked_at const &at, auto const &fn)
 			{
 				_confirm.propagate(at, [&] { fn(_radio.value); });
 			}
@@ -106,8 +101,7 @@ struct Sculpt::Device_power_dialog : Widget<Vbox>
 			});
 		}
 
-		template <typename FN>
-		void click(Clicked_at const &at, Option const &selected, FN const &fn)
+		void click(Clicked_at const &at, Option const &selected, auto const &fn)
 		{
 			_performance.propagate(at, selected, fn);
 			_economic   .propagate(at, selected, fn);
@@ -115,16 +109,14 @@ struct Sculpt::Device_power_dialog : Widget<Vbox>
 			_off        .propagate(at, selected, fn);
 		}
 
-		template <typename FN>
-		void clack(Clacked_at const &at, FN const &fn)
+		void clack(Clacked_at const &at, auto const &fn)
 		{
 			_reboot.propagate(at, fn);
 			_off   .propagate(at, fn);
 		}
 	};
 
-	template <typename LABEL, typename UNIT>
-	static void _view_battery_value(Scope<> &s, LABEL const &label, double value, UNIT const &unit)
+	static void _view_battery_value(Scope<> &s, auto const &label, double value, auto const &unit)
 	{
 		s.sub_scope<Hbox>([&] (Scope<Hbox> &s) {
 			s.sub_scope<Label>(label, [&] (Scope<Hbox, Label> &s) {
@@ -215,4 +207,4 @@ struct Sculpt::Device_power_dialog : Widget<Vbox>
 	}
 };
 
-#endif /* _VIEW__DEVICE_POWER_DIALOG_H_ */
+#endif /* _VIEW__DEVICE_POWER_WIDGET_H_ */
