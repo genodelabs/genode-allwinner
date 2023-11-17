@@ -74,7 +74,7 @@ proc call_number { } {
 }
 
 build {
-	core init timer
+	core lib/ld init timer
 	drivers/uart/ns16550 drivers/platform/a64 drivers/pin/a64
 	drivers/modem/pinephone drivers/audio_control/pinephone
 	drivers/usb_host/a64
@@ -363,12 +363,6 @@ install_config {
 
 file copy [select_from_repositories board/[board]/devices] [run_dir]/genode/devices
 
-build_boot_image {
-	core ld.lib.so init timer
-	a64_platform_drv a64_pio_drv ns16550_uart
-	a64_usb_host_drv pinephone_modem pinephone_audio_control
-	terminal_crosslink report_rom usb-pinephone.dtb
-	usb_net_drv nic_router ping
-}
+build_boot_image [build_artifacts]
 
 run_genode_until forever

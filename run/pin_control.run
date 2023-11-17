@@ -1,4 +1,4 @@
-build { core init timer test/pin_control }
+build { core lib/ld init timer test/pin_control }
 
 create_boot_directory
 
@@ -31,6 +31,6 @@ install_config {
 	</config>
 }
 
-build_boot_image { core ld.lib.so init timer test-pin_control }
+build_boot_image [build_artifacts]
 
 run_genode_until forever

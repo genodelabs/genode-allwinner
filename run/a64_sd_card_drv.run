@@ -1,5 +1,5 @@
 build {
-	core init timer
+	core lib/ld init timer
 	drivers/platform/a64
 	drivers/sd_card/a64
 	app/block_tester
@@ -92,14 +92,6 @@ install_config {
 	</config>
 }
 
-set build_components {
-	core ld.lib.so init timer a64_platform_drv
-	a64_sd_card_drv block_tester
-}
-
-lappend_if [have_board pine_a64lts] build_components sd_card-pine_a64lts.dtb
-lappend_if [have_board pinephone]   build_components sd_card-pinephone.dtb
-
-build_boot_image $build_components
+build_boot_image [build_artifacts]
 
 run_genode_until {.*child "block_tester" exited with exit value 0.*} 60

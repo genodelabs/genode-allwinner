@@ -4,15 +4,12 @@
 #
 
 build {
-	core init timer
+	core lib/ld init timer lib/libc lib/vfs lib/posix lib/vfs_oss
 	drivers/platform/a64 drivers/pin/a64
 	drivers/audio_control/pinephone
 	drivers/audio/a64
 	server/report_rom
-	test/audio_in
-
-	lib/vfs_oss
-	test/oss
+	test/audio_in test/oss
 }
 
 create_boot_directory
@@ -144,15 +141,6 @@ install_config {
 
 file copy [select_from_repositories board/[board]/devices] [run_dir]/genode/devices
 
-build_boot_image {
-	core ld.lib.so init timer report_rom
-	a64_platform_drv a64_pio_drv
-	a64_audio_drv pinephone_audio_control
-	test-audio_in
-
-	libc.lib.so vfs.lib.so libm.lib.so
-	posix.lib.so vfs_oss.lib.so
-	test-oss
-}
+build_boot_image [build_artifacts]
 
 run_genode_until forever

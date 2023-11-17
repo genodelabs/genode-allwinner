@@ -1,4 +1,4 @@
-build { core init timer test/at_protocol server/terminal_crosslink }
+build { core lib/ld init timer test/at_protocol server/terminal_crosslink }
 
 create_boot_directory
 
@@ -45,6 +45,6 @@ install_config {
 	</config>
 }
 
-build_boot_image { core ld.lib.so init timer terminal_crosslink test-at_protocol }
+build_boot_image [build_artifacts]
 
 run_genode_until "modem.*Test done.*driver.*Test done.*\n" 30

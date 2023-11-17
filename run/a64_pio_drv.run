@@ -1,5 +1,5 @@
-build { core init timer drivers/platform drivers/pin/a64 server/dynamic_rom
-        app/pin_pulse app/pin_event }
+build { core lib/ld init timer drivers/platform drivers/pin/a64
+        server/dynamic_rom app/pin_pulse app/pin_event }
 
 create_boot_directory
 
@@ -126,7 +126,6 @@ install_config {
 	</config>
 }
 
-build_boot_image { core ld.lib.so init timer platform_drv a64_pio_drv
-                   pin_pulse pin_event dynamic_rom }
+build_boot_image [build_artifacts]
 
 run_genode_until forever

@@ -1,4 +1,4 @@
-build { core init test/pin_interrupt }
+build { core lib/ld init test/pin_interrupt }
 
 create_boot_directory
 
@@ -22,6 +22,6 @@ install_config {
 	</config>
 }
 
-build_boot_image { core ld.lib.so init test-pin_interrupt }
+build_boot_image [build_artifacts]
 
 run_genode_until forever

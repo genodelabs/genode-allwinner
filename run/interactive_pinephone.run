@@ -64,16 +64,6 @@ install_config {
 foreach file [glob "[genode_dir]/repos/allwinner/recipes/raw/drivers_interactive-pinephone/*.config"] {
 	copy_file $file [run_dir]/genode/ }
 
-build_boot_image {
-	a64_platform_drv
-	a64_pio_drv
-	de_fb_drv
-	de-pinephone.dtb
-	goodix_touch_drv
-	goodix-pinephone.dtb
-	event_filter
-	event_dump
-	test-framebuffer
-}
+build_boot_image [build_artifacts]
 
 run_genode_until forever

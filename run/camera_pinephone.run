@@ -328,16 +328,6 @@ install_config {
 
 </config>}
 
-build_boot_image {
-	test-framebuffer
-	a64_platform_drv
-	a64_pio_drv
-	de_fb_drv
-	de-pinephone.dtb
-	pinephone_camera_drv
-	camera-pinephone.dtb
-
-	dummy
-}
+build_boot_image [build_artifacts]
 
 run_genode_until forever

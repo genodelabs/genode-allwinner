@@ -1,5 +1,5 @@
 build {
-	core init timer
+	core lib/ld init timer
 	drivers/platform/a64
 	drivers/usb_host/a64
 	drivers/usb_block
@@ -122,14 +122,6 @@ install_config {
 	</config>
 }
 
-set build_components {
-	core ld.lib.so init timer report_rom a64_platform_drv
-	a64_usb_host_drv usb_block_drv block_tester
-}
-
-lappend_if [have_board pine_a64lts] build_components usb-pine_a64lts.dtb
-lappend_if [have_board pinephone]   build_components usb-pinephone.dtb
-
-build_boot_image $build_components
+build_boot_image [build_artifacts]
 
 run_genode_until {.*child "block_tester" exited with exit value 0.*} 60
