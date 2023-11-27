@@ -523,3 +523,19 @@ void gnet_stats_basic_sync_init(struct gnet_stats_basic_sync * b)
 {
 	lx_emul_trace(__func__);
 }
+
+
+/*
+ * AFAICT this function can be a NOP as its intended purpose [1]
+ * is not there in our case.
+ *
+ * [1] "This function is called when a page has been modified by the kernel.
+ *      Mark it as dirty for later flushing when mapped in user space [...]"
+ *      -- arm64/mm/flush.c
+ *
+ */
+extern void flush_dcache_page(struct page * page);
+void flush_dcache_page(struct page * page)
+{
+	lx_emul_trace(__func__);
+}

@@ -394,13 +394,6 @@ struct kobject *firmware_kobj;
 struct flow_dissector flow_keys_basic_dissector;
 
 
-extern void flush_dcache_page(struct page * page);
-void flush_dcache_page(struct page * page)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
 #include <linux/sched/signal.h>
 
 void flush_signals(struct task_struct * t)
