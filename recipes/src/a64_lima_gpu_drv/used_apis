@@ -1,6 +1,7 @@
 a64_linux
 base
 gpu_session
+genode_c_api
 nic_session
 os
 platform_session

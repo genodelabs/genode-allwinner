@@ -27,18 +27,6 @@
 #include "emul.h"
 
 
-void *emul_alloc_shmem_file_buffer(unsigned long size)
-{
-	return (void*) Lx_kit::env().memory.alloc_buffer(size).virt_addr();
-}
-
-
-void emul_free_shmem_file_buffer(void *addr)
-{
-	Lx_kit::env().memory.free_buffer(addr);
-}
-
-
 /************
  ** memory **
  ************/

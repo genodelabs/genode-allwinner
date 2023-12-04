@@ -6,6 +6,7 @@ INC_DIR += $(PRG_DIR)/include/lx_emul/shadow
 SRC_CC  += main.cc
 SRC_CC  += emul.cc
 SRC_CC  += lx_emul/random_dummy.cc
+SRC_CC  += lx_emul/shared_dma_buffer.cc
 SRC_C   += lx_emul.c
 SRC_C   += lx_user.c
 SRC_C   += clock.c

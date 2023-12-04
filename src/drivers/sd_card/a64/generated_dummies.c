@@ -38,14 +38,6 @@ const struct earlycon_id __earlycon_table[] = {};
 const struct earlycon_id __earlycon_table_end[] = {};
 
 
-#include <linux/mm.h>
-
-void __folio_put(struct folio * folio)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
 #include <linux/blkdev.h>
 
 int __invalidate_device(struct block_device * bdev,bool kill_dirty)
