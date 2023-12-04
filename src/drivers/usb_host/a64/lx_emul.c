@@ -46,15 +46,6 @@ void dma_pool_free(struct dma_pool * pool,void * vaddr,dma_addr_t dma)
 }
 
 
-#include <lx_emul/usb.h>
-#include <linux/cdev.h>
-
-void cdev_init(struct cdev * cdev,const struct file_operations * fops)
-{
-	lx_emul_usb_register_devio(fops);
-}
-
-
 #include <linux/interrupt.h>
 
 void do_softirq_own_stack(void)

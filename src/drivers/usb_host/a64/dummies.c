@@ -271,3 +271,10 @@ struct clk * devm_clk_get_optional(struct device * dev,const char * id)
 	return NULL;
 }
 
+
+#include <linux/cdev.h>
+
+void cdev_init(struct cdev * cdev,const struct file_operations * fops)
+{
+	lx_emul_trace(__func__);
+}
