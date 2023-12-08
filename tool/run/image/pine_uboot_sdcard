@@ -48,7 +48,7 @@ proc run_image { } {
 	#
 	set image_load_addr [get_cmd_arg --image-load-address "0x42000000"]
 
-	exec echo "bootcmd=ext2load mmc 0:1 $image_load_addr /boot/uImage; bootm $image_load_addr\n" \
+	exec echo "bootcmd=ext2load mmc 0:1 $image_load_addr /boot/uImage || reset; bootm $image_load_addr || reset\n" \
 	          "bootdelay=0" \
 	   | $mkenvimage -s 0x20000 -o [file join $ext2_boot_dir uboot.env] -
 
