@@ -1039,18 +1039,10 @@ struct Gpu::Session_component : public Genode::Session_object<Gpu::Session>
 			return true;
 		}
 
-		enum class Blocking_request : uint8_t { NO, YES };
-
-		/*
-		 * Most request will block the RPC interface as the Gpu session
-		 * requires this behaviour. 'WAIT' and 'SYNCOBJ_WAIT' are the
-		 * only RPCs performed in polling fashion.
-		 */
 		template <typename SUCC_FN, typename FAIL_FN>
 		void _schedule_request(Gpu::Request const &request,
 		                       SUCC_FN const &succ_fn,
-		                       FAIL_FN const &fail_fn,
-		                       Blocking_request block = Blocking_request::YES)
+		                       FAIL_FN const &fail_fn)
 		{
 			if (_pending_request.valid()) {
 				/* that should not happen and is most likely a bug in the client */
@@ -1073,19 +1065,18 @@ struct Gpu::Session_component : public Genode::Session_object<Gpu::Session>
 			_lx_task_args._pending_request   = &_pending_request;
 			_lx_task_args._completed_request = &_completed_request;
 
+			/*
+			 * Whenever the pending request gets scheduled the
+			 * completed request is reset beforehand. So ending
+			 * up with an unsuccessful completed request either
+			 * means the request failed or it has not yet been
+			 * finished. For the time being this differentiation
+			 * is done by the calling RPC function where a failed
+			 * request is treat appropriately.
+			 */
+
 			lx_emul_task_unblock(_lx_task);
 			Lx_kit::env().scheduler.execute();
-
-			if (block == Blocking_request::YES)
-				for (;;) {
-					if (_completed_request.matches(request)
-					 && _completed_request.valid())
-						break;
-
-					_ep.wait_and_dispatch_one_io_signal();
-
-					Lx_kit::env().scheduler.execute();
-				}
 
 			if (_completed_request.success) {
 				succ_fn(_completed_request);
@@ -1169,8 +1160,13 @@ struct Gpu::Session_component : public Genode::Session_object<Gpu::Session>
 
 		/*
 		 * Waiting for an sync object and waiting for access
-		 * to a given buffer-object is done by blocking the
-		 * calling linux task.
+		 * to a given buffer-object is done by calling the
+		 * corresponding DRM functions with a huge timeout.
+		 * In case we have to wait the task will be blocked
+		 * and the schedule execution returns. We treat this
+		 * as a pending operation and the client will wait
+		 * until it is notified via a signal and tries to
+		 * perform the waiting again.
 		 */
 
 		bool _pending_syncobj_wait { false };
@@ -1430,7 +1426,7 @@ struct Gpu::Session_component : public Genode::Session_object<Gpu::Session>
 			auto fail = [&] () {
 				_pending_syncobj_wait = true;
 			};
-			_schedule_request(r, success, fail, Blocking_request::NO);
+			_schedule_request(r, success, fail);
 
 			return completed;
 		}
@@ -1591,7 +1587,7 @@ struct Gpu::Session_component : public Genode::Session_object<Gpu::Session>
 			auto fail = [&] () {
 				_pending_wait = true;
 			};
-			_schedule_request(r, success, fail, Blocking_request::NO);
+			_schedule_request(r, success, fail);
 
 			return completed;
 		}
