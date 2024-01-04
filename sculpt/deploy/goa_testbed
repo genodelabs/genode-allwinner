@@ -1,0 +1,66 @@
+<config arch="" info="Goa testbed">
+
+	<common_routes>
+		<service name="ROM" label_last="ld.lib.so"> <parent/> </service>
+		<service name="CPU">   <parent/> </service>
+		<service name="PD">    <parent/> </service>
+		<service name="LOG">   <parent/> </service>
+		<service name="Timer"> <parent/> </service>
+	</common_routes>
+
+	<start name="fonts_fs" priority="-2" pkg="fonts_fs">
+		<route>
+			<service name="ROM" label="config">
+				<parent label="config -> managed/fonts"/>
+			</service>
+		</route>
+	</start>
+
+	<start name="recall_fs" priority="-2" pkg="recall_fs">
+		<route>
+			<service name="File_system"> <child name="default_fs_rw"/> </service>
+		</route>
+	</start>
+
+	<start name="black_hole" priority="-2" pkg="black_hole">
+		<route/>
+	</start>
+
+	<start name="sntp_dummy_rtc" pkg="sntp_dummy_rtc">
+		<route>
+			<service name="Nic"> <child name="nic_router"/> </service>
+		</route>
+	</start>
+
+	<start name="gpu_drv" caps="1500" pkg="a64_lima_gpu_drv-pinephone">
+		<route>
+			<service name="Platform"> <parent label="gpu"/> </service>
+		</route>
+	</start>
+
+	<start name="goa_testbed" pkg="jschlatow/pkg/goa_testbed/2024-01-03" priority="-2">
+		<route>
+			<service name="TRACE">       <parent/> </service>
+			<service name="VM">          <parent/> </service>
+			<service name="Gpu">         <parent/> </service>
+			<service name="Gui">         <parent/> </service>
+			<service name="Rtc">         <child name="sntp_dummy_rtc"/>  </service>
+			<service name="Audio_in">    <child name="black_hole"/>      </service>
+			<service name="Audio_out">   <child name="black_hole"/>      </service>
+			<service name="Usb">         <child name="black_hole"/>      </service>
+			<service name="Event">       <child name="black_hole"/>      </service>
+			<service name="Capture">     <child name="black_hole"/>      </service>
+			<service name="File_system"> <child name="recall_fs"/>       </service>
+			<service name="Nic" label_prefix="tcp_terminal"> <child name="nic_router" label="telnet"/> </service>
+			<service name="Nic" label_prefix="lighttpd">     <child name="nic_router" label="http"/>   </service>
+			<service name="Nic"> <!-- for test scenario -->  <child name="nic_router"/>                </service>
+			<service name="Report" label_last="clipboard"> <parent/> </service>
+			<service name="Report" label_last="shape">     <parent/> </service>
+			<service name="ROM"    label_last="clipboard"> <parent/> </service>
+			<service name="ROM"    label="platform_info"> <parent label="platform_info"/> </service>
+			<service name="ROM"    label="capslock">      <parent label="capslock"/>      </service>
+			<service name="ROM" label="mesa_gpu_drv.lib.so"> <parent label="mesa_gpu-lima.lib.so"/> </service>
+		</route>
+	</start>
+
+</config>
