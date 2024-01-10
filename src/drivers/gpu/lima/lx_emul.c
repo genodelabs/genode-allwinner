@@ -147,16 +147,6 @@ struct kmem_cache * kmem_cache_create_usercopy(const char * name,
 }
 
 
-#include <linux/rcutree.h>
-#include <linux/mm.h>
-
-void kvfree_call_rcu(struct rcu_head * head,rcu_callback_t func)
-{
-	void *ptr = (void *) head - (unsigned long) func;
-	kvfree(ptr);
-}
-
-
 #include <linux/sched.h>
 
 char * __get_task_comm(char * buf,size_t buf_size,struct task_struct * tsk)

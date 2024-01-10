@@ -641,14 +641,6 @@ noinline int kstrtoull(const char * s,unsigned int base,unsigned long long * res
 }
 
 
-#include <linux/rcutree.h>
-
-void kvfree_call_rcu(struct rcu_head * head,rcu_callback_t func)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
 #include <linux/logic_pio.h>
 
 unsigned long logic_pio_trans_hwaddr(struct fwnode_handle * fwnode,resource_size_t addr,resource_size_t size)

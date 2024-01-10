@@ -933,14 +933,6 @@ int kobject_synth_uevent(struct kobject * kobj,const char * buf,size_t count)
 }
 
 
-#include <linux/rcutree.h>
-
-void kvfree_call_rcu(struct rcu_head * head,rcu_callback_t func)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
 #include <linux/llist.h>
 
 bool llist_add_batch(struct llist_node * new_first,struct llist_node * new_last,struct llist_head * head)
