@@ -20,7 +20,7 @@
 namespace Driver { struct R_prcm; }
 
 
-struct Driver::R_prcm : private Attached_mmio
+struct Driver::R_prcm : private Attached_mmio<0>
 {
 	Genode::Env &_env;
 	Clocks      &_clocks;
@@ -40,18 +40,18 @@ struct Driver::R_prcm : private Attached_mmio
 	};
 
 	template <unsigned BIT>
-	struct Apb0_clk_gate : Gate, private Mmio
+	struct Apb0_clk_gate : Gate, private Mmio<0x2c>
 	{
 		enum { MASK = 0, PASS = 1 };
 
 		struct Gates : Register_array<0x28, 32, 32, 1> { };
 
-		Apb0_clk_gate(Clocks     &clocks,
-		              Name const &name,
-		              Clock      &parent,
-		              void       *r_prcm_regs)
+		Apb0_clk_gate(Clocks               &clocks,
+		              Name const           &name,
+		              Clock                &parent,
+		              Byte_range_ptr const &r_prcm_regs)
 		:
-			Gate(clocks, name, parent), Mmio((addr_t)r_prcm_regs)
+			Gate(clocks, name, parent), Mmio(r_prcm_regs)
 		{ }
 
 		void _enable()  override { write<Gates>(PASS, BIT); }
@@ -59,11 +59,11 @@ struct Driver::R_prcm : private Attached_mmio
 	};
 
 
-	Apb0_clk_gate<6> _r_twi_clk { _clocks, "r_twi", _osc_24m_clk, local_addr<void>() };
+	Apb0_clk_gate<6> _r_twi_clk { _clocks, "r_twi", _osc_24m_clk, Attached_mmio::range() };
 
 	R_prcm(Genode::Env &env, Clocks &clocks, Clock &osc_24m_clk)
 	:
-		Attached_mmio(env, 0x1f01400, 0x100),
+		Attached_mmio(env, {(char *)0x1f01400, 0x100}),
 		_env(env), _clocks(clocks), _osc_24m_clk(osc_24m_clk)
 	{ }
 };

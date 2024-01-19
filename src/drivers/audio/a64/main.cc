@@ -30,7 +30,7 @@ namespace Audio {
 }
 
 
-class Audio::I2s : Platform::Device::Mmio
+class Audio::I2s : Platform::Device::Mmio<0x30>
 {
 	private:
 
@@ -196,7 +196,7 @@ struct Audio::I2s_dma
 };
 
 
-class Audio::Dma_engine : Platform::Device::Mmio
+class Audio::Dma_engine : Platform::Device::Mmio<0x34>
 {
 	private:
 
@@ -224,7 +224,7 @@ class Audio::Dma_engine : Platform::Device::Mmio
 		 */
 
 		class Descriptor : private Platform::Dma_buffer,
-		                   private Genode::Mmio,
+		                   private Genode::Mmio<0x18>,
 		                   public  Fifo<Descriptor>::Element
 		{
 			public:
@@ -269,7 +269,7 @@ class Audio::Dma_engine : Platform::Device::Mmio
 
 				Descriptor(Platform::Connection &platform, size_t size)
 				: Platform::Dma_buffer(platform, 0x1000, UNCACHED),
-				  Mmio(addr_t(local_addr<addr_t>())),
+				  Mmio({Dma_buffer::local_addr<char>(), Dma_buffer::size()}),
 				  _data(platform, size, CACHED)
 				{
 					/* touch cached dma memory */
@@ -322,7 +322,7 @@ class Audio::Dma_engine : Platform::Device::Mmio
 				size_t length()   const { return read<Length>();                     }
 		};
 
-		class Channel : private Genode::Mmio
+		class Channel : private Genode::Mmio<0x1c>
 		{
 			private:
 
@@ -343,8 +343,8 @@ class Audio::Dma_engine : Platform::Device::Mmio
 
 			public:
 
-				Channel(addr_t const base, uint32_t const id, Dma_engine &engine)
-				: Mmio(base), _id(id), _engine(engine)
+				Channel(Byte_range_ptr const &range, uint32_t const id, Dma_engine &engine)
+				: Mmio(range), _id(id), _engine(engine)
 				{ }
 
 				enum Irq_type { HALF_PACKET = 1u, FULL_PACKET = 2u };
@@ -401,9 +401,8 @@ class Audio::Dma_engine : Platform::Device::Mmio
 		Dma_engine(Platform::Device &device)
 		: Mmio(device)
 		{
-			addr_t const channel_base = (addr_t)local_addr<addr_t>() + 0x100;
 			for (uint32_t i = 0; i < 8; i++)
-				_channel[i].construct(channel_base + i * 0x40, i, *this);
+				_channel[i].construct(Mmio::range_at(0x100 + i * 0x40), i, *this);
 
 			/* disable auto gating for mclk */
 			write<Auto_gate::Mclk_circuit>(1);

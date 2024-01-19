@@ -21,7 +21,7 @@
 namespace Genode { class Ns16550_uart; }
 
 
-class Genode::Ns16550_uart : Platform::Device::Mmio
+class Genode::Ns16550_uart : Platform::Device::Mmio<0x18>
 {
 	private:
 

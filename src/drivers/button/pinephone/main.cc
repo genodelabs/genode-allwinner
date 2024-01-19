@@ -21,7 +21,7 @@ namespace Button_driver {
 
 struct Button_driver::Keyadc
 {
-	struct Mmio : Platform::Device::Mmio
+	struct Mmio : Platform::Device::Mmio<0x10>
 	{
 		struct Ctrl : Register<0x0, 32>
 		{
@@ -41,7 +41,7 @@ struct Button_driver::Keyadc
 			struct Bits : Bitfield<0, 5> { };
 		};
 
-		using Platform::Device::Mmio::Mmio;
+		using Platform::Device::Mmio<SIZE>::Mmio;
 
 	} _mmio;
 

@@ -21,15 +21,15 @@
 #include <types.h>
 
 namespace Audio_control {
-	class  Codec;
-	class  Analog_plain_access;
-	class  Analog_mmio;
+	class Codec;
+	class Analog_plain_access;
+	template <size_t> class Analog_mmio;
 	struct Analog;
-	class  Device;
+	class Device;
 }
 
 
-class Audio_control::Codec : Platform::Device::Mmio
+class Audio_control::Codec : Platform::Device::Mmio<0x134>
 {
 	private:
 
@@ -262,7 +262,7 @@ class Audio_control::Analog_plain_access
 
 	private:
 
-		class Analog_domain : Platform::Device::Mmio
+		class Analog_domain : Platform::Device::Mmio<0x4>
 		{
 			private:
 
@@ -283,7 +283,7 @@ class Audio_control::Analog_plain_access
 
 				void write(uint8_t const opcode, uint8_t const data)
 				{
-					using Mmio = Platform::Device::Mmio;
+					using Mmio = Platform::Device::Mmio<SIZE>;
 					Mmio::write<Ac_pr::Rst>(1);
 					Mmio::write<Ac_pr::Addr>(opcode);
 					Mmio::write<Ac_pr::In>(data);
@@ -293,7 +293,7 @@ class Audio_control::Analog_plain_access
 
 				uint8_t read(uint8_t const opcode)
 				{
-					using Mmio = Platform::Device::Mmio;
+					using Mmio = Platform::Device::Mmio<SIZE>;
 					Mmio::write<Ac_pr::Rst>(1);
 					Mmio::write<Ac_pr::Rw>(0);
 					Mmio::write<Ac_pr::Addr>(opcode);
@@ -328,18 +328,19 @@ class Audio_control::Analog_plain_access
 };
 
 
+template<Genode::size_t SIZE>
 struct Audio_control::Analog_mmio : Analog_plain_access,
-                                    Register_set<Analog_plain_access>
+                                    Register_set<Analog_plain_access, SIZE>
 {
 	Analog_mmio(Platform::Device &device)
 	:
 		Analog_plain_access(device),
-		Register_set(*static_cast<Analog_plain_access *>(this))
+		Register_set<Analog_plain_access, SIZE>(*static_cast<Analog_plain_access *>(this))
 	{ }
 };
 
 
-class Audio_control::Analog : public Analog_mmio
+class Audio_control::Analog : public Analog_mmio<0xf>
 {
 	private:
 

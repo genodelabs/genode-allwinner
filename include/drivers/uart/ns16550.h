@@ -20,7 +20,7 @@
 namespace Genode { class Ns16550_uart; }
 
 
-class Genode::Ns16550_uart : Mmio
+class Genode::Ns16550_uart : Mmio<0x18>
 {
 	private:
 
@@ -42,7 +42,7 @@ class Genode::Ns16550_uart : Mmio
 
 	public:
 
-		Ns16550_uart(addr_t const base, uint32_t, uint32_t) : Mmio(base) { }
+		Ns16550_uart(addr_t const base, uint32_t, uint32_t) : Mmio({(char *)base, Mmio::SIZE}) { }
 
 		void init() { }
 

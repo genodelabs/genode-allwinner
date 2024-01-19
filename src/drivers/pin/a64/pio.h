@@ -18,12 +18,12 @@ namespace Pio_driver { struct Pio; }
 
 struct Pio_driver::Pio
 {
-	Platform::Device::Mmio _pio_mmio;
-	Platform::Device::Mmio _r_pio_mmio;
+	Platform::Device::Mmio<0> _pio_mmio;
+	Platform::Device::Mmio<0> _r_pio_mmio;
 
-	struct Io_bank : Genode::Mmio
+	struct Io_bank : Genode::Mmio<0x24>
 	{
-		using Genode::Mmio::Mmio;
+		using Mmio::Mmio;
 
 		struct Cfg  : Register_array<0x0,  32, 32, 4> { };
 		struct Data : Register_array<0x10, 32, 32, 1> { };
@@ -52,11 +52,11 @@ struct Pio_driver::Pio
 		}
 	};
 
-	struct Irq_regs : Genode::Mmio
+	struct Irq_regs : Genode::Mmio<0x18>
 	{
 		enum Id { B, G, H, L, NUM, UNDEFINED };
 
-		using Genode::Mmio::Mmio;
+		using Mmio::Mmio;
 
 		struct Cfg     : Register_array<0x0,  32, 32, 4> { };
 		struct Control : Register_array<0x10, 32, 32, 1> { };
@@ -86,15 +86,12 @@ struct Pio_driver::Pio
 		}
 	};
 
-	addr_t const   _pio_base { (addr_t)  _pio_mmio.local_addr<void>() };
-	addr_t const _r_pio_base { (addr_t)_r_pio_mmio.local_addr<void>() };
-
 	Constructible<Io_bank> _io_banks [Bank::NUM];
 
-	Irq_regs _irq_regs_b { _pio_base   + 0x200 };
-	Irq_regs _irq_regs_g { _pio_base   + 0x220 };
-	Irq_regs _irq_regs_h { _pio_base   + 0x240 };
-	Irq_regs _irq_regs_l { _r_pio_base + 0x200 };
+	Irq_regs _irq_regs_b { _pio_mmio.range_at(0x200) };
+	Irq_regs _irq_regs_g { _pio_mmio.range_at(0x220) };
+	Irq_regs _irq_regs_h { _pio_mmio.range_at(0x240) };
+	Irq_regs _irq_regs_l { _r_pio_mmio.range_at(0x200) };
 
 	template <typename PIO, typename FN>
 	static void _with_irq_regs(PIO &pio, Pin_id id, FN const &fn)
@@ -110,20 +107,20 @@ struct Pio_driver::Pio
 
 	Pio(Platform::Device &device)
 	:
-		_pio_mmio  (device, Platform::Device::Mmio::Index { 0 }),
-		_r_pio_mmio(device, Platform::Device::Mmio::Index { 1 })
+		_pio_mmio  (device, Platform::Device::Mmio<0>::Index { 0 }),
+		_r_pio_mmio(device, Platform::Device::Mmio<0>::Index { 1 })
 	{
-		auto base_addr = [&] (Bank bank)
+		auto base_range = [&] (Bank bank)
 		{
 			if (bank.value >= Bank::B && bank.value <= Bank::H)
-				return _pio_base + bank.value*0x24;
+				return _pio_mmio.range_at(bank.value*0x24);
 
-			return _r_pio_base;
+			return _r_pio_mmio.range();
 		};
 
 		for (unsigned i = Bank::B; i < Bank::NUM; i++) {
 			Bank const bank { Bank::Value(i) };
-			_io_banks[i].construct(base_addr(bank));
+			_io_banks[i].construct(base_range(bank));
 		}
 	}
 

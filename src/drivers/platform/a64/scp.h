@@ -67,7 +67,7 @@ namespace Scp {
 }
 
 
-struct Scp::Mbox_mmio : Attached_mmio
+struct Scp::Mbox_mmio : Attached_mmio<0x188>
 {
 	struct Ctrl0 : Register<0x0, 32>
 	{
@@ -105,7 +105,7 @@ struct Scp::Mbox_mmio : Attached_mmio
 		write<Irq_status::Receive_mq1>(1);
 	}
 
-	Mbox_mmio(Env &env) : Attached_mmio(env, 0x1c17000, 0x1000)
+	Mbox_mmio(Env &env) : Attached_mmio(env, {(char *)0x1c17000, 0x1000})
 	{
 		/* configure channels 0 (ARM -> SCP) and 1 (SCP -> ARM) */
 		write<Ctrl0::Reception_mq0>(Ctrl0::USER_SCP);
@@ -335,9 +335,9 @@ struct Scp::Driver : private Scheduler
 	Clock::Guard _mbox_clock_guard;
 	Reset::Guard _mbox_reset_guard;
 
-	Mbox_mmio      _mmio      { _env };
-	Irq_connection _irq       { _env, 81 };
-	Attached_mmio  _sram_mmio { _env, 0x44000, 0x10000 };
+	Mbox_mmio        _mmio      { _env };
+	Irq_connection   _irq       { _env, 81 };
+	Attached_mmio<0> _sram_mmio { _env, {(char *)0x44000, 0x10000} };
 
 	Io_signal_handler<Driver> _irq_handler { _env.ep(), *this, &Driver::_handle_irq };
 

@@ -28,9 +28,11 @@ struct Test::Main
 {
 	Env &_env;
 
-	Attached_io_mem_dataspace _pio_ds { _env, 0x1c20800u, 0x400u };
+	static constexpr size_t PIO_DS_SIZE = 0x400u;
 
-	struct Pio : Mmio
+	Attached_io_mem_dataspace _pio_ds { _env, 0x1c20800u, PIO_DS_SIZE };
+
+	struct Pio : Mmio<0x38>
 	{
 		struct Pb_cfg0 : Register<0x24, 32>
 		{
@@ -45,7 +47,7 @@ struct Test::Main
 			struct Pb2 : Bitfield<2, 1> { };
 		};
 
-		Pio(addr_t base) : Mmio(base)
+		Pio(Byte_range_ptr const &range) : Mmio(range)
 		{
 			/* configure PB2 pin to output mode */
 			write<Pb_cfg0::Pb2_select>(Pb_cfg0::Pb2_select::OUT);
@@ -60,7 +62,7 @@ struct Test::Main
 		}
 	};
 
-	Pio _pio { (addr_t)_pio_ds.local_addr<void>() };
+	Pio _pio { {_pio_ds.local_addr<char>(), PIO_DS_SIZE} };
 
 	Timer::Connection _timer { _env };
 

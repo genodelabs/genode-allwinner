@@ -85,7 +85,7 @@ struct Power::Scp : Noncopyable
 /**
  * Utility to access PMIC registers via Genode's 'Register' framework
  */
-struct Power::Pmic : Register_set<Pmic>
+struct Power::Pmic : Register_set<Pmic, 0x54>
 {
 	Scp &_scp;
 
@@ -125,7 +125,7 @@ struct Power::Pmic : Register_set<Pmic>
 		struct Poksirq : Bitfield<4, 1> { };  /* short press on power button */
 	};
 
-	Pmic(Scp &scp) : Register_set<Pmic>(*this), _scp(scp) { }
+	Pmic(Scp &scp) : Register_set(*this), _scp(scp) { }
 };
 
 
@@ -208,14 +208,14 @@ struct Power::Pmic_info
  */
 struct Power::Rintc
 {
-	struct Mmio : Platform::Device::Mmio
+	struct Mmio : Platform::Device::Mmio<0x54>
 	{
 		struct Ctrl    : Register<0x0c, 32> { struct Pmic : Bitfield<0, 1> { }; };
 		struct Pending : Register<0x10, 32> { struct Pmic : Bitfield<0, 1> { }; };
 		struct Enable  : Register<0x40, 32> { struct Pmic : Bitfield<0, 1> { }; };
 		struct Mask    : Register<0x50, 32> { struct Pmic : Bitfield<0, 1> { }; };
 
-		using Platform::Device::Mmio::Mmio;
+		using Platform::Device::Mmio<SIZE>::Mmio;
 
 	} _mmio;
 

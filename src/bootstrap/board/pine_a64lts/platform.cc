@@ -48,7 +48,7 @@ void Board::Cpu::wake_up_all_cpus(void * ip)
 
 Hw::size_t Board::detect_ram_size()
 {
-	struct Dram : Genode::Mmio
+	struct Dram : Genode::Mmio<0x4>
 	{
 		struct Rank : Register<0x0, 32>
 		{
@@ -76,7 +76,7 @@ Hw::size_t Board::detect_ram_size()
 			return (1ul << (row_bits() + bank_bits())) * page_size();
 		}
 
-		Dram(Hw::addr_t const base) : Mmio(base) { }
+		Dram(Hw::addr_t const base) : Mmio({(char *)base, Mmio::SIZE}) { }
 	};
 
 	Dram  rank0 { ::Board::DRAMCOM_BASE };

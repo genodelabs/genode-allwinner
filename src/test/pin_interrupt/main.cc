@@ -26,9 +26,11 @@ struct Test::Main
 {
 	Env &_env;
 
-	Attached_io_mem_dataspace _pio_ds { _env, 0x1c20800u, 0x400u };
+	static constexpr size_t PIO_DS_SIZE = 0x400u;
 
-	struct Pio : Mmio
+	Attached_io_mem_dataspace _pio_ds { _env, 0x1c20800u, PIO_DS_SIZE };
+
+	struct Pio : Mmio<0x218>
 	{
 		struct Pb_cfg0 : Register<0x24, 32>
 		{
@@ -55,7 +57,7 @@ struct Test::Main
 			struct Pb2 : Bitfield<4, 2> { };
 		};
 
-		Pio(addr_t base) : Mmio(base)
+		Pio(Byte_range_ptr const &range) : Mmio(range)
 		{
 			/* enable pull down to avoid high-impedance (undefined) signal */
 			write<Pb_pull0::Pb2>(Pb_pull0::PULL_DOWN);
@@ -73,7 +75,7 @@ struct Test::Main
 		}
 	};
 
-	Pio _pio { (addr_t)_pio_ds.local_addr<void>() };
+	Pio _pio { {_pio_ds.local_addr<char>(), PIO_DS_SIZE} };
 
 	enum { PB_EINT = 43 };
 
