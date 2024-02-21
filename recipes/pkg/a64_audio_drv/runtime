@@ -5,7 +5,7 @@
 		<platform label="audio"/>
 	</requires>
 
-	<provides> <audio_out/> <audio_in/> </provides>
+	<provides> <play/> <record/> <audio_out/> <audio_in/> </provides>
 
 	<config/>
 

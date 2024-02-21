@@ -1,21 +1,21 @@
 #
-# Script to test audio driver on PinePhone. Test component acts a loopback
-# device.
+# Script to test audio driver on PinePhone
 #
 
 build {
-	core lib/ld init timer lib/libc lib/vfs lib/posix lib/vfs_oss
+	core lib/ld init timer lib/libc lib/libm lib/vfs lib/posix
 	drivers/platform/a64 drivers/pin/a64
 	drivers/audio_control/pinephone
 	drivers/audio/a64
 	server/report_rom
-	test/audio_in test/oss
+	server/record_play_mixer
+	app/waveform_player
 }
 
 create_boot_directory
 
 install_config {
-	<config verbose="yes">
+	<config verbose="yes" prio_levels="2">
 		<parent-provides>
 			<service name="LOG"/>
 			<service name="PD"/>
@@ -32,19 +32,20 @@ install_config {
 			<any-service> <parent/> <any-child/> </any-service>
 		</default-route>
 
-		<start name="timer">
+		<start name="timer" priority="0">
 			<resource name="RAM" quantum="1M"/>
+			<resource name="CPU" quantum="20"/>
 			<route> <any-service> <parent/> </any-service> </route>
 			<provides> <service name="Timer"/> </provides>
 		</start>
 
-		<start name="report_rom">
+		<start name="report_rom" priority="-1">
 			<resource name="RAM" quantum="1M"/>
 			<provides> <service name="Report"/> <service name="ROM"/> </provides>
 			<config verbose="yes"/>
 		</start>
 
-		<start name="platform_drv" caps="200" managing_system="yes">
+		<start name="platform_drv" caps="200" managing_system="yes" priority="-1">
 			<resource name="RAM" quantum="2M"/>
 			<binary name="a64_platform_drv"/>
 			<provides> <service name="Platform"/> <service name="Scp"/> </provides>
@@ -65,7 +66,7 @@ install_config {
 			<route> <any-service> <parent/> </any-service> </route>
 		</start>
 
-		<start name="a64_pio_drv">
+		<start name="a64_pio_drv" priority="-1">
 			<resource name="RAM" quantum="1M"/>
 			<provides>
 				<service name="Pin_state"/>
@@ -85,13 +86,13 @@ install_config {
 			</config>
 		</start>
 
-		<start name="audio_control">
+		<start name="audio_control" priority="-1">
 			<binary name="pinephone_audio_control"/>
 			<resource name="RAM" quantum="1M"/>
 			<config>
 				<mic      volume="60"/>
 				<earpiece volume="100"/>
-				<speaker  volume="0"/>
+				<speaker  volume="20"/>
 				<codec    target="soc"/>
 			</config>
 			<route>
@@ -100,42 +101,47 @@ install_config {
 			</route>
 		</start>
 
-		<start name="audio_drv">
-			<binary name="a64_audio_drv"/>
-			<resource name="RAM" quantum="1M"/>
-			<provides>
-				<service name="Audio_out"/>
-				<service name="Audio_in"/>
-			</provides>
-			<route>
-				<service name="Platform"> <child name="platform_drv"/> </service>
-				<any-service> <parent/> </any-service>
-			</route>
+		<start name="mixer" priority="0">
+			<resource name="RAM" quantum="2M"/>
+			<resource name="CPU" quantum="20"/>
+			<binary name="record_play_mixer"/>
+			<provides> <service name="Record"/> <service name="Play"/> </provides>
+			<config jitter_ms="10">
+
+				<mix name="left">  <play label="waveform_player -> left" /> </mix>
+				<mix name="right"> <play label="waveform_player -> right"/> </mix>
+
+				<mix name="mic_left">  <!-- <play label="audio_drv -> mic_left"/>  --> </mix>
+				<mix name="mic_right"> <!-- <play label="audio_drv -> mic_right"/> --> </mix>
+
+				<policy label="audio_drv -> left"  record="left"  volume="0.6"/>
+				<policy label="audio_drv -> right" record="right" volume="0.0"/>
+			</config>
 		</start>
 
-		<start name="test-oss">
-			<resource name="RAM" quantum="10M"/>
-			<config>
-				<vfs>
-					<dir name="dev">
-						<log/>
-						<oss name="dsp"/>
-					</dir>
-				</vfs>
-				<libc stdout="/dev/log" stderr="/dev/log"/>
+		<start name="waveform_player" priority="0">
+			<resource name="RAM" quantum="1M"/>
+			<config period_ms="11">
+				<play label="left"  wave="sine"   hz="1000" sample_rate_hz="44100"/>
+				<play label="right" wave="square" hz="1000" sample_rate_hz="44100"/>
 			</config>
 			<route>
-				<service name="Audio_in"> <child name="audio_drv"/> </service>
-				<service name="Audio_out"> <child name="audio_drv"/> </service>
 				<any-service> <parent/> <any-child/> </any-service>
 			</route>
 		</start>
 
-<!--
-		<start name="test-audio_in">
-			<resource name="RAM" quantum="8M"/>
+		<start name="audio_drv" priority="0">
+			<binary name="a64_audio_drv"/>
+			<resource name="RAM" quantum="1M"/>
+			<resource name="CPU" quantum="20"/>
+			<config record_play="yes"/>
+			<route>
+				<service name="Platform"> <child name="platform_drv"/> </service>
+				<service name="Record">   <child name="mixer"/> </service>
+				<service name="Play">     <child name="mixer"/> </service>
+				<any-service> <parent/> </any-service>
+			</route>
 		</start>
--->
 	</config>
 }
 

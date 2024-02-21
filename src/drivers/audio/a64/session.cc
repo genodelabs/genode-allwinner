@@ -13,12 +13,12 @@
 
 #include <audio_in_session/rpc_object.h>
 #include <audio_out_session/rpc_object.h>
+#include <play_session/connection.h>
+#include <record_session/connection.h>
 #include <base/attached_rom_dataspace.h>
 #include <base/session_label.h>
 #include <base/component.h>
 #include <base/heap.h>
-#include <base/log.h>
-#include <os/reporter.h>
 #include <root/component.h>
 
 #include "session.h"
@@ -451,9 +451,129 @@ struct Audio_aggregator : Audio::Session
 };
 
 
+struct Record_play_aggregator : Audio::Session
+{
+	static constexpr unsigned SAMPLES_PER_PERIOD = Audio_in::PERIOD;
+	static constexpr unsigned CHANNELS = 2;
+
+	Env &_env;
+
+	struct Stereo_output : private Noncopyable
+	{
+		Env &_env;
+
+		/* 16 bit per sample, interleaved left and right */
+		int16_t data[SAMPLES_PER_PERIOD*CHANNELS] { };
+
+		Record::Connection _left  { _env, "left"  };
+		Record::Connection _right { _env, "right" };
+
+		Stereo_output(Env &env) : _env(env) { }
+
+		void clear() { for (auto &e : data) e = 0; }
+
+		void from_record_sessions()
+		{
+			using Samples_ptr = Record::Connection::Samples_ptr;
+
+			Record::Num_samples const num_samples { SAMPLES_PER_PERIOD };
+
+			auto clamped = [&] (float v)
+			{
+				return (v >  1.0) ?  1.0
+				     : (v < -1.0) ? -1.0
+				     :  v;
+			};
+
+			auto float_to_s16 = [&] (float v) { return int16_t(clamped(v)*32767); };
+
+			_left.record(num_samples,
+				[&] (Record::Time_window const tw, Samples_ptr const &samples) {
+
+					for (unsigned i = 0; i < SAMPLES_PER_PERIOD; i++)
+						data[i*CHANNELS] = float_to_s16(samples.start[i]);
+
+					_right.record_at(tw, num_samples,
+						[&] (Samples_ptr const &samples) {
+							for (unsigned i = 0; i < SAMPLES_PER_PERIOD; i++)
+								data[i*CHANNELS + 1] = float_to_s16(samples.start[i]);
+						});
+				},
+				[&] { clear(); }
+			);
+		}
+	};
+
+	Stereo_output _stereo_output { _env };
+
+	struct Stereo_input : private Noncopyable
+	{
+		struct Frame { float left, right; };
+
+		void _for_each_frame(Packet const &packet, auto const &fn) const
+		{
+			float const scale = 1.0f/32768;
+
+			for (unsigned i = 0; i < SAMPLES_PER_PERIOD; i++)
+				fn(Frame { .left  = scale*float(packet.data[i*CHANNELS]),
+				           .right = scale*float(packet.data[i*CHANNELS + 1]) });
+		}
+
+		Env &_env;
+
+		Play::Connection _left  { _env, "mic_left"  };
+		Play::Connection _right { _env, "mic_right" };
+
+		Play::Time_window _time_window { };
+
+		Stereo_input(Env &env) : _env(env) { }
+
+		void from_packet(Packet const &packet)
+		{
+			if (!packet.valid())
+				return;
+
+			Play::Duration const duration_us { 11*1000 };
+			_time_window = _left.schedule_and_enqueue(_time_window, duration_us,
+				[&] (auto &submit) {
+					_for_each_frame(packet, [&] (Frame const frame) {
+						submit(frame.left); }); });
+
+			_right.enqueue(_time_window,
+				[&] (auto &submit) {
+					_for_each_frame(packet, [&] (Frame const frame) {
+						submit(frame.right); }); });
+		}
+	};
+
+	Stereo_input _stereo_input { _env };
+
+	Record_play_aggregator(Env &env) : _env(env) { }
+
+	Packet play_packet() override
+	{
+		_stereo_output.from_record_sessions();
+
+		return { _stereo_output.data, sizeof(Stereo_output::data) };
+	}
+
+	void record_packet(Packet packet) override
+	{
+		_stereo_input.from_packet(packet);
+	}
+};
+
+
 Audio::Session &Audio::Session::construct(Env &env, Allocator &alloc)
 {
-	static Audio_aggregator _audio { env, alloc };
+	bool const use_record_play_interface =
+		Attached_rom_dataspace(env, "config").xml().attribute_value("record_play", false);
+
+	if (!use_record_play_interface) {
+		static Audio_aggregator _audio { env, alloc };
+		return _audio;
+	}
+
+	static Record_play_aggregator _audio { env };
 	return _audio;
 }
-
