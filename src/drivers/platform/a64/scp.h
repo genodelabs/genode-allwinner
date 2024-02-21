@@ -383,9 +383,8 @@ struct Scp::Driver : private Scheduler
 					);
 				});
 			});
+			_state = State::IDLE;
 		}
-
-		_state = State::IDLE;
 
 		/* try to submit another pending request */
 		schedule();
