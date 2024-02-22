@@ -70,12 +70,16 @@ struct Uart::Main
 
 	void _handle_irq()
 	{
-		while (_uart.char_avail()) {
-			char c = _uart.get_char();
-			_terminal.write(&c, 1);
-		}
-
 		_irq.ack();
+
+		while (_uart.char_avail()) {
+			char buf[100] { };
+			unsigned count = 0;
+			while (_uart.char_avail() && (count < sizeof(buf)))
+				buf[count++] = _uart.get_char();
+
+			_terminal.write(buf, count);
+		}
 	}
 };
 
