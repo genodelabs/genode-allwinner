@@ -15,6 +15,7 @@
 #include <base/env.h>
 
 #include <lx_emul/init.h>
+#include <lx_emul/shared_dma_buffer.h>
 #include <lx_emul/usb.h>
 #include <lx_kit/env.h>
 #include <lx_kit/init.h>
@@ -51,10 +52,10 @@ struct Main
 		Lx_kit::initialize(env, signal_handler);
 		env.exec_static_constructors();
 
-		genode_usb_init(genode_env_ptr(env),
-		                genode_allocator_ptr(sliced_heap),
-		                genode_signal_handler_ptr(signal_handler),
-		                &lx_emul_usb_rpc_callbacks);
+		Genode_c_api::initialize_usb_service(env, signal_handler,
+		                                     lx_emul_shared_dma_buffer_allocate,
+		                                     lx_emul_shared_dma_buffer_free,
+		                                     lx_emul_usb_release_device);
 
 		lx_emul_start_kernel(dtb_rom.local_addr<void>());
 	}

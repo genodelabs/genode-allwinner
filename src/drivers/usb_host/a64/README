@@ -1,0 +1,7 @@
+USB host controller driver for Allwinner
+========================================
+
+Please have a look into the README of the PC USB host controller driver,
+which is equivalent with regard to configuration and semantic.
+You can find it within Genode's main repository under:
+`repos/pc/src/drivers/usb_host/pc/README`.
