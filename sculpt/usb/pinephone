@@ -1,0 +1,5 @@
+<config>
+	<policy label_prefix="usb_net">
+		<device vendor_id="0x2c7c" product_id="0x0125"/>
+	</policy>
+</config>

@@ -7,18 +7,11 @@
 		<service name="CPU"/>
 		<service name="LOG"/>
 		<service name="Timer"/>
-		<service name="Capture"/>
 		<service name="Event"/>
 		<service name="Report"/>
 	</parent-provides>
 
 	<default caps="100"/>
-
-	<service name="Block">
-		<default-policy> <child name="dynamic"/> </default-policy> </service>
-
-	<service name="Usb">
-		<default-policy> <child name="dynamic"/> </default-policy> </service>
 
 	<service name="Platform">
 		<default-policy> <child name="platform_drv"/> </default-policy> </service>
@@ -27,6 +20,9 @@
 		<default-policy> <child name="a64_pio_drv"/> </default-policy> </service>
 
 	<service name="Pin_state">
+		<default-policy> <child name="a64_pio_drv"/> </default-policy> </service>
+
+	<service name="IRQ">
 		<default-policy> <child name="a64_pio_drv"/> </default-policy> </service>
 
 	<start name="platform_drv" caps="250" managing_system="yes">
@@ -39,7 +35,7 @@
 				<device name="pio"/>
 			</policy>
 
-			<policy label="dynamic -> fb_drv -> " info="yes">
+			<policy label="runtime -> fb -> " info="yes">
 				<device name="dphy"/>
 				<device name="dsi"/>
 				<device name="syscon"/>
@@ -49,7 +45,7 @@
 				<device name="tcon1"/>
 			</policy>
 
-			<policy label="dynamic -> goodix_touch_drv -> " info="yes">
+			<policy label="runtime -> touch -> " info="yes">
 				<device name="i2c0"/>
 			</policy>
 
@@ -68,12 +64,12 @@
 				<device name="audio_codec_soc"/>
 			</policy>
 
-			<policy label="dynamic -> usb_host_drv -> " info="yes">
+			<policy label="runtime -> usb -> " info="yes">
 				<device name="ehci1"/>
 				<device name="usb_phy"/>
 			</policy>
 
-			<policy label="dynamic -> sd_card_drv -> " info="yes">
+			<policy label="runtime -> mmc -> " info="yes">
 				<device name="sd_card"/>
 				<device name="emmc"/>
 			</policy>
@@ -129,15 +125,15 @@
 			<in     name="touchscreen-int"      bank="H" index="4" irq="falling"/>
 			<out    name="touchscreen-reset"    bank="H" index="11"/>
 
-			<policy label="dynamic -> goodix_touch_drv -> PH11" pin="touchscreen-reset"/>
-			<policy label="dynamic -> goodix_touch_drv -> PH4"  pin="touchscreen-int"/>
+			<policy label="runtime -> touch -> PH11" pin="touchscreen-reset"/>
+			<policy label="runtime -> touch -> PH4"  pin="touchscreen-int"/>
 
 			<select name="lcd-pwm"   bank="L" index="10" function="2"/>
 			<out    name="backlight" bank="H" index="10" default="0"/>
 			<out    name="lcd-reset" bank="D" index="23" default="0"/>
 
-			<policy label="dynamic -> fb_drv -> PH10" pin="backlight"/>
-			<policy label="dynamic -> fb_drv -> PD23" pin="lcd-reset"/>
+			<policy label="runtime -> fb -> PH10" pin="backlight"/>
+			<policy label="runtime -> fb -> PD23" pin="lcd-reset"/>
 
 			<!-- modem -->
 			<out name="4g-pwr-bat" bank="L" index="7" />
@@ -223,34 +219,6 @@
 		</config>
 	</start>
 
-	<!-- toggle key mappings depending on the numlock state -->
-	<start name="numlock_remap_rom" caps="100">
-		<binary name="rom_filter"/>
-		<resource name="RAM" quantum="1M"/>
-		<provides> <service name="ROM"/> </provides>
-		<route>
-			<service name="ROM" label="config">  <parent label="numlock_remap.config"/> </service>
-			<service name="ROM" label="numlock"> <parent label="numlock"/> </service>
-			<any-service> <parent/> </any-service>
-		</route>
-	</start>
-
-	<start name="event_filter" caps="120">
-		<resource name="RAM" quantum="2M"/>
-		<provides> <service name="Event"/> </provides>
-		<route>
-			<service name="ROM" label="config">        <parent label="event_filter.config"/> </service>
-			<service name="ROM" label="numlock.remap"> <child name="numlock_remap_rom"/> </service>
-			<service name="ROM" label="capslock">      <parent label="capslock"/> </service>
-			<service name="ROM">   <parent/> </service>
-			<service name="PD">    <parent/> </service>
-			<service name="CPU">   <parent/> </service>
-			<service name="LOG">   <parent/> </service>
-			<service name="Timer"> <parent/> </service>
-			<service name="Event"> <parent/> </service>
-		</route>
-	</start>
-
 	<start name="terminal_crosslink" caps="100">
 		<resource name="RAM" quantum="1M"/>
 		<provides> <service name="Terminal"/> </provides>
@@ -315,160 +283,6 @@
 			<any-service> <parent/> </any-service>
 		</route>
 		<config/>
-	</start>
-
-	<start name="dynamic_config">
-		<binary name="rom_filter"/>
-		<resource name="RAM" quantum="1M"/>
-		<provides> <service name="ROM"/> </provides>
-		<config>
-			<input name="usb_enabled" rom="system" node="system">
-				<attribute name="usb" /> </input>
-
-			<input name="storage_enabled" rom="system" node="system">
-				<attribute name="storage" /> </input>
-
-			<input name="display_enabled" rom="system" node="system">
-				<attribute name="display" /> </input>
-
-			<output node="config">
-				<inline>
-					<parent-provides>
-						<service name="ROM"/>
-						<service name="PD"/>
-						<service name="CPU"/>
-						<service name="LOG"/>
-						<service name="Timer"/>
-						<service name="Report"/>
-						<service name="Platform"/>
-						<service name="Capture"/>
-						<service name="Event"/>
-						<service name="Pin_control"/>
-						<service name="IRQ"/>
-					</parent-provides>
-
-					<service name="Block">
-						<default-policy> <child name="sd_card_drv"/> </default-policy> </service>
-
-					<service name="Usb">
-						<default-policy> <child name="usb_host_drv"/> </default-policy> </service>
-				</inline>
-
-				<if>
-					<has_value input="display_enabled" value="yes" />
-					<then>
-						<inline>
-							<start name="fb_drv" caps="250">
-								<binary name="de_fb_drv"/>
-								<resource name="RAM" quantum="20M"/>
-								<resource name="CPU" quantum="90"/>
-								<route>
-									<service name="ROM" label="dtb"> <parent label="de-pinephone.dtb"/> </service>
-									<service name="ROM">         <parent/> </service>
-									<service name="PD">          <parent/> </service>
-									<service name="CPU">         <parent/> </service>
-									<service name="LOG">         <parent/> </service>
-									<service name="Timer">       <parent/> </service>
-									<service name="Capture">     <parent/> </service>
-									<service name="Platform">    <parent/> </service>
-									<service name="Pin_control"> <parent/> </service>
-								</route>
-							</start>
-
-							<start name="goodix_touch_drv" caps="250">
-								<resource name="RAM" quantum="10M"/>
-								<resource name="CPU" quantum="10"/>
-								<route>
-									<service name="ROM" label="dtb"> <parent label="goodix-pinephone.dtb"/> </service>
-									<service name="RM">          <parent/> </service>
-									<service name="ROM">         <parent/> </service>
-									<service name="PD">          <parent/> </service>
-									<service name="CPU">         <parent/> </service>
-									<service name="LOG">         <parent/> </service>
-									<service name="Timer">       <parent/> </service>
-									<service name="Platform">    <parent/> </service>
-									<service name="Pin_control"> <parent/> </service>
-									<service name="Event">       <parent/> </service>
-									<service name="IRQ">
-										<parent label="goodix_touch_drv -> PH4"/> </service>
-								</route>
-							</start>
-
-						</inline>
-					</then>
-				</if>
-
-				<if>
-					<has_value input="usb_enabled" value="yes" />
-					<then>
-						<inline>
-							<start name="usb_host_drv" caps="200">
-								<binary name="a64_usb_host_drv"/>
-								<resource name="RAM" quantum="16M"/>
-								<provides> <service name="Usb"/> </provides>
-								<config>
-									<policy label_prefix="runtime -> usb_net" vendor_id="0x2c7c" product_id="0x0125"/>
-								</config>
-								<route>
-									<service name="Platform"> <parent/> </service>
-									<service name="ROM" label="dtb"> <parent label="usb-pinephone.dtb"/> </service>
-									<any-service> <parent/> </any-service>
-								</route>
-							</start>
-						</inline>
-					</then>
-				</if>
-
-				<if>
-					<has_value input="storage_enabled" value="yes" />
-					<then>
-						<inline>
-							<start name="sd_card_drv" caps="500">
-								<binary name="a64_sd_card_drv"/>
-								<resource name="RAM" quantum="16M"/>
-								<provides> <service name="Block"/> </provides>
-								<config report="yes">
-									<default-policy device="mmcblk0" writeable="yes"/>
-								</config>
-								<route>
-									<service name="ROM" label="dtb">
-										<parent label="sd_card-pinephone.dtb"/> </service>
-									<service name="ROM">    <parent/> </service>
-									<service name="CPU">    <parent/> </service>
-									<service name="PD">     <parent/> </service>
-									<service name="LOG">    <parent/> </service>
-									<service name="Timer">  <parent/> </service>
-									<service name="Report"> <parent label="block_devices"/> </service>
-									<service name="Platform"> <parent/> </service>
-								</route>
-							</start>
-						</inline>
-					</then>
-				</if>
-
-			</output>
-		</config>
-		<route>
-			<service name="ROM" label="system"> <parent label="system"/> </service>
-			<any-service> <parent/> </any-service>
-		</route>
-	</start>
-
-	<start name="dynamic" caps="2300">
-		<binary name="init"/>
-		<resource name="RAM" quantum="67M"/>
-		<resource name="CPU" quantum="100"/>
-		<provides> <service name="Usb"/> <service name="Block"/> </provides>
-		<route>
-			<service name="ROM" label="config"> <child name="dynamic_config"/> </service>
-			<service name="Report" label_last="block_devices">
-				<parent label="block_devices"/> </service>
-			<service name="Platform">    <child name="platform_drv"/> </service>
-			<service name="Pin_control"> <child name="a64_pio_drv"/>  </service>
-			<service name="IRQ">         <child name="a64_pio_drv"/>  </service>
-			<service name="Event"> <child name="event_filter" label="touch"/> </service>
-			<any-service> <parent/> </any-service>
-		</route>
 	</start>
 
 </config>
