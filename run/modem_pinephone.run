@@ -137,7 +137,9 @@ proc network_related_start_nodes { } {
 			<resource name="RAM" quantum="16M"/>
 			<provides> <service name="Usb"/> </provides>
 			<config>
-				<policy label_prefix="cdc_ether" vendor_id="0x2c7c" product_id="0x0125"/>
+				<policy label_prefix="cdc_ether">
+					<device vendor_id="0x2c7c" product_id="0x0125"/>
+				</policy>
 			</config>
 			<route>
 				<service name="Timer"> <child name="timer"/> </service>
