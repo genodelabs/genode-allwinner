@@ -1,6 +1,6 @@
 proc run_image { } {
 
-	set elf_img [file join [run_dir] boot image.elf]
+	set elf_img [file join [run_dir] boot [kernel_specific_binary image.elf]]
 
 	set sgdisk     [installed_command sgdisk]
 	set mkenvimage [installed_command mkenvimage]
