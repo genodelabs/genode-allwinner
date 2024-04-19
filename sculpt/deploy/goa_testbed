@@ -45,8 +45,8 @@
 			<service name="Gpu">         <parent/> </service>
 			<service name="Gui">         <parent/> </service>
 			<service name="Rtc">         <child name="sntp_dummy_rtc"/>  </service>
-			<service name="Audio_in">    <child name="black_hole"/>      </service>
-			<service name="Audio_out">   <child name="black_hole"/>      </service>
+			<service name="Play">        <child name="black_hole"/>      </service>
+			<service name="Record">      <child name="black_hole"/>      </service>
 			<service name="Usb">         <child name="black_hole"/>      </service>
 			<service name="Event">       <child name="black_hole"/>      </service>
 			<service name="Capture">     <child name="black_hole"/>      </service>

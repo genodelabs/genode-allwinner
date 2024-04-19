@@ -22,8 +22,8 @@
 
 	<start name="black_hole" pkg="black_hole">
 		<config>
-			<audio_in/>
-			<audio_out/>
+			<play/>
+			<record/>
 			<capture/>
 		</config>
 	</start>

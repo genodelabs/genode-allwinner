@@ -65,11 +65,35 @@
 		</route>
 	</start>
 
-	<start name="audio_drv" pkg="a64_audio_drv" priority="0" cpu="40">
-		<resource name="CPU" quantum="40"/>
+	<start name="audio_drv" pkg="a64_audio_drv" priority="0" cpu="20">
 		<affinity xpos="0" ypos="0" width="1" height="1"/>
+		<config record_play="yes"/>
 		<route>
+			<service name="Play">   <child name="mixer"/> </service>
+			<service name="Record"> <child name="mixer"/> </service>
 			<service name="Platform"> <parent label="audio_drv"/> </service>
+		</route>
+	</start>
+
+	<start name="mixer" pkg="record_play_mixer" priority="0" cpu="20">
+		<affinity xpos="0" ypos="0" width="1" height="1"/>
+		<config jitter_ms="23" warning_rate_ms="0">
+			<mix name="left">  <play label="jitsi_browser -> morph-browser -> left"  volume="1.0"/> </mix>
+			<mix name="right"> <play label="jitsi_browser -> morph-browser -> right" volume="1.0"/> </mix>
+
+			<!-- capture microphone -->
+			<mix name="mic_left">  <play label="audio_drv -> mic_left"/>  </mix>
+			<mix name="mic_right"> <play label="audio_drv -> mic_right"/> </mix>
+
+			<policy label="jitsi_browser -> morph-browser -> left"   record="mic_left"  period_ms="46" jitter_ms="23" volume="1.0"/>
+			<policy label="jitsi_browser -> morph-browser -> right"  record="mic_right" period_ms="46" jitter_ms="23" volume="1.0"/>
+
+			<!-- rule for the audio driver matching its configuration -->
+			<policy label="audio_drv -> left"   record="left"  period_ms="12" jitter_ms="5" volume="1.0"/>
+			<policy label="audio_drv -> right"  record="right" period_ms="12" jitter_ms="5" volume="1.0"/>
+		</config>
+		<route>
+			<service name="Report"> <parent/> </service>
 		</route>
 	</start>
 
@@ -139,7 +163,7 @@
 		</config>
 	</start>
 
-	<start ram="1350M" name="jitsi_browser" pkg="cproc/pkg/morph_browser_pinephone-jemalloc/2023-10-18">
+	<start ram="1350M" name="jitsi_browser" pkg="morph_browser">
 		<affinity xpos="1" width="2"/>
 		<route>
 			<service name="Nic">
@@ -166,11 +190,11 @@
 			<service name="Rtc">
 				<child name="sntp_dummy_rtc"/>
 			</service>
-			<service name="Audio_out">
-				<child name="audio_drv"/>
+			<service name="Play">
+				<child name="mixer"/>
 			</service>
-			<service name="Audio_in">
-				<child name="audio_drv"/>
+			<service name="Record">
+				<child name="mixer"/>
 			</service>
 			<service name="Capture">
 				<child name="video_bridge"/>

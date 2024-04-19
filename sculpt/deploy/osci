@@ -1,4 +1,4 @@
-<config arch="" info="simple oscilloscope for audio input">
+<config arch="" info="simple oscilloscope for microphone recording">
 
 	<common_routes>
 		<service name="ROM" label_last="ld.lib.so"> <parent/> </service>
@@ -9,22 +9,59 @@
 		<service name="Timer"> <parent/> </service>
 	</common_routes>
 
-	<start name="audio_drv" pkg="a64_audio_drv" priority="0" cpu="40">
-		<resource name="CPU" quantum="40"/>
+	<start name="audio_drv" pkg="a64_audio_drv" priority="0" cpu="20">
 		<affinity xpos="0" ypos="0" width="1" height="1"/>
+		<config record_play="yes"/>
 		<route>
+			<service name="Play">   <child name="mixer"/> </service>
+			<service name="Record"> <child name="mixer"/> </service>
 			<service name="Platform"> <parent label="audio_drv"/> </service>
 		</route>
 	</start>
 
-	<start ram="16M" name="osci" pkg="osci">
-		<affinity xpos="2" width="1"/>
-		<config xpos="0" ypos="360" width="720" height="720"
-		        background="#1a2831" color="#ffefdf"/>
+	<start name="mixer" pkg="record_play_mixer" priority="0" cpu="20">
+		<affinity xpos="0" ypos="0" width="1" height="1"/>
+		<config jitter_ms="10" warning_rate_ms="0">
+
+			<!-- capture microphone -->
+			<mix name="mic_left">  <play label="audio_drv -> mic_left"/>  </mix>
+			<mix name="mic_right"> <play label="audio_drv -> mic_right"/> </mix>
+
+			<policy label="record_rom -> mic_left"  record="mic_left"  period_ms="12" jitter_ms="5" volume="1.0"/>
+			<policy label="record_rom -> mic_right" record="mic_right" period_ms="12" jitter_ms="5" volume="1.0"/>
+
+			<policy label="audio_drv -> left"  record="left"  period_ms="12" jitter_ms="5" volume="1.0"/>
+			<policy label="audio_drv -> right" record="right" period_ms="12" jitter_ms="5" volume="1.0"/>
+		</config>
 		<route>
+			<service name="Report"> <parent/> </service>
+		</route>
+	</start>
+
+	<start name="record_rom" pkg="record_rom" priority="0">
+		<affinity xpos="0" ypos="0" width="1" height="1"/>
+		<config period_ms="12" sample_rate_hz="44100">
+			<record label="mic_left"/>
+			<record label="mic_right"/>
+		</config>
+		<route>
+			<service name="Record"> <child name="mixer"/> </service>
+			<service name="RM">     <parent/> </service>
+		</route>
+	</start>
+
+	<start name="osci" pkg="rom_osci" priority="-1">
+		<affinity xpos="0" ypos="0" width="1" height="1"/>
+
+		<config fps="20" v_scale="0.5" phase_lock="yes" xpos="0" ypos="360"
+		        width="720" height="720" background="#1a2831" color="#ffefdf">
+			<channel label="mic_left"       color="#ff6633" v_pos="0.25"/>
+			<channel label="mic_right"      color="#cc7777" v_pos="0.75"/>
+		</config>
+		<route>
+			<service name="ROM" label="recording"> <child name="record_rom"/> </service>
 			<service name="Gui"> <parent/> </service>
-			<service name="Audio_in"> <child name="audio_drv"/> </service>
-			<config/>
+			<service name="RM">  <parent/> </service>
 		</route>
 	</start>
 
