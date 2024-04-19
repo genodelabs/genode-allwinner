@@ -2,10 +2,10 @@
 	<output>
 		<merge>
 			<touch-key>
-				<input name="drivers"/>
+				<input name="runtime"/>
 				<tap xpos="0" ypos="400" width="25" height="600" key="KEY_DASHBOARD"/>
 			</touch-key>
-			<input name="runtime"/>
+			<input name="drivers"/>
 		</merge>
 	</output>
 	<policy label_prefix="drivers -> " input="drivers"/>
