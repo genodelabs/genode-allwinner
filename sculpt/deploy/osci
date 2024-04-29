@@ -1,4 +1,4 @@
-<config arch="" info="simple oscilloscope for microphone recording">
+<config arch="" info="oscilloscope for the microphone">
 
 	<common_routes>
 		<service name="ROM" label_last="ld.lib.so"> <parent/> </service>
