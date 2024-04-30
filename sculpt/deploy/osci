@@ -53,7 +53,7 @@
 	<start name="osci" pkg="rom_osci" priority="-1">
 		<affinity xpos="0" ypos="0" width="1" height="1"/>
 
-		<config fps="20" v_scale="0.5" phase_lock="yes" xpos="0" ypos="360"
+		<config fps="50" v_scale="1" phase_lock="yes" xpos="0" ypos="360"
 		        width="720" height="720" background="#1a2831" color="#ffefdf">
 			<channel label="mic_left"       color="#ff6633" v_pos="0.25"/>
 			<channel label="mic_right"      color="#cc7777" v_pos="0.75"/>
