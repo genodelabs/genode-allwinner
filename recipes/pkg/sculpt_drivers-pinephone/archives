@@ -1,0 +1,6 @@
+_/pkg/a64_wifi_drv
+_/pkg/drivers_interactive-pinephone
+_/raw/pinephone-devices
+_/src/a64_usb_host_drv
+_/src/usb_net_drv
+_/src/a64_sd_card_drv
