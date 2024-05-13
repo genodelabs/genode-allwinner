@@ -1,5 +1,3 @@
-check_tool = $(if $(shell command -v $(1)),,$(error Need to have '$(1)' installed.))
-
 # check for installation of device-tree compiler
 $(call check_tool,dtc)
 
