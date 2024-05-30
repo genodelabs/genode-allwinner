@@ -32,15 +32,15 @@ install_config {
 			<resource name="RAM" quantum="1M"/>
 			<provides> <service name="Report"/> <service name="ROM"/> </provides>
 			<config verbose="yes">
-				<default-policy report="usb_drv -> usb_drv -> devices"/>
+				<default-policy report="usb -> usb -> devices"/>
 			</config>
 			<route>
 				<any-service> <parent/> </any-service>
 			</route>
 		</start>
 
-		<start name="platform_drv" caps="150" managing_system="yes">
-			<binary name="a64_platform_drv"/>
+		<start name="platform" caps="150" managing_system="yes">
+			<binary name="a64_platform"/>
 			<resource name="RAM" quantum="1M"/>
 			<provides> <service name="Platform"/> <service name="Scp"/> </provides>
 			<config devices_rom="config">
@@ -60,7 +60,7 @@ install_config {
 					<reset-domain name="ehci1"/>
 					<reset-domain name="ohci1"/>
 				</device>
-				<policy label="usb_host_drv -> " info="yes">
+				<policy label="usb_host -> " info="yes">
 					<device name="ehci1"/>
 					<device name="usb_phy"/>
 				</policy>
@@ -71,8 +71,8 @@ install_config {
 			</route>
 		</start>
 
-		<start name="usb_host_drv" caps="200">
-			<binary name="a64_usb_host_drv"/>
+		<start name="usb_host" caps="200">
+			<binary name="a64_usb_host"/>
 			<resource name="RAM" quantum="16M"/>
 			<provides> <service name="Usb"/> </provides>
 			<config>
@@ -82,21 +82,21 @@ install_config {
 			<route>
 				<service name="Timer"> <child name="timer"/> </service>
 				<service name="Report"> <child name="report_rom"/> </service>
-				<service name="Platform"> <child name="platform_drv"/> </service>
+				<service name="Platform"> <child name="platform"/> </service>
 				<service name="ROM" label="dtb">
 					<parent label="usb-} [board] {.dtb"/> </service>
 				<any-service> <parent/> </any-service>
 			</route>
 		</start>
 
-		<start name="usb_block_drv">
+		<start name="usb_block">
 			<resource name="RAM" quantum="4M"/>
 			<provides> <service name="Block"/> </provides>
 			<!-- XXX the label is probably only valid when a USB storage device
 			         is plugged in directly to the second port of the LTS board -->
 			<config report="yes" writeable="no" label="usb-1-2"/>
 			<route>
-				<service name="Usb"> <child name="usb_host_drv"/> </service>
+				<service name="Usb"> <child name="usb_host"/> </service>
 				<service name="Report"> <child name="report_rom"/> </service>
 				<any-service> <parent/> <any-child/> </any-service>
 			</route>

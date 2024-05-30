@@ -1,5 +1,5 @@
 DRIVER  := de
-TARGET   = $(DRIVER)_fb_drv
+TARGET   = $(DRIVER)_fb
 REQUIRES = arm_v8a
 LIBS     = base blit a64_lx_emul
 SRC_CC  += main.cc

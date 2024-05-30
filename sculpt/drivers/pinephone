@@ -14,24 +14,24 @@
 	<default caps="100"/>
 
 	<service name="Platform">
-		<default-policy> <child name="platform_drv"/> </default-policy> </service>
+		<default-policy> <child name="platform"/> </default-policy> </service>
 
 	<service name="Pin_control">
-		<default-policy> <child name="a64_pio_drv"/> </default-policy> </service>
+		<default-policy> <child name="a64_pio"/> </default-policy> </service>
 
 	<service name="Pin_state">
-		<default-policy> <child name="a64_pio_drv"/> </default-policy> </service>
+		<default-policy> <child name="a64_pio"/> </default-policy> </service>
 
 	<service name="IRQ">
-		<default-policy> <child name="a64_pio_drv"/> </default-policy> </service>
+		<default-policy> <child name="a64_pio"/> </default-policy> </service>
 
-	<start name="platform_drv" caps="250" managing_system="yes">
+	<start name="platform" caps="250" managing_system="yes">
 		<resource name="RAM" quantum="3M"/>
-		<binary name="a64_platform_drv"/>
+		<binary name="a64_platform"/>
 		<provides> <service name="Platform"/> <service name="Scp"/> </provides>
 		<config>
 
-			<policy label="a64_pio_drv -> ">
+			<policy label="a64_pio -> ">
 				<device name="pio"/>
 			</policy>
 
@@ -53,7 +53,7 @@
 				<device name="uart3"/>
 			</policy>
 
-			<policy label="a64_pio_drv -> ">
+			<policy label="a64_pio -> ">
 				<device name="pio"/>
 			</policy>
 
@@ -82,7 +82,7 @@
 				<device name="csi"/>
 			</policy>
 
-			<policy label="runtime -> audio_drv" info="yes">
+			<policy label="runtime -> audio" info="yes">
 				<device name="audio_interface"/>
 				<device name="dma_controller"/>
 			</policy>
@@ -104,7 +104,7 @@
 		<route> <any-service> <parent/> </any-service> </route>
 	</start>
 
-	<start name="a64_pio_drv">
+	<start name="a64_pio">
 		<resource name="RAM" quantum="1M"/>
 		<provides>
 			<service name="Pin_state"/>
@@ -116,7 +116,7 @@
 			<service name="CPU"> <parent/> </service>
 			<service name="PD">  <parent/> </service>
 			<service name="LOG"> <parent/> </service>
-			<service name="Platform"> <child name="platform_drv"/> </service>
+			<service name="Platform"> <child name="platform"/> </service>
 		</route>
 		<config>
 			<select name="touchscreen-i2c-sck"  bank="H" index="0" function="2"/>
@@ -230,8 +230,8 @@
 		<resource name="RAM" quantum="1M"/>
 		<route>
 			<service name="ROM" label="config"> <parent label="modem.config"/> </service>
-			<service name="Pin_control"> <child name="a64_pio_drv"/>        </service>
-			<service name="Pin_state">   <child name="a64_pio_drv"/>        </service>
+			<service name="Pin_control"> <child name="a64_pio"/>        </service>
+			<service name="Pin_state">   <child name="a64_pio"/>        </service>
 			<service name="Terminal">    <child name="terminal_crosslink"/> </service>
 			<service name="ROM">    <parent/> </service>
 			<service name="PD">     <parent/> </service>
@@ -247,7 +247,7 @@
 		<resource name="RAM" quantum="2M"/>
 		<route>
 			<service name="Terminal"> <child name="terminal_crosslink"/> </service>
-			<service name="Platform"> <child name="platform_drv"/> </service>
+			<service name="Platform"> <child name="platform"/> </service>
 			<any-service> <parent/> </any-service>
 		</route>
 	</start>
@@ -257,17 +257,17 @@
 		<resource name="RAM" quantum="1M"/>
 		<route>
 			<service name="ROM" label="config"> <parent label="audio.config"/> </service>
-			<service name="Platform"> <child name="platform_drv"/> </service>
+			<service name="Platform"> <child name="platform"/> </service>
 			<any-service> <parent/> </any-service>
 		</route>
 	</start>
 
 	<start name="power">
 		<resource name="RAM" quantum="1M"/>
-		<binary name="pinephone_power_drv"/>
+		<binary name="pinephone_power"/>
 		<route>
-			<service name="Scp">      <child name="platform_drv"/> </service>
-			<service name="Platform"> <child name="platform_drv"/> </service>
+			<service name="Scp">      <child name="platform"/> </service>
+			<service name="Platform"> <child name="platform"/> </service>
 			<service name="Report"> <parent label="power"/> </service>
 			<service name="ROM" label="system"> <parent label="system"/> </service>
 			<any-service> <parent/> </any-service>
@@ -277,9 +277,9 @@
 
 	<start name="button">
 		<resource name="RAM" quantum="1M"/>
-		<binary name="pinephone_button_drv"/>
+		<binary name="pinephone_button"/>
 		<route>
-			<service name="Platform"> <child name="platform_drv"/> </service>
+			<service name="Platform"> <child name="platform"/> </service>
 			<any-service> <parent/> </any-service>
 		</route>
 		<config/>

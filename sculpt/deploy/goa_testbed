@@ -32,7 +32,7 @@
 		</route>
 	</start>
 
-	<start name="gpu_drv" caps="1500" pkg="a64_lima_gpu_drv-pinephone">
+	<start name="gpu" caps="1500" pkg="a64_lima_gpu-pinephone">
 		<route>
 			<service name="Platform"> <parent label="gpu"/> </service>
 		</route>
@@ -59,7 +59,7 @@
 			<service name="ROM"    label_last="clipboard"> <parent/> </service>
 			<service name="ROM"    label="platform_info"> <parent label="platform_info"/> </service>
 			<service name="ROM"    label="capslock">      <parent label="capslock"/>      </service>
-			<service name="ROM" label="mesa_gpu_drv.lib.so"> <parent label="mesa_gpu-lima.lib.so"/> </service>
+			<service name="ROM" label="mesa_gpu.lib.so"> <parent label="mesa_gpu-lima.lib.so"/> </service>
 		</route>
 	</start>
 

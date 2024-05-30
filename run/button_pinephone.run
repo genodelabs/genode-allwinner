@@ -22,7 +22,7 @@ install_config {
 			<route> <any-service> <parent/> </any-service> </route>
 		</start>
 
-		<start name="a64_platform_drv" caps="150" managing_system="yes">
+		<start name="a64_platform" caps="150" managing_system="yes">
 			<resource name="RAM" quantum="1M"/>
 			<provides> <service name="Platform"/> <service name="Scp"/> </provides>
 			<route> <any-service> <parent/> </any-service> </route>
@@ -31,17 +31,17 @@ install_config {
 					<io_mem address="0x1c21800" size="0x400"/>
 					<irq number="62"/>
 				</device>
-				<policy label="pinephone_button_drv -> ">
+				<policy label="pinephone_button -> ">
 					<device name="keyadc"/>
 				</policy>
 			</config>
 		</start>
 
-		<start name="pinephone_button_drv">
+		<start name="pinephone_button">
 			<resource name="RAM" quantum="1M"/>
 			<route>
-				<service name="Platform"> <child name="a64_platform_drv"/> </service>
-				<service name="Event">    <child name="event_dump"/>       </service>
+				<service name="Platform"> <child name="a64_platform"/> </service>
+				<service name="Event">    <child name="event_dump"/>   </service>
 				<any-service> <parent/> </any-service>
 			</route>
 			<config/>

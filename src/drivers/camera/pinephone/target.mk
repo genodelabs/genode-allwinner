@@ -1,4 +1,4 @@
-TARGET   := pinephone_camera_drv
+TARGET   := pinephone_camera
 DRIVER   := camera
 REQUIRES := arm_v8a
 LIBS     := base a64_lx_emul

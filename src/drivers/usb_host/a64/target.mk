@@ -1,4 +1,4 @@
-TARGET  := a64_usb_host_drv
+TARGET  := a64_usb_host
 DRIVER  := usb
 REQUIRES = arm_v8a
 LIBS     = base a64_lx_emul

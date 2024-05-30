@@ -1,4 +1,4 @@
-<runtime binary="pinephone_camera_drv" caps="250" ram="80M">
+<runtime binary="pinephone_camera" caps="250" ram="80M">
 
 	<requires>
 		<platform label="camera"/>
@@ -11,6 +11,6 @@
 	<content>
 		<rom label="ld.lib.so"/>
 		<rom label="camera-pinephone.dtb" as="dtb"/>
-		<rom label="pinephone_camera_drv"/>
+		<rom label="pinephone_camera"/>
 	</content>
 </runtime>

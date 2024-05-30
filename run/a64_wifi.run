@@ -8,7 +8,7 @@ proc wifi_psk { } {
 
 
 create_boot_directory
-import_from_depot [depot_user]/pkg/a64_wifi_drv
+import_from_depot [depot_user]/pkg/a64_wifi
 
 build {
 	core lib/ld init timer
@@ -25,7 +25,7 @@ build {
 }
 
 #
-# widi_drv config generator (supporting a network list)
+# wifi config generator (supporting a network list)
 #
 # You may script your tests with this function in the dynamic_rom config below.
 # The syntax for the networks parameter is
@@ -87,8 +87,8 @@ install_config {
 			<provides> <service name="Timer"/> </provides>
 		</start>
 
-		<start name="platform_drv" caps="150" managing_system="yes">
-			<binary name="a64_platform_drv"/>
+		<start name="platform" caps="150" managing_system="yes">
+			<binary name="a64_platform"/>
 			<resource name="RAM" quantum="2M"/>
 			<provides> <service name="Platform"/> <service name="Scp"/> </provides>
 			<config devices_rom="config">
@@ -111,10 +111,10 @@ install_config {
 				<device name="wifi_pwrseq" type="mmc-pwrseq-simple">
 					<clock name="dummy"    driver_name="ext_clock"/>
 				</device>
-				<policy label="a64_pio_drv -> ">
+				<policy label="a64_pio -> ">
 					<device name="pio"/>
 				</policy>
-				<policy label="wifi_drv -> " info="yes">
+				<policy label="wifi -> " info="yes">
 					<device name="wifi_pwrseq"/>
 					<device name="mmc1"/>
 				</policy>
@@ -122,7 +122,7 @@ install_config {
 			<route> <any-service> <parent/> </any-service> </route>
 		</start>
 
-		<start name="a64_pio_drv">
+		<start name="a64_pio">
 			<resource name="RAM" quantum="1M"/>
 			<provides>
 				<service name="Pin_state"/>
@@ -134,7 +134,7 @@ install_config {
 				<service name="CPU"> <parent/> </service>
 				<service name="PD">  <parent/> </service>
 				<service name="LOG"> <parent/> </service>
-				<service name="Platform"> <child name="platform_drv"/> </service>
+				<service name="Platform"> <child name="platform"/> </service>
 			</route>
 			<config>
 				<select name="sdc1_clk" bank="G" index="0" function="2"/>
@@ -146,7 +146,7 @@ install_config {
 
 				<out name="wifi_pwrseq" bank="L" index="2"/>
 
-				<policy label="a64_wifi_drv -> PL2" pin="wifi_pwrseq"/>
+				<policy label="a64_wifi -> PL2" pin="wifi_pwrseq"/>
 			</config>
 		</start>
 
@@ -174,7 +174,7 @@ install_config {
 			<config verbose="no" verbose_domain_state="yes" dhcp_discover_timeout_sec="10" dhcp_request_timeout_sec="6">
 
 				<policy label_prefix="test-lwip_httpsrv" domain="downlink"/>
-				<policy label_prefix="wifi_drv"          domain="uplink"/>
+				<policy label_prefix="wifi"              domain="uplink"/>
 
 				<domain name="uplink" verbose_packets="no" verbose_packet_drop="no" icmp_echo_server="yes">
 
@@ -200,7 +200,7 @@ install_config {
 			</route>
 		</start>
 
-		<start name="dummy_rtc_drv">
+		<start name="dummy_rtc">
 			<resource name="RAM" quantum="1M"/>
 			<provides> <service name="Rtc"/> </provides>
 			<config year="2023" month="02" day="27" hour="12" minute="0" second="0"/>
@@ -285,7 +285,7 @@ install_config {
 			</route>
 		</start>
 
-		<start name="wifi_drv" caps="250" priority="-1">
+		<start name="wifi" caps="250" priority="-1">
 			<resource name="RAM" quantum="32M"/>
 			<config ld_verbose="yes">
 				<report mac_address="true"/>
@@ -322,7 +322,7 @@ install_config {
 				<service name="LOG"> <parent/> </service>
 				<service name="Rtc"> <any-child/> </service>
 				<service name="Timer">    <child name="timer"/> </service>
-				<service name="Platform"> <child name="platform_drv"/> </service>
+				<service name="Platform"> <child name="platform"/> </service>
 			</route>
 		</start>
 

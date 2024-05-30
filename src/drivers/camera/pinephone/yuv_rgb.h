@@ -1,5 +1,5 @@
 /*
- * Adapted for use in the 'pinephone_camera_drv' component.
+ * Adapted for use in the 'pinephone_camera' component.
  */
 
 // Copyright 2016 Adrien Descamps

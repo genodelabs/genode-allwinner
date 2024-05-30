@@ -1,5 +1,5 @@
 DRIVER  := goodix
-TARGET   = $(DRIVER)_touch_drv
+TARGET   = $(DRIVER)_touch
 REQUIRES = arm_v8a
 LIBS     = base a64_lx_emul
 SRC_CC  += main.cc

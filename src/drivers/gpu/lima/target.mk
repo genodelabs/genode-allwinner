@@ -1,5 +1,5 @@
 DRIVER  := lima
-TARGET   = $(DRIVER)_gpu_drv
+TARGET   = $(DRIVER)_gpu
 REQUIRES = arm_v8a
 LIBS     = base a64_lx_emul
 INC_DIR += $(PRG_DIR)/include/lx_emul/shadow

@@ -21,7 +21,7 @@ install_config {
 			<provides> <service name="Timer"/> </provides>
 		</start>
 
-		<start name="a64_platform_drv" caps="150" managing_system="yes">
+		<start name="a64_platform" caps="150" managing_system="yes">
 			<resource name="RAM" quantum="1M"/>
 			<provides> <service name="Platform"/> <service name="Scp"/> </provides>
 			<route> <any-service> <parent/> </any-service> </route>
@@ -32,7 +32,7 @@ install_config {
 		<start name="test-scp">
 			<resource name="RAM" quantum="1M"/>
 			<route>
-				<service name="Scp"> <child name="a64_platform_drv"/> </service>
+				<service name="Scp"> <child name="a64_platform"/> </service>
 				<any-service> <parent/> </any-service>
 			</route>
 			<config program="11 12 + . cr words cr"/>
@@ -42,7 +42,7 @@ install_config {
 			<binary name="test-scp"/>
 			<resource name="RAM" quantum="1M"/>
 			<route>
-				<service name="Scp"> <child name="a64_platform_drv"/> </service>
+				<service name="Scp"> <child name="a64_platform"/> </service>
 				<any-service> <parent/> </any-service>
 			</route>
 			<config program="1 2 3 4 5 6 .s cr"/>

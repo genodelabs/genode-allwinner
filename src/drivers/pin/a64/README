@@ -1,4 +1,4 @@
-The a64_pio_drv component provides pin-state, pin-control, and IRQ session
+The a64_pio component provides pin-state, pin-control, and IRQ session
 interfaces for accessing the pins of the PIO device of the Allwinner A64 SoC.
 
 Its configuration consists of two parts, pin declarations and policies. Pin

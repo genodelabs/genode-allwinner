@@ -45,12 +45,12 @@ install_config {
 			<config verbose="yes"/>
 		</start>
 
-		<start name="platform_drv" caps="200" managing_system="yes" priority="-1">
+		<start name="platform" caps="200" managing_system="yes" priority="-1">
 			<resource name="RAM" quantum="2M"/>
-			<binary name="a64_platform_drv"/>
+			<binary name="a64_platform"/>
 			<provides> <service name="Platform"/> <service name="Scp"/> </provides>
 			<config devices="yes">
-				<policy label="a64_pio_drv -> ">
+				<policy label="a64_pio -> ">
 					<device name="pio"/>
 				</policy>
 				<policy label="audio_control -> ">
@@ -58,7 +58,7 @@ install_config {
 					<device name="audio_analog"/>
 					<device name="audio_codec_soc"/>
 				</policy>
-				<policy label="audio_drv -> " info="yes">
+				<policy label="audio -> " info="yes">
 					<device name="audio_interface"/>
 					<device name="dma_controller"/>
 				</policy>
@@ -66,7 +66,7 @@ install_config {
 			<route> <any-service> <parent/> </any-service> </route>
 		</start>
 
-		<start name="a64_pio_drv" priority="-1">
+		<start name="a64_pio" priority="-1">
 			<resource name="RAM" quantum="1M"/>
 			<provides>
 				<service name="Pin_state"/>
@@ -78,7 +78,7 @@ install_config {
 				<service name="CPU"> <parent/> </service>
 				<service name="PD">  <parent/> </service>
 				<service name="LOG"> <parent/> </service>
-				<service name="Platform"> <child name="platform_drv"/> </service>
+				<service name="Platform"> <child name="platform"/> </service>
 			</route>
 			<config>
 				<!-- speaker -->
@@ -96,7 +96,7 @@ install_config {
 				<codec    target="soc"/>
 			</config>
 			<route>
-				<service name="Platform"> <child name="platform_drv"/> </service>
+				<service name="Platform"> <child name="platform"/> </service>
 				<any-service> <parent/> </any-service>
 			</route>
 		</start>
@@ -111,11 +111,11 @@ install_config {
 				<mix name="left">  <play label="waveform_player -> left" /> </mix>
 				<mix name="right"> <play label="waveform_player -> right"/> </mix>
 
-				<mix name="mic_left">  <!-- <play label="audio_drv -> mic_left"/>  --> </mix>
-				<mix name="mic_right"> <!-- <play label="audio_drv -> mic_right"/> --> </mix>
+				<mix name="mic_left">  <!-- <play label="audio -> mic_left"/>  --> </mix>
+				<mix name="mic_right"> <!-- <play label="audio -> mic_right"/> --> </mix>
 
-				<policy label="audio_drv -> left"  record="left"  volume="0.6"/>
-				<policy label="audio_drv -> right" record="right" volume="0.0"/>
+				<policy label="audio -> left"  record="left"  volume="0.6"/>
+				<policy label="audio -> right" record="right" volume="0.0"/>
 			</config>
 		</start>
 
@@ -130,13 +130,13 @@ install_config {
 			</route>
 		</start>
 
-		<start name="audio_drv" priority="0">
-			<binary name="a64_audio_drv"/>
+		<start name="audio" priority="0">
+			<binary name="a64_audio"/>
 			<resource name="RAM" quantum="1M"/>
 			<resource name="CPU" quantum="20"/>
 			<config record_play="yes"/>
 			<route>
-				<service name="Platform"> <child name="platform_drv"/> </service>
+				<service name="Platform"> <child name="platform"/> </service>
 				<service name="Record">   <child name="mixer"/> </service>
 				<service name="Play">     <child name="mixer"/> </service>
 				<any-service> <parent/> </any-service>

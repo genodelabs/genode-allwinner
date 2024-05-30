@@ -36,9 +36,9 @@ install_config {
 		<provides><service name="Timer"/></provides>
 	</start>
 
-	<start name="platform_drv" caps="200" managing_system="yes">
+	<start name="platform" caps="200" managing_system="yes">
 		<resource name="RAM" quantum="2M"/>
-		<binary name="a64_platform_drv"/>
+		<binary name="a64_platform"/>
 		<provides> <service name="Platform"/> <service name="Scp"/> </provides>
 		<config devices_rom="config">
 
@@ -100,11 +100,11 @@ install_config {
 				<clock name="tcon1"     driver_name="tcon-ch1"/>
 			</device>
 
-			<policy label="a64_pio_drv -> ">
+			<policy label="a64_pio -> ">
 				<device name="pio"/>
 			</policy>
 
-			<policy label="fb_drv -> " info="yes">
+			<policy label="fb -> " info="yes">
 				<device name="dphy"/>
 				<device name="dsi"/>
 				<device name="syscon"/>
@@ -131,7 +131,7 @@ install_config {
 				<clock name="csi-mclk" driver_name="xclk"/>
 			</device>
 
-			<policy label="camera_drv -> " info="yes">
+			<policy label="camera -> " info="yes">
 				<device name="csi"/>
 			</policy>
 
@@ -139,7 +139,7 @@ install_config {
 		<route> <any-service> <parent/> <any-child/> </any-service> </route>
 	</start>
 
-	<start name="a64_pio_drv">
+	<start name="a64_pio">
 		<resource name="RAM" quantum="1M"/>
 		<provides>
 			<service name="Pin_state"/>
@@ -151,15 +151,15 @@ install_config {
 			<service name="CPU"> <parent/> </service>
 			<service name="PD">  <parent/> </service>
 			<service name="LOG"> <parent/> </service>
-			<service name="Platform"> <child name="platform_drv"/> </service>
+			<service name="Platform"> <child name="platform"/> </service>
 		</route>
 		<config>
 			<select name="lcd-pwm"   bank="L" index="10" function="2"/>
 			<out    name="backlight" bank="H" index="10"/>
 			<out    name="lcd-reset" bank="D" index="23" default="0"/>
 
-			<policy label="fb_drv -> PH10" pin="backlight"/>
-			<policy label="fb_drv -> PD23" pin="lcd-reset"/>
+			<policy label="fb -> PH10" pin="backlight"/>
+			<policy label="fb -> PD23" pin="lcd-reset"/>
 
 			<select name="csi-pclk"  bank="E" index="0"  function="2"/>
 			<select name="csi-mclk"  bank="E" index="1"  function="2"/>
@@ -187,14 +187,14 @@ install_config {
 			<out    name="ov5460-reset"     bank="D" index="3"/>
 			<in     name="ov5460-reset"     bank="D" index="3"/>
 
-			<policy label="camera_drv -> PC0"  pin="ov5460-powerdown"/>
-			<policy label="camera_drv -> PD3"  pin="ov5460-reset"/>
+			<policy label="camera -> PC0"  pin="ov5460-powerdown"/>
+			<policy label="camera -> PD3"  pin="ov5460-reset"/>
 
-			<policy label="camera_drv -> PE12" pin="csi-sck"/>
-			<policy label="camera_drv -> PE13" pin="csi-sda"/>
+			<policy label="camera -> PE12" pin="csi-sck"/>
+			<policy label="camera -> PE13" pin="csi-sda"/>
 
-			<policy label="camera_drv -> PE16" pin="gc2145-reset"/>
-			<policy label="camera_drv -> PE17" pin="gc2145-powerdown"/>
+			<policy label="camera -> PE16" pin="gc2145-reset"/>
+			<policy label="camera -> PE17" pin="gc2145-powerdown"/>
 		</config>
 	</start>
 
@@ -211,14 +211,14 @@ install_config {
 		</config>
 	</start>
 
-	<start name="fb_drv" caps="250">
-		<binary name="de_fb_drv"/>
+	<start name="fb" caps="250">
+		<binary name="de_fb"/>
 		<resource name="RAM" quantum="40M"/>
 		<route>
 			<service name="ROM" label="dtb">     <parent label="de-pinephone.dtb"/> </service>
-			<service name="Platform">   <child name="platform_drv"/> </service>
-			<service name="Pin_control" label_last="PH10"> <child name="a64_pio_drv" label="fb_drv -> PH10"/> </service>
-			<service name="Pin_control" label_last="PD23"> <child name="a64_pio_drv" label="fb_drv -> PD23"/> </service>
+			<service name="Platform">   <child name="platform"/> </service>
+			<service name="Pin_control" label_last="PH10"> <child name="a64_pio" label="fb -> PH10"/> </service>
+			<service name="Pin_control" label_last="PD23"> <child name="a64_pio" label="fb -> PD23"/> </service>
 			<service name="Timer">       <child name="timer"/>            </service>
 			<service name="Capture">     <child name="nitpicker"/> </service>
 			<any-service> <parent/> </any-service>
@@ -256,8 +256,8 @@ install_config {
 							<service name="Pin_state"/>
 							<service name="Gui"/>
 						</parent-provides>
-						<start name="camera_drv" caps="250">
-							<binary name="pinephone_camera_drv"/>
+						<start name="camera" caps="250">
+							<binary name="pinephone_camera"/>
 							<resource name="RAM" quantum="80M"/>
 							<config width="640" height="480" fps="15" format="yuv" camera="front"/>
 							<route>
@@ -282,8 +282,8 @@ install_config {
 							<service name="Pin_state"/>
 							<service name="Gui"/>
 						</parent-provides>
-						<start name="camera_drv" version="2" caps="250">
-							<binary name="pinephone_camera_drv"/>
+						<start name="camera" version="2" caps="250">
+							<binary name="pinephone_camera"/>
 							<resource name="RAM" quantum="80M"/>
 							<config width="640" height="480" fps="15" format="yuv" camera="rear"/>
 							<route>
@@ -305,19 +305,19 @@ install_config {
 			<service name="ROM" label="config"> <child name="dynamic_rom"/> </service>
 
 			<service name="ROM" label_last="camera.dtb"> <parent label="camera-pinephone.dtb"/> </service>
-			<service name="Platform" label_suffix="camera_drv -> "> <child name="platform_drv" label="camera_drv -> "/> </service>
-			<service name="Pin_control" label_last="PC0">  <child name="a64_pio_drv" label="camera_drv -> PC0"/> </service>
-			<service name="Pin_control" label_last="PD3">  <child name="a64_pio_drv" label="camera_drv -> PD3"/> </service>
-			<service name="Pin_control" label_last="PE12"> <child name="a64_pio_drv" label="camera_drv -> PE12"/> </service>
-			<service name="Pin_control" label_last="PE13"> <child name="a64_pio_drv" label="camera_drv -> PE13"/> </service>
-			<service name="Pin_control" label_last="PE16"> <child name="a64_pio_drv" label="camera_drv -> PE16"/> </service>
-			<service name="Pin_control" label_last="PE17"> <child name="a64_pio_drv" label="camera_drv -> PE17"/> </service>
-			<service name="Pin_state" label_last="PC0">  <child name="a64_pio_drv" label="camera_drv -> PC0"/> </service>
-			<service name="Pin_state" label_last="PD3">  <child name="a64_pio_drv" label="camera_drv -> PD3"/> </service>
-			<service name="Pin_state" label_last="PE12"> <child name="a64_pio_drv" label="camera_drv -> PE12"/> </service>
-			<service name="Pin_state" label_last="PE13"> <child name="a64_pio_drv" label="camera_drv -> PE13"/> </service>
-			<service name="Pin_state" label_last="PE16"> <child name="a64_pio_drv" label="camera_drv -> PE16"/> </service>
-			<service name="Pin_state" label_last="PE17"> <child name="a64_pio_drv" label="camera_drv -> PE17"/> </service>
+			<service name="Platform" label_suffix="camera -> "> <child name="platform" label="camera -> "/> </service>
+			<service name="Pin_control" label_last="PC0">  <child name="a64_pio" label="camera -> PC0"/> </service>
+			<service name="Pin_control" label_last="PD3">  <child name="a64_pio" label="camera -> PD3"/> </service>
+			<service name="Pin_control" label_last="PE12"> <child name="a64_pio" label="camera -> PE12"/> </service>
+			<service name="Pin_control" label_last="PE13"> <child name="a64_pio" label="camera -> PE13"/> </service>
+			<service name="Pin_control" label_last="PE16"> <child name="a64_pio" label="camera -> PE16"/> </service>
+			<service name="Pin_control" label_last="PE17"> <child name="a64_pio" label="camera -> PE17"/> </service>
+			<service name="Pin_state" label_last="PC0">  <child name="a64_pio" label="camera -> PC0"/> </service>
+			<service name="Pin_state" label_last="PD3">  <child name="a64_pio" label="camera -> PD3"/> </service>
+			<service name="Pin_state" label_last="PE12"> <child name="a64_pio" label="camera -> PE12"/> </service>
+			<service name="Pin_state" label_last="PE13"> <child name="a64_pio" label="camera -> PE13"/> </service>
+			<service name="Pin_state" label_last="PE16"> <child name="a64_pio" label="camera -> PE16"/> </service>
+			<service name="Pin_state" label_last="PE17"> <child name="a64_pio" label="camera -> PE17"/> </service>
 
 			<service name="Timer"> <child name="timer"/>     </service>
 			<service name="Gui">   <child name="nitpicker"/> </service>

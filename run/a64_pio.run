@@ -22,7 +22,7 @@ install_config {
 			<provides> <service name="Timer"/> </provides>
 		</start>
 
-		<start name="platform_drv" caps="150" managing_system="yes">
+		<start name="platform" caps="150" managing_system="yes">
 			<resource name="RAM" quantum="1M"/>
 			<provides> <service name="Platform"/> </provides>
 			<route> <any-service> <parent/> </any-service> </route>
@@ -35,7 +35,7 @@ install_config {
 					<irq number="53"/> <!-- Port H -->
 					<irq number="77"/> <!-- Port L -->
 				</device>
-				<policy label="a64_pio_drv -> ">
+				<policy label="a64_pio -> ">
 					<device name="pio"/>
 				</policy>
 			</config>
@@ -79,7 +79,7 @@ install_config {
 			</config>
 		</start>
 
-		<start name="a64_pio_drv">
+		<start name="a64_pio">
 			<resource name="RAM" quantum="1M"/>
 			<provides>
 				<service name="Pin_state"/>
@@ -93,15 +93,15 @@ install_config {
 				<service name="CPU"> <parent/> </service>
 				<service name="PD">  <parent/> </service>
 				<service name="LOG"> <parent/> </service>
-				<service name="Platform"> <child name="platform_drv"/> </service>
+				<service name="Platform"> <child name="platform"/> </service>
 			</route>
 		</start>
 
 		<start name="pin_pulse">
 			<resource name="RAM" quantum="1M"/>
 			<route>
-				<service name="Timer">       <child name="timer"/>       </service>
-				<service name="Pin_control"> <child name="a64_pio_drv"/> </service>
+				<service name="Timer">       <child name="timer"/>   </service>
+				<service name="Pin_control"> <child name="a64_pio"/> </service>
 				<service name="ROM"> <parent/> </service>
 				<service name="CPU"> <parent/> </service>
 				<service name="PD">  <parent/> </service>
@@ -113,8 +113,8 @@ install_config {
 		<start name="pin_event">
 			<resource name="RAM" quantum="1M"/>
 			<route>
-				<service name="Pin_state"> <child name="a64_pio_drv"/> </service>
-				<service name="IRQ">       <child name="a64_pio_drv"/> </service>
+				<service name="Pin_state"> <child name="a64_pio"/> </service>
+				<service name="IRQ">       <child name="a64_pio"/> </service>
 				<service name="ROM"> <parent/> </service>
 				<service name="CPU"> <parent/> </service>
 				<service name="PD">  <parent/> </service>

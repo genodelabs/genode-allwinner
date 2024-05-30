@@ -19,7 +19,7 @@ the GPU.
 
 To start the driver the following configuration snippet can be used:
 
-!<start name="lima_gpu_drv" caps="500">
+!<start name="lima_gpu" caps="500">
 !  <resource name="RAM" quantum="128M">
 !  <provides> <service name="Gpu"/> </provides>
 !  </config/>

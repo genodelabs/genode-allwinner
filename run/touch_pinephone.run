@@ -38,8 +38,8 @@ install_config {
 		<config/>
 	</start>
 
-	<start name="platform_drv" caps="150" managing_system="yes">
-		<binary name="a64_platform_drv"/>
+	<start name="platform" caps="150" managing_system="yes">
+		<binary name="a64_platform"/>
 		<resource name="RAM" quantum="1M"/>
 		<provides> <service name="Platform"/> <service name="Scp"/> </provides>
 		<config devices_rom="config">
@@ -62,11 +62,11 @@ install_config {
 				<power-domain name="pmic-gpio0"/>
 			</device>
 
-			<policy label="a64_pio_drv -> ">
+			<policy label="a64_pio -> ">
 				<device name="pio"/>
 			</policy>
 
-			<policy label="goodix_touch_drv -> " info="yes">
+			<policy label="goodix_touch -> " info="yes">
 				<device name="i2c0"/>
 			</policy>
 
@@ -74,7 +74,7 @@ install_config {
 		<route> <any-service> <parent/> </any-service> </route>
 	</start>
 
-	<start name="a64_pio_drv">
+	<start name="a64_pio">
 		<resource name="RAM" quantum="1M"/>
 		<provides>
 			<service name="Pin_state"/>
@@ -86,7 +86,7 @@ install_config {
 			<service name="CPU"> <parent/> </service>
 			<service name="PD">  <parent/> </service>
 			<service name="LOG"> <parent/> </service>
-			<service name="Platform"> <child name="platform_drv"/> </service>
+			<service name="Platform"> <child name="platform"/> </service>
 		</route>
 		<config>
 			<select name="touchscreen-i2c-sck"  bank="H" index="0" function="2"/>
@@ -95,12 +95,12 @@ install_config {
 			<in     name="touchscreen-int"      bank="H" index="4" irq="falling"/>
 			<out    name="touchscreen-reset"    bank="H" index="11"/>
 
-			<policy label="goodix_touch_drv -> PH11" pin="touchscreen-reset"/>
-			<policy label="goodix_touch_drv -> PH4"  pin="touchscreen-int"/>
+			<policy label="goodix_touch -> PH11" pin="touchscreen-reset"/>
+			<policy label="goodix_touch -> PH4"  pin="touchscreen-int"/>
 		</config>
 	</start>
 
-	<start name="goodix_touch_drv" caps="250">
+	<start name="goodix_touch" caps="250">
 		<resource name="RAM" quantum="40M"/>
 		<route>
 			<service name="ROM" label="dtb"> <parent label="goodix-pinephone.dtb"/> </service>
@@ -109,12 +109,12 @@ install_config {
 			<service name="PD">          <parent/> </service>
 			<service name="CPU">         <parent/> </service>
 			<service name="LOG">         <parent/> </service>
-			<service name="Timer">       <child name="timer"/>        </service>
-			<service name="Platform">    <child name="platform_drv"/> </service>
-			<service name="Event">       <child name="event_dump"/>   </service>
-			<service name="Pin_control"> <child name="a64_pio_drv"/>  </service>
+			<service name="Timer">       <child name="timer"/>      </service>
+			<service name="Platform">    <child name="platform"/>   </service>
+			<service name="Event">       <child name="event_dump"/> </service>
+			<service name="Pin_control"> <child name="a64_pio"/>    </service>
 			<service name="IRQ">
-				<child name="a64_pio_drv" label="goodix_touch_drv -> PH4"/> </service>
+				<child name="a64_pio" label="goodix_touch -> PH4"/> </service>
 		</route>
 	</start>
 

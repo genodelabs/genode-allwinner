@@ -58,20 +58,20 @@
 		</route>
 	</start>
 
-	<start name="gpu_drv" version="morph" caps="2000" pkg="a64_lima_gpu_drv-pinephone">
+	<start name="gpu" version="morph" caps="2000" pkg="a64_lima_gpu-pinephone">
 		<affinity xpos="0" width="1"/>
 		<route>
 			<service name="Platform"> <parent label="gpu"/> </service>
 		</route>
 	</start>
 
-	<start name="audio_drv" pkg="a64_audio_drv" priority="0" cpu="20">
+	<start name="audio" pkg="a64_audio" priority="0" cpu="20">
 		<affinity xpos="0" ypos="0" width="1" height="1"/>
 		<config record_play="yes"/>
 		<route>
 			<service name="Play">   <child name="mixer"/> </service>
 			<service name="Record"> <child name="mixer"/> </service>
-			<service name="Platform"> <parent label="audio_drv"/> </service>
+			<service name="Platform"> <parent label="audio"/> </service>
 		</route>
 	</start>
 
@@ -82,15 +82,15 @@
 			<mix name="right"> <play label="jitsi_browser -> morph-browser -> right" volume="1.0"/> </mix>
 
 			<!-- capture microphone -->
-			<mix name="mic_left">  <play label="audio_drv -> mic_left"/>  </mix>
-			<mix name="mic_right"> <play label="audio_drv -> mic_right"/> </mix>
+			<mix name="mic_left">  <play label="audio -> mic_left"/>  </mix>
+			<mix name="mic_right"> <play label="audio -> mic_right"/> </mix>
 
 			<policy label="jitsi_browser -> morph-browser -> left"   record="mic_left"  period_ms="46" jitter_ms="23" volume="1.0"/>
 			<policy label="jitsi_browser -> morph-browser -> right"  record="mic_right" period_ms="46" jitter_ms="23" volume="1.0"/>
 
 			<!-- rule for the audio driver matching its configuration -->
-			<policy label="audio_drv -> left"   record="left"  period_ms="12" jitter_ms="5" volume="1.0"/>
-			<policy label="audio_drv -> right"  record="right" period_ms="12" jitter_ms="5" volume="1.0"/>
+			<policy label="audio -> left"   record="left"  period_ms="12" jitter_ms="5" volume="1.0"/>
+			<policy label="audio -> right"  record="right" period_ms="12" jitter_ms="5" volume="1.0"/>
 		</config>
 		<route>
 			<service name="Report"> <parent/> </service>
@@ -200,9 +200,9 @@
 				<child name="video_bridge"/>
 			</service>
 			<service name="Gpu">
-				<child name="gpu_drv"/>
+				<child name="gpu"/>
 			</service>
-			<service name="ROM" label="mesa_gpu_drv.lib.so">
+			<service name="ROM" label="mesa_gpu.lib.so">
 				<child name="mesa_gpu-lima"/>
 			</service>
 		</route>

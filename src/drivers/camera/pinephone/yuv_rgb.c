@@ -1,5 +1,5 @@
 /*
- * Removed SSE2 code not used in the 'pinephone_camera_drv' component.
+ * Removed SSE2 code not used in the 'pinephone_camera' component.
  */
 
 // Copyright 2016 Adrien Descamps

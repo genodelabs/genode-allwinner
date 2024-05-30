@@ -1,3 +1,3 @@
-TARGET := pinephone_button_drv
+TARGET := pinephone_button
 SRC_CC := main.cc
 LIBS   += base

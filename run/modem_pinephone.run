@@ -119,7 +119,7 @@ proc uart_log_start_node { } {
 			<config carriage_return="true"/>
 			<route>
 				<service name="Terminal"> <child name="terminal_crosslink"/> </service>
-				<service name="Platform"> <child name="platform_drv"/> </service>
+				<service name="Platform"> <child name="platform"/> </service>
 				<any-service> <parent/> </any-service>
 			</route>
 		</start>
@@ -132,8 +132,8 @@ proc network_related_start_nodes { } {
 	if {![test_network_connectivity]} { return "" }
 
 	return {
-		<start name="usb_host_drv" caps="200">
-			<binary name="a64_usb_host_drv"/>
+		<start name="usb_host" caps="200">
+			<binary name="a64_usb_host"/>
 			<resource name="RAM" quantum="16M"/>
 			<provides> <service name="Usb"/> </provides>
 			<config>
@@ -143,7 +143,7 @@ proc network_related_start_nodes { } {
 			</config>
 			<route>
 				<service name="Timer"> <child name="timer"/> </service>
-				<service name="Platform"> <child name="platform_drv"/> </service>
+				<service name="Platform"> <child name="platform"/> </service>
 				<service name="ROM" label="dtb">
 					<parent label="usb-pinephone.dtb"/> </service>
 
@@ -152,7 +152,7 @@ proc network_related_start_nodes { } {
 		</start>
 
 		<start name="cdc_ether" caps="200">
-			<binary name="usb_net_drv"/>
+			<binary name="usb_net"/>
 			<resource name="RAM" quantum="20M"/>
 			<config mac="02:00:00:00:01:05" ld_verbose="yes"/>
 			<route>
@@ -235,9 +235,9 @@ install_config {
 			<config verbose="yes"/>
 		</start>
 
-		<start name="platform_drv" caps="200" managing_system="yes">
+		<start name="platform" caps="200" managing_system="yes">
 			<resource name="RAM" quantum="2M"/>
-			<binary name="a64_platform_drv"/>
+			<binary name="a64_platform"/>
 			<provides> <service name="Platform"/> <service name="Scp"/> </provides>
 			<config>
 				<policy label="uart_log -> ">
@@ -246,7 +246,7 @@ install_config {
 				<policy label="uart_phone -> ">
 					<device name="uart3"/>
 				</policy>
-				<policy label="a64_pio_drv -> ">
+				<policy label="a64_pio -> ">
 					<device name="pio"/>
 				</policy>
 				<policy label="audio_control -> ">
@@ -254,7 +254,7 @@ install_config {
 					<device name="audio_analog"/>
 					<device name="audio_codec_modem"/>
 				</policy>
-				<policy label="usb_host_drv -> " info="yes">
+				<policy label="usb_host -> " info="yes">
 					<device name="ehci1"/>
 					<device name="usb_phy"/>
 				</policy>
@@ -262,7 +262,7 @@ install_config {
 			<route> <any-service> <parent/> </any-service> </route>
 		</start>
 
-		<start name="a64_pio_drv">
+		<start name="a64_pio">
 			<resource name="RAM" quantum="1M"/>
 			<provides>
 				<service name="Pin_state"/>
@@ -274,7 +274,7 @@ install_config {
 				<service name="CPU"> <parent/> </service>
 				<service name="PD">  <parent/> </service>
 				<service name="LOG"> <parent/> </service>
-				<service name="Platform"> <child name="platform_drv"/> </service>
+				<service name="Platform"> <child name="platform"/> </service>
 			</route>
 			<config>
 
@@ -323,7 +323,7 @@ install_config {
 				<codec    target="modem"/>
 			</config>
 			<route>
-				<service name="Platform"> <child name="platform_drv"/> </service>
+				<service name="Platform"> <child name="platform"/> </service>
 				<any-service> <parent/> </any-service>
 			</route>
 		</start>
@@ -335,8 +335,8 @@ install_config {
 			<route>
 				<service name="Timer">       <child name="timer"/>              </service>
 				<service name="Report">      <child name="report_rom"/>         </service>
-				<service name="Pin_control"> <child name="a64_pio_drv"/>        </service>
-				<service name="Pin_state">   <child name="a64_pio_drv"/>        </service>
+				<service name="Pin_control"> <child name="a64_pio"/>            </service>
+				<service name="Pin_state">   <child name="a64_pio"/>            </service>
 				<service name="Terminal">    <child name="terminal_crosslink"/> </service>
 				<any-service> <parent/> </any-service>
 			</route>
@@ -352,7 +352,7 @@ install_config {
 			<resource name="RAM" quantum="2M"/>
 			<route>
 				<service name="Terminal"> <child name="terminal_crosslink"/> </service>
-				<service name="Platform"> <child name="platform_drv"/> </service>
+				<service name="Platform"> <child name="platform"/> </service>
 				<any-service> <parent/> </any-service>
 			</route>
 		</start>

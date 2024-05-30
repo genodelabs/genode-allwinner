@@ -17,7 +17,7 @@ initialized card.
 
 To start the driver the following configuration snippet can be used:
 
-!<start name="a64_sd_card_drv" caps="500">
+!<start name="a64_sd_card" caps="500">
 !  <resource name="RAM" quantum="16M"/>
 !  <provides> <service name="Block"/> </provides>
 !  <config>

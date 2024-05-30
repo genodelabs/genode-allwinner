@@ -1,4 +1,4 @@
-TARGET   := a64_sd_card_drv
+TARGET   := a64_sd_card
 DRIVER   := sd_card
 REQUIRES := arm_v8a
 LIBS     := base a64_lx_emul

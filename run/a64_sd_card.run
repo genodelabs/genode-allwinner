@@ -26,8 +26,8 @@ install_config {
 			<provides> <service name="Timer"/> </provides>
 		</start>
 
-		<start name="platform_drv" caps="150" managing_system="yes">
-			<binary name="a64_platform_drv"/>
+		<start name="platform" caps="150" managing_system="yes">
+			<binary name="a64_platform"/>
 			<resource name="RAM" quantum="1M"/>
 			<provides> <service name="Platform"/> <service name="Scp"/> </provides>
 			<config devices_rom="config">
@@ -45,7 +45,7 @@ install_config {
 					<clock name="mmc2" driver_name="mmc"/>
 					<reset-domain name="mmc2"/>
 				</device>
-				<policy label="a64_sd_card_drv -> " info="yes">
+				<policy label="a64_sd_card -> " info="yes">
 					<device name="sd_card"/>
 					<device name="emmc"/>
 				</policy>
@@ -53,7 +53,7 @@ install_config {
 			<route> <any-service> <parent/> </any-service> </route>
 		</start>
 
-		<start name="a64_sd_card_drv" caps="500">
+		<start name="a64_sd_card" caps="500">
 			<resource name="RAM" quantum="16M"/>
 			<provides> <service name="Block"/> </provides>
 			<config>
@@ -67,7 +67,7 @@ install_config {
 				<service name="PD">  <parent/> </service>
 				<service name="LOG"> <parent/> </service>
 				<service name="Timer">    <child name="timer"/> </service>
-				<service name="Platform"> <child name="platform_drv"/> </service>
+				<service name="Platform"> <child name="platform"/> </service>
 			</route>
 		</start>
 

@@ -1,4 +1,4 @@
-<runtime ram="1M" caps="100" binary="a64_audio_drv">
+<runtime ram="1M" caps="100" binary="a64_audio">
 
 	<requires>
 		<timer/>
@@ -10,7 +10,7 @@
 	<config/>
 
 	<content>
-		<rom label="a64_audio_drv"/>
+		<rom label="a64_audio"/>
 	</content>
 
 </runtime>

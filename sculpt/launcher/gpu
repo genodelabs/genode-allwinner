@@ -1,4 +1,4 @@
-<launcher name="gpu_drv" pkg="a64_lima_gpu_drv-pinephone">
+<launcher name="gpu" pkg="a64_lima_gpu-pinephone">
 	<affinity xpos="1" width="2"/>
 	<route>
 		<service name="Platform"> <parent label="gpu"/> </service>
