@@ -1,10 +1,3 @@
-#
-# Set to true in case the driver needs to be debugged to
-# pull in the locally build binaries rather than the ones
-# from the depot.
-#
-set debug_driver false
-
 proc wifi_ssid { } {
 	return $::env(GENODE_WIFI_SSID)
 }
@@ -17,9 +10,8 @@ proc wifi_psk { } {
 create_boot_directory
 import_from_depot [depot_user]/pkg/a64_wifi_drv
 
-
-set build_components {
-	core init timer
+build {
+	core lib/ld init timer
 	drivers/platform/a64
 	drivers/pin/a64
 	drivers/rtc/dummy
@@ -27,17 +19,10 @@ set build_components {
 	server/nic_router
 	server/report_rom
 	lib/vfs_jitterentropy
-
-	test/lwip/http_srv
+	lib/vfs_lwip test/lwip/http_srv
+	drivers/wifi
+	lib/a64_wifi
 }
-
-append_if $debug_driver build_components {
-        drivers/wifi
-        lib/a64_wifi
-}
-
-build $build_components
-
 
 #
 # widi_drv config generator (supporting a network list)
@@ -342,15 +327,6 @@ install_config {
 		</start>
 
 	</config>
-}
-
-#
-# Provide dummy 'wifi.lib.so' shared-object for
-# boot-module assembly
-#
-if {$debug_driver} {
-exec rm bin/wifi.lib.so
-exec echo dummy > bin/wifi.lib.so
 }
 
 build_boot_image [build_artifacts]
