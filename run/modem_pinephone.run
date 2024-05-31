@@ -75,11 +75,11 @@ proc call_number { } {
 
 build {
 	core lib/ld init timer
-	drivers/uart/ns16550 drivers/platform/a64 drivers/pin/a64
-	drivers/modem/pinephone drivers/audio_control/pinephone
-	drivers/usb_host/a64
+	driver/uart/ns16550 driver/platform/a64 driver/pin/a64
+	driver/modem/pinephone driver/audio_control/pinephone
+	driver/usb_host/a64
 	server/terminal_crosslink server/report_rom
-	drivers/usb_net
+	driver/usb_net
 	server/nic_router
 	app/ping
 }

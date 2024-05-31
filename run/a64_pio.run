@@ -1,4 +1,4 @@
-build { core lib/ld init timer drivers/platform drivers/pin/a64
+build { core lib/ld init timer driver/platform driver/pin/a64
         server/dynamic_rom app/pin_pulse app/pin_event }
 
 create_boot_directory

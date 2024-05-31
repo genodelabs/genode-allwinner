@@ -1,4 +1,4 @@
-build { core init server/event_dump drivers/platform/a64 drivers/button/pinephone }
+build { core init server/event_dump driver/platform/a64 driver/button/pinephone }
 
 create_boot_directory
 

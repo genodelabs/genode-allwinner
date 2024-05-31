@@ -6,9 +6,9 @@ import_from_depot [depot_user]/src/[base_src] \
                   [depot_user]/src/dynamic_rom
 
 build {
-	drivers/platform/a64
-	drivers/framebuffer/de
-	drivers/pin/a64
+	driver/platform/a64
+	driver/framebuffer/de
+	driver/pin/a64
 	test/framebuffer
 }
 

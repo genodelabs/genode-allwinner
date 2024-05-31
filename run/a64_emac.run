@@ -1,4 +1,4 @@
-build { core lib/ld init timer drivers/platform drivers/nic/emac server/nic_router }
+build { core lib/ld init timer driver/platform driver/nic/emac server/nic_router }
 
 create_boot_directory
 

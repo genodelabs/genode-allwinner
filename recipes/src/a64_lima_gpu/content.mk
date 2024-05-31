@@ -1,4 +1,4 @@
-MIRRORED_FROM_REP_DIR := src/drivers/gpu/lima
+MIRRORED_FROM_REP_DIR := src/driver/gpu/lima
 
 content: $(MIRRORED_FROM_REP_DIR)
 $(MIRRORED_FROM_REP_DIR):

@@ -1,4 +1,4 @@
-MIRRORED_FROM_REP_DIR := src/drivers/framebuffer/de
+MIRRORED_FROM_REP_DIR := src/driver/framebuffer/de
 
 content: $(MIRRORED_FROM_REP_DIR)
 $(MIRRORED_FROM_REP_DIR):

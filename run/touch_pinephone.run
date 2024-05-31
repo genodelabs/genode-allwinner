@@ -5,10 +5,10 @@ import_from_depot [depot_user]/src/[base_src] \
                   [depot_user]/src/init
 
 build {
-	drivers/platform/a64
-	drivers/touch/goodix
+	driver/platform/a64
+	driver/touch/goodix
 	server/event_dump
-	drivers/pin/a64
+	driver/pin/a64
 }
 
 install_config {

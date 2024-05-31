@@ -12,15 +12,15 @@ import_from_depot [depot_user]/pkg/a64_wifi
 
 build {
 	core lib/ld init timer
-	drivers/platform/a64
-	drivers/pin/a64
-	drivers/rtc/dummy
+	driver/platform/a64
+	driver/pin/a64
+	driver/rtc/dummy
 	server/dynamic_rom
 	server/nic_router
 	server/report_rom
 	lib/vfs_jitterentropy
 	lib/vfs_lwip test/lwip/http_srv
-	drivers/wifi
+	driver/wifi
 	lib/a64_wifi
 }
 

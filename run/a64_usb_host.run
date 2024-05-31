@@ -1,8 +1,8 @@
 build {
 	core lib/ld init timer
-	drivers/platform/a64
-	drivers/usb_host/a64
-	drivers/usb_block
+	driver/platform/a64
+	driver/usb_host/a64
+	driver/usb_block
 	server/report_rom
 	app/block_tester
 }

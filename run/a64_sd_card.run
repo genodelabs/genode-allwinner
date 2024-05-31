@@ -1,7 +1,7 @@
 build {
 	core lib/ld init timer
-	drivers/platform/a64
-	drivers/sd_card/a64
+	driver/platform/a64
+	driver/sd_card/a64
 	app/block_tester
 }
 

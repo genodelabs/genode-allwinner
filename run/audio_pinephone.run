@@ -4,9 +4,9 @@
 
 build {
 	core lib/ld init timer lib/libc lib/libm lib/vfs lib/posix
-	drivers/platform/a64 drivers/pin/a64
-	drivers/audio_control/pinephone
-	drivers/audio/a64
+	driver/platform/a64 driver/pin/a64
+	driver/audio_control/pinephone
+	driver/audio/a64
 	server/report_rom
 	server/record_play_mixer
 	app/waveform_player

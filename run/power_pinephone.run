@@ -1,7 +1,7 @@
 build {
 	core init timer
 	server/report_rom server/event_dump
-	drivers/platform/a64 drivers/power/pinephone
+	driver/platform/a64 driver/power/pinephone
 }
 
 create_boot_directory

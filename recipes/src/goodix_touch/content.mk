@@ -1,4 +1,4 @@
-MIRRORED_FROM_REP_DIR := src/drivers/touch/goodix
+MIRRORED_FROM_REP_DIR := src/driver/touch/goodix
 
 content: $(MIRRORED_FROM_REP_DIR)
 $(MIRRORED_FROM_REP_DIR):

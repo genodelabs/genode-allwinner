@@ -7,10 +7,10 @@ import_from_depot [depot_user]/src/[base_src] \
                   [depot_user]/src/nitpicker
 
 build {
-	drivers/platform/a64
-	drivers/camera/pinephone
-	drivers/framebuffer/de
-	drivers/pin/a64
+	driver/platform/a64
+	driver/camera/pinephone
+	driver/framebuffer/de
+	driver/pin/a64
 	test/framebuffer
 	app/dummy
 }

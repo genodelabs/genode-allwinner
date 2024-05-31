@@ -1,4 +1,4 @@
-MIRRORED_FROM_REP_DIR := src/drivers/usb_host/a64
+MIRRORED_FROM_REP_DIR := src/driver/usb_host/a64
 
 content: $(MIRRORED_FROM_REP_DIR)
 $(MIRRORED_FROM_REP_DIR):

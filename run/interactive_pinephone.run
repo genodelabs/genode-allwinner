@@ -5,10 +5,10 @@ import_from_depot [depot_user]/src/[base_src] \
                   [depot_user]/src/init
 
 build {
-	drivers/platform/a64
-	drivers/framebuffer/de
-	drivers/pin/a64
-	drivers/touch/goodix
+	driver/platform/a64
+	driver/framebuffer/de
+	driver/pin/a64
+	driver/touch/goodix
 	server/event_dump
 	server/event_filter
 	test/framebuffer
