@@ -66,7 +66,7 @@ struct genode_gui : private Noncopyable, private Interface
 			using namespace Gui;
 
 			_gui.enqueue<C::Geometry>(_view, Gui::Rect(Gui::Point(0, 0),
-			                          _mode.area));
+			                                           _mode.area));
 			_gui.enqueue<C::To_front>(_view, Gui::Session::View_handle());
 			_gui.enqueue<C::Title>(_view, _session_label.string());
 			_gui.execute();
@@ -75,8 +75,8 @@ struct genode_gui : private Noncopyable, private Interface
 		template <typename FN>
 		void refresh(FN const &fn)
 		{
-			size_t const size = _mode.area.w()
-			                  * _mode.area.h()
+			size_t const size = _mode.area.w
+			                  * _mode.area.h
 			                  * _mode.bytes_per_pixel();
 			fn(_fb_ptr, size);
 		}
@@ -101,7 +101,7 @@ struct genode_gui : private Noncopyable, private Interface
 			 * as setting the offset should trigger it as well.
 			 */
 			_gui.framebuffer()->refresh(view.x, -view.y,
-			                            area.w(), area.h());
+			                            area.w, area.h);
 		}
 };
 
