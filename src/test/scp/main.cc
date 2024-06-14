@@ -27,8 +27,14 @@ struct Test::Main
 
 	Main(Env &env) : _env(env)
 	{
-		_config.xml().attribute("program").with_raw_value(
+		auto with_raw_attr_value = [&] (auto const &attr_name, auto const &fn)
+		{
+			_config.xml().for_each_attribute([&] (Xml_attribute const &attr) {
+				if (attr.name() == attr_name)
+					attr.with_raw_value(fn); });
+		};
 
+		with_raw_attr_value("program",
 			[&] (char const *program, size_t program_len) {
 				_scp.execute(
 					[&] (char *buf, size_t buf_len) {
