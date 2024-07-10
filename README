@@ -1,41 +1,40 @@
+# Genode support for Allwinner-based boards
 
-               =========================================
-               Genode support for Allwinner-based boards
-               =========================================
-
-
-This repository complements the Genode OS framework (https://genode.org) with
+This repository complements the [Genode OS framework](https://genode.org) with
 the board support needed to use Genode on devices based on Allwinner SoCs.
 
 To use it, you first need to obtain a clone of Genode:
 
-! git clone https://github.com/genodelabs/genode.git genode
+```sh
+$ git clone https://github.com/genodelabs/genode.git genode
+```
 
-Now, clone the _genode-allwinner.git_ repository to _genode/repos/allwinner_:
+Now, clone the `genode-allwinner.git` repository to `genode/repos/allwinner`:
 
-! git clone https://github.com/nfeske/genode-allwinner.git genode/repos/allwinner
+```sh
+$ git clone https://github.com/nfeske/genode-allwinner.git genode/repos/allwinner
+```
 
 For enabling the board support, adjust the build-directory configuration
-_etc/build.conf_ by adding the following line before the other 'REPOSITORIES'
-definitions so that the _allwinner_ repository is prioritized over the others.
+`etc/build.conf` by adding the following line before the other `REPOSITORIES`
+definitions so that the `allwinner` repository is prioritized over the others.
 
-! REPOSITORIES += $(GENODE_DIR)/repos/allwinner
+```sh
+$ REPOSITORIES += $(GENODE_DIR)/repos/allwinner
+```
 
-
-Allwinner-specific tool dependencies
-------------------------------------
+# Allwinner-specific tool dependencies
 
 The Allwinner A64 SoC features a dedicated system-control processor (SCP) in
 addition the the ARM application processor. This repository contains a custom
-firmware for the SCP (at _src/scp/a64/_), which is incorporated into the
-U-Boot boot loader (_src/u-boot/pine/). As the SCP (aka AR100) is based on the
+firmware for the SCP (at `src/scp/a64/`), which is incorporated into the
+U-Boot boot loader (`src/u-boot/pine/`). As the SCP (aka AR100) is based on the
 OpenRISC instruction-set architecture, the build process of the SCP firmware
 requires the installation of binutils for this architecture. Please refer
-to _src/scp/a64/README_ for further instructions.
+to `src/scp/a64/README` for further instructions.
 
 
-License
--------
+# License
 
 Genode-specific code is provided under Genode's regular open-source license,
 which is AGPLv3 + open-source linking exception. This code is also available
