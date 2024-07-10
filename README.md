@@ -40,7 +40,7 @@ Genode-specific code is provided under Genode's regular open-source license,
 which is AGPLv3 + open-source linking exception. This code is also available
 under a commercial license offered by Genode Labs.
 
-For code ported from other projects - e.g., device drivers ported from the
+For code ported from other projects - e.g, device drivers ported from the
 Linux kernel - the license of the originating upstream project applies.
 
 Please refer to the individual file headers for detailed information.
