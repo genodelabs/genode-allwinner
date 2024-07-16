@@ -25,15 +25,6 @@ int alloc_chrdev_region(dev_t * dev,unsigned baseminor,unsigned count,const char
 }
 
 
-#include <asm/cache.h>
-
-extern int cache_line_size(void);
-int cache_line_size(void)
-{
-	return ARCH_DMA_MINALIGN;
-}
-
-
 #include <linux/regulator/consumer.h>
 
 static int vmmc_regulator;

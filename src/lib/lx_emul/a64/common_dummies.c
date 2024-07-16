@@ -267,10 +267,6 @@ void rcu_sched_clock_irq(int user)
 }
 
 
-bool arm64_use_ng_mappings = false;
-EXPORT_SYMBOL(arm64_use_ng_mappings);
-
-
 #include <linux/sysfs.h>
 
 void sysfs_remove_file_ns(struct kobject * kobj,const struct attribute * attr,const void * ns)
