@@ -37,9 +37,6 @@ asmlinkage __wsum csum_partial(const void * buff,int len,__wsum sum)
 }
 
 
-struct static_key_false init_on_alloc;
-
-
 #include <linux/proc_ns.h>
 
 int proc_alloc_inum(unsigned int * inum)
