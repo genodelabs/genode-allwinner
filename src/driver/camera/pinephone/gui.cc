@@ -34,46 +34,30 @@ struct genode_gui : private Noncopyable, private Interface
 		genode_gui(const genode_gui &) = delete;
 		const genode_gui& operator=(const genode_gui&) = delete;
 
-		Env       &_env;
-		Allocator &_alloc;
+		Env &_env;
 
-		Session_label const _session_label;
+		Framebuffer::Mode const _mode;
 
-		Gui::Connection           _gui  { _env, _session_label.string() };
-		Gui::Session::View_handle _view { _gui.create_view() };
-		Framebuffer::Mode const   _mode;
+		Gui::Connection    _gui;
+		Gui::View_id const _view { };
 
 		Constructible<Attached_dataspace>  _fb_ds { };
 		unsigned char                     *_fb_ptr { nullptr };
 
 	public:
 
-		genode_gui(Env &env, Allocator &alloc,
-		           Session_label const &session_label,
-		           Framebuffer::Mode mode)
+		genode_gui(Env &env, Session_label const label, Framebuffer::Mode mode)
 		:
-			_env           { env },
-			_alloc         { alloc },
-			_session_label { session_label },
-			_mode          { mode }
+			_env(env), _mode(mode), _gui(env, label)
 		{
 			_gui.buffer(_mode, false);
+			_gui.view(_view, { .title = label, .rect = { }, .front = true });
 
-			_fb_ds.construct(_env.rm(), _gui.framebuffer()->dataspace());
+			_fb_ds.construct(_env.rm(), _gui.framebuffer.dataspace());
 			_fb_ptr = _fb_ds->local_addr<unsigned char>();
-
-			using C = Gui::Session::Command;
-			using namespace Gui;
-
-			_gui.enqueue<C::Geometry>(_view, Gui::Rect(Gui::Point(0, 0),
-			                                           _mode.area));
-			_gui.enqueue<C::To_front>(_view, Gui::Session::View_handle());
-			_gui.enqueue<C::Title>(_view, _session_label.string());
-			_gui.execute();
 		}
 
-		template <typename FN>
-		void refresh(FN const &fn)
+		void refresh(auto const &fn)
 		{
 			size_t const size = _mode.area.w
 			                  * _mode.area.h
@@ -81,8 +65,7 @@ struct genode_gui : private Noncopyable, private Interface
 			fn(_fb_ptr, size);
 		}
 
-		template <typename FN>
-		void swap_view(FN const &fn)
+		void swap_view(auto const &fn)
 		{
 			using C = Gui::Session::Command;
 
@@ -91,8 +74,7 @@ struct genode_gui : private Noncopyable, private Interface
 			Gui::Point const point { view.x, view.y };
 			Gui::Area  const area  { view.width, view.height };
 
-			_gui.enqueue<C::Geometry>(_view, Gui::Rect(Gui::Point(0, 0),
-			                                           area));
+			_gui.enqueue<C::Geometry>(_view, Gui::Rect { { 0, 0 }, area });
 			_gui.enqueue<C::Offset>(_view, point);
 			_gui.execute();
 
@@ -100,8 +82,7 @@ struct genode_gui : private Noncopyable, private Interface
 			 * The explicit refresh here should probably not be needed
 			 * as setting the offset should trigger it as well.
 			 */
-			_gui.framebuffer()->refresh(view.x, -view.y,
-			                            area.w, area.h);
+			_gui.framebuffer.refresh(view.x, -view.y, area.w, area.h);
 		}
 };
 
@@ -124,8 +105,7 @@ struct genode_gui *genode_gui_create(struct genode_gui_args const *args)
 	Framebuffer::Mode const mode { { args->width, args->height } };
 
 	return new (*_alloc_ptr)
-		Registered<genode_gui>(_gui_sessions, *_env_ptr, *_alloc_ptr,
-		                       Session_label(args->label), mode);
+		Registered<genode_gui>(_gui_sessions, *_env_ptr, args->label, mode);
 }
 
 
