@@ -62,7 +62,7 @@ struct Framebuffer::Driver
 			:
 				_capture(env),
 				_size{xres, yres},
-				_captured_screen(_capture, env.rm(), _size),
+				_captured_screen(_capture, env.rm(), { .px = _size, .mm = { } }),
 				_base(base) {}
 	};
 
