@@ -50,7 +50,7 @@ struct genode_gui : private Noncopyable, private Interface
 		:
 			_env(env), _mode(mode), _gui(env, label)
 		{
-			_gui.buffer(_mode, false);
+			_gui.buffer(_mode);
 			_gui.view(_view, { .title = label, .rect = { }, .front = true });
 
 			_fb_ds.construct(_env.rm(), _gui.framebuffer.dataspace());
@@ -59,10 +59,7 @@ struct genode_gui : private Noncopyable, private Interface
 
 		void refresh(auto const &fn)
 		{
-			size_t const size = _mode.area.w
-			                  * _mode.area.h
-			                  * _mode.bytes_per_pixel();
-			fn(_fb_ptr, size);
+			fn(_fb_ptr, _mode.num_bytes());
 		}
 
 		void swap_view(auto const &fn)
@@ -82,7 +79,7 @@ struct genode_gui : private Noncopyable, private Interface
 			 * The explicit refresh here should probably not be needed
 			 * as setting the offset should trigger it as well.
 			 */
-			_gui.framebuffer.refresh(view.x, -view.y, area.w, area.h);
+			_gui.framebuffer.refresh({ { view.x, -view.y }, area });
 		}
 };
 
@@ -102,7 +99,8 @@ struct genode_gui *genode_gui_create(struct genode_gui_args const *args)
 		return nullptr;
 	}
 
-	Framebuffer::Mode const mode { { args->width, args->height } };
+	Framebuffer::Mode const mode { .area  = { args->width, args->height },
+	                               .alpha = false };
 
 	return new (*_alloc_ptr)
 		Registered<genode_gui>(_gui_sessions, *_env_ptr, args->label, mode);
