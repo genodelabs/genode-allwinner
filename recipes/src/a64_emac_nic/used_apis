@@ -1,7 +1,8 @@
 a64_linux
-uplink_session
-nic_session
-platform_session
 base
-os
 genode_c_api
+nic_session
+os
+platform_session
+report_session
+uplink_session
