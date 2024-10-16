@@ -2,7 +2,8 @@ assert_spec arm_v8a
 
 create_boot_directory
 import_from_depot [depot_user]/src/[base_src] \
-                  [depot_user]/src/init
+                  [depot_user]/src/init \
+                  [depot_user]/raw/pinephone-devices
 
 build {
 	driver/platform/a64
