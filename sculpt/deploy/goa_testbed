@@ -38,7 +38,7 @@
 		</route>
 	</start>
 
-	<start name="goa_testbed" pkg="jschlatow/pkg/goa_testbed/2024-01-03" priority="-2">
+	<start name="goa_testbed" pkg="jschlatow/pkg/goa_testbed/2024-10-11" priority="-2">
 		<route>
 			<service name="TRACE">       <parent/> </service>
 			<service name="VM">          <parent/> </service>
