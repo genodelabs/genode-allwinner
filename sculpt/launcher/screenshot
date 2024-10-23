@@ -1,4 +1,4 @@
-<launcher name="screenshot" pkg="nfeske/pkg/screenshot/2023-03-29" priority="-2">
+<launcher name="screenshot" pkg="nfeske/pkg/screenshot/2024-10-09" priority="-2">
 	<route>
 		<service name="Gui" label="trigger"> <parent label="overlay"/> </service>
 		<service name="Gui"> <parent/> </service>
