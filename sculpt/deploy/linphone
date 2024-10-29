@@ -1,0 +1,124 @@
+<config arch="" info="Linphone SIP Client">
+
+	<common_routes>
+		<service name="ROM" label_last="ld.lib.so"> <parent/> </service>
+		<service name="ROM" label_last="init">      <parent/> </service>
+		<service name="CPU">   <parent/> </service>
+		<service name="PD">    <parent/> </service>
+		<service name="LOG">   <parent/> </service>
+		<service name="Timer"> <parent/> </service>
+	</common_routes>
+
+	<start name="linphone_loading_backdrop" pkg="ssumpf/pkg/linphone_loading_backdrop/2024-10-29">
+		<route>
+			<service name="Gui"> <parent label="backdrop"/> </service>
+		</route>
+	</start>
+
+	<start name="fonts_fs" pkg="fonts_fs">
+		<route>
+			<service name="ROM" label="config">
+				<parent label="config -> managed/fonts"/> </service>
+		</route>
+	</start>
+
+	<start name="sntp_dummy_rtc" pkg="sntp_dummy_rtc">
+		<route>
+			<service name="Nic"> <child name="nic_router"/> </service>
+		</route>
+	</start>
+
+	<start name="gpu" caps="2000" pkg="ssumpf/pkg/a64_lima_gpu-pinephone/2024-10-28" priority="-1">
+		<affinity xpos="0" width="1"/>
+		<route>
+			<service name="Platform"> <parent label="gpu"/> </service>
+		</route>
+	</start>
+
+	<start name="audio" pkg="a64_audio" priority="0" cpu="20">
+		<resource name="CPU" quantum="40"/>
+		<affinity xpos="0" ypos="0" width="1" height="1"/>
+		<config record_play="yes"/>
+		<route>
+			<service name="Play">   <child name="mixer"/> </service>
+			<service name="Record"> <child name="mixer"/> </service>
+			<service name="Platform"> <parent label="audio"/> </service>
+		</route>
+	</start>
+
+	<start name="mixer" pkg="record_play_mixer" priority="0" cpu="20">
+		<affinity xpos="0" ypos="0" width="1" height="1"/>
+		<config jitter_ms="23">
+			<mix name="linphone_left">  <play label_suffix="linphonec -> left" /> </mix>
+			<mix name="linphone_right"> <play label_suffix="linphonec -> right"/> </mix>
+
+			<mix name="mic_left">  <play label_suffix="audio -> mic_left" /> </mix>
+			<mix name="mic_right"> <play label_suffix="audio -> mic_right"/> </mix>
+
+			<policy label_suffix="audio -> left"  record="linphone_left"   volume="1.0"/>
+			<policy label_suffix="audio -> right" record="linphone_right"  volume="1.0"/>
+
+			<policy label_suffix="linphonec -> left"  period_ms="46" jitter_ms="23" record="mic_left"  volume="1.0"/>
+			<policy label_suffix="linphonec -> right" period_ms="46" jitter_ms="23" record="mic_right" volume="1.0"/>
+		</config>
+		<route>
+			<service name="Report"> <parent/> </service>
+		</route>
+	</start>
+
+	<start name="black_hole" pkg="black_hole">
+		<config> <audio_in/> <audio_out/> <capture/> <report/> </config>
+	</start>
+
+	<start name="touch_keyboard" pkg="touch_keyboard">
+		<route>
+			<service name="Gui"> <parent label="touch_keyboard"/> </service>
+			<service name="Event"> <parent label="global"/> </service>
+			<service name="File_system" label="fonts"> <child name="fonts_fs"/> </service>
+		</route>
+	</start>
+
+	<start name="mesa_gpu-lima" pkg="mesa_gpu-lima">
+		<route> <service name="RM"> <parent/> </service> </route>
+	</start>
+
+	<start name="terminal_crosslink" pkg="ssumpf/pkg/terminal_crosslink/2024-10-07" priority="-2">
+		<route/>
+	</start>
+
+	<start name="linphone_gui" pkg="ssumpf/pkg/linphone-simple/2024-10-29" priority="-2">
+		<affinity xpos="1" ypos="0" width="1" height="1"/>
+		<route>
+			<service name="Gui" label_last="QGenodeScreen"> <parent/> </service>
+			<service name="Gui"> <parent label="focus"/> </service>
+			<service name="RM"> <parent/> </service>
+			<service name="Gpu"> <child name="gpu"/> </service>
+			<service name="ROM" label="mesa_gpu.lib.so">
+				<child name="mesa_gpu-lima"/>
+			</service>
+			<service name="Terminal"> <child name="terminal_crosslink"/> </service>
+			<service name="File_system"> <child name="linphone_recall_fs"/> </service>
+		</route>
+	</start>
+
+	<start name="linphone_recall_fs" pkg="chroot">
+		<route>
+			<service name="File_system"> <child name="default_fs_rw"/> </service>
+		</route>
+		<config> <default-policy path="/recall/linphone" writeable="yes"/> </config>
+	</start>
+
+	<start name="linphone_daemon" pkg="ssumpf/pkg/linphonec_daemon/2024-10-29" cpu="40" priority="-1">
+		<affinity xpos="1" ypos="0" width="1" height="1"/>
+		<route>
+			<service name="Nic"> <child name="nic_router"/> </service>
+			<service name="Record"> <child name="mixer"/> </service>
+			<service name="Play"> <child name="mixer"/> </service>
+			<service name="Terminal"> <child name="terminal_crosslink"/> </service>
+			<service name="Rtc"> <child name="sntp_dummy_rtc"/> </service>
+			<service name="File_system"> <child name="linphone_recall_fs"/> </service>
+			<service name="RM"> <parent/> </service>
+		</route>
+	</start>
+
+</config>

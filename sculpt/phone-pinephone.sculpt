@@ -15,7 +15,7 @@ import:       src/a64_usb_host src/usb_net src/a64_sd_card
 import:       pkg/a64_wifi
 deploy:       empty
 presets:      empty nano3d system_shell gpu_test osci camera_test
-presets:      morph_browser jitsi goa_testbed
+presets:      morph_browser jitsi goa_testbed linphone
 launcher:     screenshot report_dump system_clock-dummy
 depot:        genodelabs cnuke alex-ab mstein nfeske cproc chelmuth jschlatow
 depot:        ssumpf skalk
