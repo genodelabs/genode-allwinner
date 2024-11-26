@@ -41,9 +41,7 @@ SRC_C   += lx_emul/shadow/kernel/smp.c
 SRC_C   += lx_emul/shadow/kernel/stop_machine.c
 SRC_C   += lx_emul/shadow/lib/devres.c
 SRC_C   += lx_emul/shadow/lib/smp_processor_id.c
-SRC_C   += lx_emul/shadow/mm/memblock.c
-SRC_C   += lx_emul/shadow/mm/slab_common.c
-SRC_C   += lx_emul/shadow/mm/slub.c
+SRC_C   += lx_emul/shadow/mm/page_alloc.c
 SRC_CC  += lx_kit/device.cc
 SRC_CC  += lx_kit/memory_dma.cc
 

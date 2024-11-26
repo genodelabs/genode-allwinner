@@ -1,5 +1,5 @@
 /*
- * \brief  PIO stub driver
+ * \brief  Minimal PIO driver using LX emul PIN interface
  * \author Norman Feske
  * \date   2021-06-02
  */
