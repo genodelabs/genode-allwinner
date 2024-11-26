@@ -257,7 +257,7 @@ void blk_mq_hctx_kobj_init(struct blk_mq_hw_ctx * hctx)
 
 #include <linux/blkdev.h>
 
-void blkdev_put(struct block_device * bdev,fmode_t mode)
+void blkdev_put(struct block_device * bdev, void * holder)
 {
 	lx_emul_trace(__func__);
 }
@@ -304,3 +304,11 @@ void __init net_ns_init(void)
 	lx_emul_trace(__func__);
 }
 
+
+#include <linux/group_cpus.h>
+
+struct cpumask * group_cpus_evenly(unsigned int numgrps)
+{
+	lx_emul_trace(__func__);
+	return NULL;
+}

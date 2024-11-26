@@ -31,7 +31,8 @@ void lx_user_handle_io(void)
 /*
  * Called whenever the link state changes
  */
-void rtmsg_ifinfo(int type, struct net_device * dev, unsigned int change, gfp_t flags)
+void rtmsg_ifinfo(int type, struct net_device * dev, unsigned int change, gfp_t flags,
+                  u32 portid, const struct nlmsghdr *nlh)
 {
 	lx_emul_nic_handle_io();
 }

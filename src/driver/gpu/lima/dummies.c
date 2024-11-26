@@ -243,3 +243,11 @@ int devm_pm_opp_of_add_table(struct device * dev)
 	lx_emul_trace(__func__);
 	return 0;
 }
+
+
+#include <linux/swap.h>
+
+void check_move_unevictable_folios(struct folio_batch * fbatch)
+{
+	lx_emul_trace(__func__);
+}

@@ -105,6 +105,8 @@ lib/irq_regs.c
 lib/kasprintf.c
 lib/klist.c
 lib/kobject.c
+lib/math/reciprocal_div.c
+lib/maple_tree.c
 lib/radix-tree.c
 lib/rbtree.c
 lib/refcount.c
@@ -114,4 +116,7 @@ lib/string_helpers.c
 lib/timerqueue.c
 lib/vsprintf.c
 lib/xarray.c
+mm/memblock.c
+mm/slab_common.c
+mm/slub.c
 mm/util.c

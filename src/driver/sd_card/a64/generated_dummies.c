@@ -1,7 +1,7 @@
 /*
  * \brief  Dummy definitions of Linux Kernel functions
  * \author Automatically generated file - do no edit
- * \date   2023-06-13
+ * \date   2024-11-28
  */
 
 #include <lx_emul.h>
@@ -36,14 +36,6 @@ const struct earlycon_id __earlycon_table[] = {};
 #include <linux/serial_core.h>
 
 const struct earlycon_id __earlycon_table_end[] = {};
-
-
-#include <linux/blkdev.h>
-
-int __invalidate_device(struct block_device * bdev,bool kill_dirty)
-{
-	lx_emul_trace_and_stop(__func__);
-}
 
 
 #include <asm-generic/percpu.h>
@@ -120,6 +112,11 @@ int _printk_deferred(const char * fmt,...)
 }
 
 
+#include <linux/mm.h>
+
+atomic_long_t _totalram_pages;
+
+
 #include <linux/random.h>
 
 void __init add_bootloader_randomness(const void * buf,size_t len)
@@ -176,8 +173,9 @@ ssize_t badblocks_store(struct badblocks * bb,const char * page,size_t len,int u
 }
 
 
-extern void blk_drop_partitions(struct gendisk * disk);
-void blk_drop_partitions(struct gendisk * disk)
+#include <linux/blkdev.h>
+
+void bdev_mark_dead(struct block_device * bdev,bool surprise)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -199,20 +197,6 @@ void blk_mq_sysfs_deinit(struct request_queue * q)
 
 extern void blk_stat_add(struct request * rq,u64 now);
 void blk_stat_add(struct request * rq,u64 now)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-extern void blk_stat_free_callback(struct blk_stat_callback * cb);
-void blk_stat_free_callback(struct blk_stat_callback * cb)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-extern bool blk_stats_alloc_enable(struct request_queue * q);
-bool blk_stats_alloc_enable(struct request_queue * q)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -263,9 +247,12 @@ int clk_set_phase(struct clk * clk,int degrees)
 }
 
 
-#include <linux/arch_topology.h>
+#include <linux/cpumask.h>
 
-struct cpu_topology cpu_topology[NR_CPUS] = {};
+unsigned int cpumask_any_distribute(const struct cpumask * srcp)
+{
+	lx_emul_trace_and_stop(__func__);
+}
 
 
 #include <linux/sched/topology.h>
@@ -313,9 +300,24 @@ void do_softirq_own_stack(void)
 }
 
 
+extern void drop_partition(struct block_device * part);
+void drop_partition(struct block_device * part)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
 #include <linux/printk.h>
 
 asmlinkage __visible void dump_stack(void)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/printk.h>
+
+asmlinkage __visible void dump_stack_lvl(const char * log_lvl)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -334,9 +336,25 @@ void finish_rcuwait(struct rcuwait * w)
 struct kobject *firmware_kobj;
 
 
-#include <linux/blkdev.h>
+#include <linux/mmzone.h>
 
-int fsync_bdev(struct block_device * bdev)
+struct pglist_data * first_online_pgdat(void)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/kernel.h>
+
+int get_option(char ** str,int * pint)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/gfp.h>
+
+bool gfp_pfmemalloc_allowed(gfp_t gfp_mask)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -472,11 +490,6 @@ long __sched io_schedule_timeout(long timeout)
 }
 
 
-#include <linux/swiotlb.h>
-
-struct io_tlb_mem io_tlb_default_mem;
-
-
 #include <linux/ioport.h>
 
 struct resource iomem_resource;
@@ -529,22 +542,6 @@ bool is_software_node(const struct fwnode_handle * fwnode)
 #include <linux/kobject.h>
 
 struct kobject *kernel_kobj;
-
-
-#include <linux/slab.h>
-
-void kmem_dump_obj(void * object)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/slab.h>
-
-bool kmem_valid_obj(void * object)
-{
-	lx_emul_trace_and_stop(__func__);
-}
 
 
 #include <linux/kobject.h>
@@ -626,97 +623,25 @@ unsigned long logic_pio_trans_hwaddr(struct fwnode_handle * fwnode,resource_size
 
 #include <linux/delay.h>
 
+unsigned long loops_per_jiffy;
+
+
+#include <linux/delay.h>
+
 unsigned long lpj_fine;
-
-
-#include <linux/memblock.h>
-
-struct memblock memblock;
-
-
-#include <linux/memblock.h>
-
-int __init_memblock memblock_add(phys_addr_t base,phys_addr_t size)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/memblock.h>
-
-void __init memblock_cap_memory_range(phys_addr_t base,phys_addr_t size)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/memblock.h>
-
-int __init_memblock memblock_clear_nomap(phys_addr_t base,phys_addr_t size)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/memblock.h>
-
-bool __init_memblock memblock_is_region_reserved(phys_addr_t base,phys_addr_t size)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/memblock.h>
-
-int __init_memblock memblock_mark_hotplug(phys_addr_t base,phys_addr_t size)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/memblock.h>
-
-int __init_memblock memblock_mark_nomap(phys_addr_t base,phys_addr_t size)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/memblock.h>
-
-bool __init_memblock memblock_overlaps_region(struct memblock_type * type,phys_addr_t base,phys_addr_t size)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/memblock.h>
-
-phys_addr_t __init memblock_phys_alloc_range(phys_addr_t size,phys_addr_t align,phys_addr_t start,phys_addr_t end)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/memblock.h>
-
-int __init_memblock memblock_phys_free(phys_addr_t base,phys_addr_t size)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/memblock.h>
-
-int __init_memblock memblock_reserve(phys_addr_t base,phys_addr_t size)
-{
-	lx_emul_trace_and_stop(__func__);
-}
 
 
 #include <linux/string.h>
 
 ssize_t memory_read_from_buffer(void * to,size_t count,loff_t * ppos,const void * from,size_t available)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/mmzone.h>
+
+struct pglist_data * next_online_pgdat(struct pglist_data * pgdat)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -738,6 +663,14 @@ int nonseekable_open(struct inode * inode,struct file * filp)
 #include <linux/irq.h>
 
 void note_interrupt(struct irq_desc * desc,irqreturn_t action_ret)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/of.h>
+
+ssize_t of_modalias(const struct device_node * np,char * str,ssize_t len)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -793,6 +726,28 @@ int proc_dointvec_minmax(struct ctl_table * table,int write,void * buffer,size_t
 }
 
 
+extern void raw_spin_rq_lock_nested(struct rq * rq,int subclass);
+void raw_spin_rq_lock_nested(struct rq * rq,int subclass)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+extern void raw_spin_rq_unlock(struct rq * rq);
+void raw_spin_rq_unlock(struct rq * rq)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/rcutree.h>
+
+void rcu_barrier(void)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
 #include <linux/reboot.h>
 
 int register_restart_handler(struct notifier_block * nb)
@@ -812,6 +767,14 @@ int regulator_list_voltage(struct regulator * regulator,unsigned selector)
 #include <linux/ioport.h>
 
 int release_resource(struct resource * old)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/mm.h>
+
+void __meminit reserve_bootmem_region(phys_addr_t start,phys_addr_t end,int nid)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -852,6 +815,20 @@ void seq_vprintf(struct seq_file * m,const char * f,va_list args)
 #include <linux/mm.h>
 
 int set_page_dirty_lock(struct page * page)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+extern void set_rq_offline(struct rq * rq);
+void set_rq_offline(struct rq * rq)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+extern void set_rq_online(struct rq * rq);
+void set_rq_online(struct rq * rq)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -955,6 +932,14 @@ void time64_to_tm(time64_t totalsecs,int offset,struct tm * result)
 }
 
 
+#include <linux/mm.h>
+
+void unpin_user_page(struct page * page)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
 #include <linux/fs.h>
 
 void unregister_chrdev_region(dev_t from,unsigned count)
@@ -985,6 +970,13 @@ int unregister_restart_handler(struct notifier_block * nb)
 }
 
 
+extern void update_group_capacity(struct sched_domain * sd,int cpu);
+void update_group_capacity(struct sched_domain * sd,int cpu)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
 #include <linux/uuid.h>
 
 const u8 uuid_index[16] = {};
@@ -1001,14 +993,6 @@ void vfree(const void * addr)
 #include <linux/vmalloc.h>
 
 bool vmalloc_dump_obj(void * object)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/sched/wake_q.h>
-
-void wake_q_add_safe(struct wake_q_head * head,struct task_struct * task)
 {
 	lx_emul_trace_and_stop(__func__);
 }

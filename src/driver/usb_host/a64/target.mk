@@ -8,7 +8,6 @@ INC_DIR  = $(PRG_DIR)
 SRC_C += lx_emul/usb.c
 SRC_C += lx_emul/a64/common_dummies.c
 SRC_C += lx_emul/shadow/drivers/clk/clk.c
-SRC_C += lx_emul/shadow/mm/page_alloc.c
 
 SRC_CC += main.cc
 SRC_CC += lx_emul/shared_dma_buffer.cc

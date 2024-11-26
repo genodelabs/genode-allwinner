@@ -37,32 +37,6 @@ unsigned long get_zeroed_page(gfp_t gfp_mask)
 }
 
 
-#include <linux/slab.h>
-
-struct kmem_cache * kmem_cache_create_usercopy(const char * name,
-                                               unsigned int size,
-                                               unsigned int align,
-                                               slab_flags_t flags,
-                                               unsigned int useroffset,
-                                               unsigned int usersize,
-                                               void (* ctor)(void *))
-{
-	return kmem_cache_create(name, size, align, flags, ctor);
-}
-
-
-#include <linux/slab.h>
-
-int kmem_cache_alloc_bulk(struct kmem_cache * s,gfp_t flags, size_t nr,void ** p)
-{
-	size_t i;
-	for (i = 0; i < nr; i++)
-		p[i] = kmem_cache_alloc(s, flags);
-
-	return nr;
-}
-
-
 #include <linux/mm.h>
 
 bool is_vmalloc_addr(const void * x)

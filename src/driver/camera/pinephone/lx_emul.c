@@ -55,7 +55,7 @@ int alloc_chrdev_region(dev_t * dev,unsigned baseminor,unsigned count,const char
 
 
 static int          cdevs_count;
-static struct cdev *cdevs[5];
+static struct cdev *cdevs[6];
 
 struct cdev *lx_emul_get_cdev(unsigned major, unsigned minor)
 {
@@ -90,8 +90,10 @@ int cdev_add(struct cdev * p,dev_t dev,unsigned count)
 	if (cdevs_count < sizeof (cdevs) / sizeof (cdevs[0])) {
 		cdevs[cdevs_count] = p;
 		++cdevs_count;
+		return 0;
 	}
-	return 0;
+
+	return -1;
 }
 
 

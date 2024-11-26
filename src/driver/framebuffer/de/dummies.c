@@ -92,6 +92,8 @@ void cdev_device_del(struct cdev * cdev,struct device * dev)
 
 #include <linux/fb.h>
 
+struct apertures_struct;
+
 int remove_conflicting_framebuffers(struct apertures_struct * a,const char * name,bool primary)
 {
 	lx_emul_trace(__func__);
@@ -223,8 +225,36 @@ bool is_vmalloc_addr(const void * x)
 #include <drm/drm_aperture.h>
 
 int drm_aperture_remove_conflicting_framebuffers(resource_size_t base, resource_size_t size,
-                         bool primary, const struct drm_driver *req_driver)
+                                                 const struct drm_driver *req_driver)
 {
 	lx_emul_trace(__func__);
 	return 0;
+}
+
+
+#include <video/nomodeset.h>
+
+bool video_firmware_drivers_only(void)
+{
+	lx_emul_trace(__func__);
+	return false;
+}
+
+
+#include <video/cmdline.h>
+
+const char * video_get_options(const char * name)
+{
+	static char * const option = "";
+	lx_emul_trace(__func__);
+	return option;
+}
+
+
+#include <linux/regulator/consumer.h>
+
+struct regulator * devm_regulator_get_optional(struct device * dev,const char * id)
+{
+	lx_emul_trace(__func__);
+	return NULL;
 }

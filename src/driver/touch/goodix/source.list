@@ -21,6 +21,7 @@ drivers/base/platform.c
 drivers/base/property.c
 drivers/base/regmap/regcache-flat.c
 drivers/base/regmap/regcache-rbtree.c
+drivers/base/regmap/regcache-maple.c
 drivers/base/regmap/regcache.c
 drivers/base/regmap/regmap-i2c.c
 drivers/base/regmap/regmap-irq.c
@@ -127,6 +128,8 @@ lib/kobject.c
 lib/kstrtox.c
 lib/linear_ranges.c
 lib/list_sort.c
+lib/math/reciprocal_div.c
+lib/maple_tree.c
 lib/radix-tree.c
 lib/rbtree.c
 lib/refcount.c
@@ -136,5 +139,8 @@ lib/string_helpers.c
 lib/timerqueue.c
 lib/vsprintf.c
 lib/xarray.c
+mm/memblock.c
 mm/mempool.c
+mm/slab_common.c
+mm/slub.c
 mm/util.c

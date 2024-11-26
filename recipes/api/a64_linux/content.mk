@@ -67,6 +67,7 @@ LX_FILES += Makefile \
             scripts/Makefile.asm-generic \
             scripts/Makefile.build \
             scripts/Makefile.compiler \
+            scripts/Makefile.defconf \
             scripts/Makefile.extrawarn \
             scripts/Makefile.host \
             scripts/Makefile.lib \
@@ -75,7 +76,6 @@ LX_FILES += Makefile \
             scripts/basic/Makefile \
             scripts/basic/fixdep.c \
             scripts/cc-version.sh \
-            scripts/check-local-export \
             scripts/checksyscalls.sh \
             scripts/config \
             scripts/dtc \

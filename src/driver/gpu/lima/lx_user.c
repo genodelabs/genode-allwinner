@@ -29,6 +29,7 @@ void lx_user_handle_io(void) { }
 void lx_user_init(void)
 {
 	int pid = kernel_thread(lx_user_task_func, lx_user_task_args,
+	                        "user_task",
 	                        CLONE_FS | CLONE_FILES);
 	lx_user_task = find_task_by_pid_ns(pid, NULL);
 }
@@ -36,7 +37,7 @@ void lx_user_init(void)
 
 struct task_struct *lx_user_new_gpu_task(int (*func)(void*), void *args)
 {
-	int pid = kernel_thread(func, args, CLONE_FS | CLONE_FILES);
+	int pid = kernel_thread(func, args, "gpu_task", CLONE_FS | CLONE_FILES);
 	return find_task_by_pid_ns(pid, NULL);
 }
 

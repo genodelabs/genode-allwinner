@@ -50,11 +50,21 @@ int regulator_get_voltage(struct regulator * regulator)
 }
 
 
-#include <linux/slab.h>
+#include <linux/blkdev.h>
 
-void * kmem_cache_alloc_lru(struct kmem_cache * cachep,struct list_lru * lru,gfp_t flags)
+int bd_prepare_to_claim(struct block_device * bdev,void * holder,
+                        const struct blk_holder_ops *hops)
 {
-	return kmem_cache_alloc(cachep, flags);
+	struct block_device *whole = bdev_whole(bdev);
+	whole->bd_claiming = holder;
+	return 0;
+}
+
+
+void bd_abort_claiming(struct block_device * bdev,void * holder)
+{
+	struct block_device *whole = bdev_whole(bdev);
+	whole->bd_claiming = NULL;
 }
 
 

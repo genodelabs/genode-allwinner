@@ -15,6 +15,7 @@ SRC_C += lx_emul/a64/common_dummies.c
 SRC_C += lx_emul/a64/pio.c
 SRC_C += lx_emul/a64/pmic.c
 SRC_C += lx_emul/a64/ccu.c
+SRC_C += lx_emul/a64/r_pio.c
 SRC_C += lx_emul/shadow/mm/page_alloc.c
 
 SRC_CC += gui.cc
@@ -32,6 +33,7 @@ vpath lx_emul/a64/ccu.c            $(REP_DIR)/src/lib
 vpath lx_emul/a64/common_dummies.c $(REP_DIR)/src/lib
 vpath lx_emul/a64/pio.c            $(REP_DIR)/src/lib
 vpath lx_emul/a64/pmic.c           $(REP_DIR)/src/lib
+vpath lx_emul/a64/r_pio.c          $(REP_DIR)/src/lib
 vpath lx_emul/a64/sched.c          $(REP_DIR)/src/lib
 
 BOARDS := pinephone

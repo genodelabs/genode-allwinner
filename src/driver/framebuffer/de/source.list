@@ -21,6 +21,7 @@ drivers/base/platform.c
 drivers/base/property.c
 drivers/base/regmap/regcache-flat.c
 drivers/base/regmap/regcache-rbtree.c
+drivers/base/regmap/regcache-maple.c
 drivers/base/regmap/regcache.c
 drivers/base/regmap/regmap-i2c.c
 drivers/base/regmap/regmap-irq.c
@@ -72,6 +73,7 @@ drivers/gpu/drm/drm_encoder.c
 drivers/gpu/drm/drm_encoder_slave.c
 drivers/gpu/drm/drm_fb_dma_helper.c
 drivers/gpu/drm/drm_fb_helper.c
+drivers/gpu/drm/drm_fbdev_dma.c
 drivers/gpu/drm/drm_file.c
 drivers/gpu/drm/drm_flip_work.c
 drivers/gpu/drm/drm_format_helper.c
@@ -93,7 +95,6 @@ drivers/gpu/drm/drm_mode_object.c
 drivers/gpu/drm/drm_modes.c
 drivers/gpu/drm/drm_modeset_helper.c
 drivers/gpu/drm/drm_modeset_lock.c
-drivers/gpu/drm/drm_nomodeset.c
 drivers/gpu/drm/drm_of.c
 drivers/gpu/drm/drm_panel.c
 drivers/gpu/drm/drm_panel_orientation_quirks.c
@@ -115,12 +116,12 @@ drivers/gpu/drm/drm_vma_manager.c
 drivers/gpu/drm/drm_writeback.c
 drivers/gpu/drm/panel/panel-sitronix-st7703.c
 drivers/gpu/drm/sun4i/sun4i_crtc.c
-drivers/gpu/drm/sun4i/sun4i_dotclock.c
 drivers/gpu/drm/sun4i/sun4i_drv.c
 drivers/gpu/drm/sun4i/sun4i_framebuffer.c
 drivers/gpu/drm/sun4i/sun4i_lvds.c
 drivers/gpu/drm/sun4i/sun4i_rgb.c
 drivers/gpu/drm/sun4i/sun4i_tcon.c
+drivers/gpu/drm/sun4i/sun4i_tcon_dclk.c
 drivers/gpu/drm/sun4i/sun4i_tv.c
 drivers/gpu/drm/sun4i/sun6i_drc.c
 drivers/gpu/drm/sun4i/sun6i_mipi_dsi.c
@@ -228,6 +229,8 @@ lib/kobject.c
 lib/kstrtox.c
 lib/linear_ranges.c
 lib/list_sort.c
+lib/math/reciprocal_div.c
+lib/maple_tree.c
 lib/radix-tree.c
 lib/rbtree.c
 lib/refcount.c
@@ -237,5 +240,8 @@ lib/string_helpers.c
 lib/timerqueue.c
 lib/vsprintf.c
 lib/xarray.c
+mm/memblock.c
 mm/mempool.c
+mm/slab_common.c
+mm/slub.c
 mm/util.c
