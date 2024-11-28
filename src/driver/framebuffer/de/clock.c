@@ -89,7 +89,7 @@ struct clk * clk_register(struct device * dev,struct clk_hw * hw)
 {
 	struct clk *res = NULL;
 
-	if (strcmp(hw->init->name, "tcon-pixel-clock") == 0) {
+	if (strcmp(hw->init->name, "tcon-data-clock") == 0) {
 
 		if (!clk_tcon_pixel_clock) {
 
@@ -104,7 +104,6 @@ struct clk * clk_register(struct device * dev,struct clk_hw * hw)
 
 			clk_hw_tcon_pixel_clock = hw;
 			clk_tcon_pixel_clock = lx_emul_clock_get(dev->of_node, hw->init->name);
-
 		}
 		res = clk_tcon_pixel_clock;
 	}
@@ -156,8 +155,6 @@ int clk_hw_register(struct device * dev,struct clk_hw * hw)
 	 * Lookup like done in 'dev_or_parent_of_node()'.
 	 */
 	struct device_node *np = dev->of_node;
-	if (!np)
-		dev->parent->of_node;
 	if (!np) {
 		printk("Error: could not lookup device_node for dev %px\n", dev);
 		lx_emul_trace_and_stop(__func__);
@@ -216,7 +213,7 @@ int clk_set_rate(struct clk * clk,unsigned long rate)
 {
 	struct clk_hw *hw = lookup_internal_clk_hw(clk);
 	if (hw) {
-		/* only called for tcon-pixel-clock */
+		/* only called for tcon-data-clock */
 		unsigned long parent_rate = 275625000; /* tcon-ch0 */
 		return hw->init->ops->set_rate(hw, rate, parent_rate);
 	}
@@ -265,4 +262,10 @@ struct clk * devm_clk_get(struct device * dev,const char * id)
 struct clk * devm_clk_get_optional(struct device * dev,const char * id)
 {
 	return devm_clk_get(dev, id);
+}
+
+
+struct clk * devm_clk_get_enabled(struct device * dev,const char * id)
+{
+	return NULL;
 }

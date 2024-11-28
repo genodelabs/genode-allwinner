@@ -87,7 +87,7 @@ install_config {
 				<power-domain name="pmic-gpio0"/>
 				<clock name="bus-tcon0" driver_name="ahb"/>
 				<clock name="tcon0"     driver_name="tcon-ch0"/>
-				<clock name="dummy"     driver_name="tcon-pixel-clock"/>
+				<clock name="dummy"     driver_name="tcon-data-clock"/>
 			</device>
 			<device name="tcon1" type="allwinner,sun8i-a83t-tcon-tv">
 				<io_mem address="0x01c0d000" size="0x1000"/>
