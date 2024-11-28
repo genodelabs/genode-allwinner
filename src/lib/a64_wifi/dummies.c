@@ -536,3 +536,17 @@ void flush_dcache_page(struct page * page)
 {
 	lx_emul_trace(__func__);
 }
+
+
+#include <linux/mnt_idmapping.h>
+
+struct mnt_idmap { unsigned dummy; };
+struct mnt_idmap nop_mnt_idmap;
+
+
+#include <linux/fs.h>
+
+void inode_init_once(struct inode * inode)
+{
+	lx_emul_trace(__func__);
+}

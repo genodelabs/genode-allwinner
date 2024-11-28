@@ -18,8 +18,6 @@ SRC_CC  += dtb_helper.cc
 SRC_C   += clock.c
 SRC_C   += irq.c
 SRC_C   += $(notdir $(wildcard $(TARGET_LIB_DIR)/generated_dummies.c))
-SRC_C   += slab_common_supplement.c
-
 
 SRC_C += lx_emul/shadow/drivers/char/random.c
 SRC_C += lx_emul/shadow/fs/libfs.c
@@ -28,9 +26,13 @@ SRC_C += lx_emul/shadow/mm/vmalloc.c
 
 SRC_C += lx_emul/a64/common_dummies.c
 SRC_C += lx_emul/a64/pmic.c
+SRC_C += lx_emul/a64/pio-dummy.c
+SRC_C += lx_emul/a64/r_pio.c
 
 vpath lx_emul/a64/common_dummies.c $(REP_DIR)/src/lib
 vpath lx_emul/a64/pmic.c           $(REP_DIR)/src/lib
+vpath lx_emul/a64/pio-dummy.c      $(REP_DIR)/src/lib
+vpath lx_emul/a64/r_pio.c          $(REP_DIR)/src/lib
 
 #
 # RTL8723cs extra flags obtained by instrumenting 'rtl8723cs/Makefile'
@@ -45,6 +47,8 @@ CC_C_OPT += \
             -Wno-address-of-packed-member \
             -Wno-unused-variable \
             -Wno-date-time \
+            -DCONFIG_RTW_CFGVENDOR_RSSIMONITOR \
+            -DCONFIG_RTW_CFGVENDOR_CQM_THRESHOLD_EVT_LOW \
             -DCONFIG_RTL8703B \
             -DCONFIG_AP_MODE \
             -DCONFIG_P2P \

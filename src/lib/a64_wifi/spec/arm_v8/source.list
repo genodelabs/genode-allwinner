@@ -6,6 +6,7 @@ crypto/akcipher.c
 crypto/algapi.c
 crypto/algboss.c
 crypto/api.c
+crypto/asymmetric_keys/x509_loader.c
 crypto/ccm.c
 crypto/cipher.c
 crypto/cmac.c
@@ -14,7 +15,6 @@ crypto/crypto_null.c
 crypto/ctr.c
 crypto/gcm.c
 crypto/geniv.c
-crypto/gf128mul.c
 crypto/ghash-generic.c
 crypto/hash_info.c
 crypto/kpp.c
@@ -284,6 +284,8 @@ lib/klist.c
 lib/kobject.c
 lib/kstrtox.c
 lib/list_sort.c
+lib/math/reciprocal_div.c
+lib/maple_tree.c
 lib/nlattr.c
 lib/radix-tree.c
 lib/rbtree.c
@@ -297,7 +299,10 @@ lib/string_helpers.c
 lib/timerqueue.c
 lib/vsprintf.c
 lib/xarray.c
+mm/memblock.c
 mm/mempool.c
+mm/slab_common.c
+mm/slub.c
 mm/util.c
 net/core/datagram.c
 net/core/dev.c
