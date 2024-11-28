@@ -69,7 +69,18 @@ void bdev_add(struct block_device * bdev, dev_t dev)
 }
 
 
-struct block_device * blkdev_get_by_dev(dev_t dev,fmode_t mode,void * holder)
+extern void bdev_set_nr_sectors(struct block_device * bdev,sector_t sectors);
+void bdev_set_nr_sectors(struct block_device * bdev,sector_t sectors)
+{
+	spin_lock(&bdev->bd_size_lock);
+	i_size_write(bdev->bd_inode, (loff_t)sectors << SECTOR_SHIFT);
+	bdev->bd_nr_sectors = sectors;
+	spin_unlock(&bdev->bd_size_lock);
+}
+
+
+struct block_device *blkdev_get_by_dev(dev_t dev, blk_mode_t mode, void *holder,
+                                       const struct blk_holder_ops *hops)
 {
 	unsigned idx = MAJOR(dev);
 	if (idx < MAX_BDEV)
@@ -227,6 +238,7 @@ void lx_user_handle_io(void)
 
 void lx_user_init(void)
 {
-	int pid = kernel_thread(block_poll_sessions, NULL, CLONE_FS | CLONE_FILES);
+	int pid = kernel_thread(block_poll_sessions, NULL, "block_user_task",
+	                        CLONE_FS | CLONE_FILES);
 	lx_user_task = find_task_by_pid_ns(pid, NULL);;
 }
