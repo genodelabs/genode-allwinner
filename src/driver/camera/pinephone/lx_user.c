@@ -1,7 +1,7 @@
 /*
  * \brief  Post kernel userland activity
  * \author Josef Soentgen
- * \date   2027-07-29
+ * \date   2022-07-29
  */
 
 /*
@@ -41,6 +41,8 @@ struct Buffer
 	unsigned char *base;
 	size_t         size;
 
+	struct vm_area_struct *vma;
+
 	unsigned vma_flags;
 	unsigned vma_pgoff;
 };
@@ -54,14 +56,18 @@ struct Camera
 
 	struct media_v2_topology topology;
 
-	struct inode video_f_inode;
-	struct file  video_filp;
+	struct inode capture_f_inode;
+	struct file  capture_filp;
+
+	struct inode bridge_f_inode;
+	struct file  bridge_filp;
 
 	struct inode subdev_f_inode;
 	struct file  subdev_filp;
 
 	struct cdev *media0;
-	struct cdev *video0;
+	struct cdev *video0; /* treated as subdev */
+	struct cdev *video3;
 	struct cdev *v4l_subdev_gc2145;
 	struct cdev *v4l_subdev_ov5640;
 };
@@ -212,8 +218,8 @@ static int _setup_link(struct cdev              *media,
 	/* rear camera */
 	memset(&arg, 0, sizeof (arg));
 	arg.flags = front_camera ? 0 : MEDIA_LNK_FL_ENABLED;
-	arg.source.entity = pads[1].entity_id;
-	arg.source.index  = pads[1].index;
+	arg.source.entity = pads[2].entity_id;
+	arg.source.index  = pads[2].index;
 	arg.sink.entity   = pads[0].entity_id;
 	arg.sink.index    = pads[0].index;
 	err = media->ops->unlocked_ioctl(&media_filp, MEDIA_IOC_SETUP_LINK,
@@ -224,8 +230,8 @@ static int _setup_link(struct cdev              *media,
 	/* front camera */
 	memset(&arg, 0, sizeof (arg));
 	arg.flags = front_camera ? MEDIA_LNK_FL_ENABLED : 0;
-	arg.source.entity = pads[2].entity_id;
-	arg.source.index  = pads[2].index;
+	arg.source.entity = pads[3].entity_id;
+	arg.source.index  = pads[3].index;
 	arg.sink.entity   = pads[0].entity_id;
 	arg.sink.index    = pads[0].index;
 	err = media->ops->unlocked_ioctl(&media_filp, MEDIA_IOC_SETUP_LINK,
@@ -240,7 +246,7 @@ static int _setup_link(struct cdev              *media,
 static int _setup_subdev_fmt(struct Camera *camera,
                              bool front_camera)
 {
-	struct cdev *video        = camera->video0;
+	struct cdev *video        = camera->video3;
 	struct cdev *video_subdev = front_camera ? camera->v4l_subdev_gc2145
 	                                         : camera->v4l_subdev_ov5640;
 	int err;
@@ -284,7 +290,6 @@ static int _setup_subdev_fmt(struct Camera *camera,
 		arg.format.code   = camera->config.format ? MEDIA_BUS_FMT_SBGGR8_1X8
 		                                          : MEDIA_BUS_FMT_UYVY8_2X8;
 		arg.format.field  = V4L2_FIELD_ANY;
-
 		err = video->ops->unlocked_ioctl(&camera->subdev_filp,
 		                                 VIDIOC_SUBDEV_S_FMT,
 		                                 (unsigned long)&arg);
@@ -311,28 +316,60 @@ static int _setup_subdev_fmt(struct Camera *camera,
 		}
 	}
 
+	{
+		struct v4l2_subdev_format arg;
+		memset(&arg, 0, sizeof(arg));
+		arg.pad   = 0;
+		arg.which = V4L2_SUBDEV_FORMAT_ACTIVE;
+		arg.format.width  = camera->config.width;
+		arg.format.height = camera->config.height;
+		arg.format.code   = camera->config.format ? MEDIA_BUS_FMT_SBGGR8_1X8
+		                                          : MEDIA_BUS_FMT_UYVY8_2X8;
+		arg.format.field  = V4L2_FIELD_ANY;
+		err = video->ops->unlocked_ioctl(&camera->bridge_filp,
+		                                  VIDIOC_SUBDEV_S_FMT,
+		                                  (unsigned long)&arg);
+		if (err) {
+			printk("Could not set bridge format: %d\n", err);
+			return err;
+		}
+	}
+
 	return 0;
 }
 
 
 static int _open_video_device(struct Camera *camera)
 {
-	struct cdev *video = camera->video0;
+	struct cdev *bridge  = camera->video0;
+	struct cdev *capture = camera->video3;
 	int err;
 
-	err = video->ops->open(NULL, &camera->video_filp);
-	return err;
+	err = capture->ops->open(NULL, &camera->capture_filp);
+	if (err) {
+		printk("Could not open capture video device\n");
+		return err;
+	}
+
+	err = bridge->ops->open(NULL, &camera->bridge_filp);
+	if (err) {
+		printk("Could not open bridge video device\n");
+		/* ignore unclosed capture_filp */
+		return err;
+	}
+
+	return 0;
 }
 
 
 static int _query_video_device(struct Camera *camera)
 {
-	struct cdev *video = camera->video0;
+	struct cdev *video = camera->video3;
 	struct v4l2_capability arg;
 	int err;
 
 	memset(&arg, 0, sizeof(arg));
-	err = video->ops->unlocked_ioctl(&camera->video_filp,
+	err = video->ops->unlocked_ioctl(&camera->capture_filp,
 	                                 VIDIOC_QUERYCAP,
 	                                 (unsigned long)&arg);
 	if (err) {
@@ -346,7 +383,7 @@ static int _query_video_device(struct Camera *camera)
 
 static int _setup_video_fmt(struct Camera *camera)
 {
-	struct cdev *video = camera->video0;
+	struct cdev *video = camera->video3;
 	struct v4l2_format arg;
 	int err;
 
@@ -358,11 +395,11 @@ static int _setup_video_fmt(struct Camera *camera)
 	                                                              : V4L2_PIX_FMT_YUV420;
 	arg.fmt.pix.field       = V4L2_FIELD_ANY;
 
-	err = video->ops->unlocked_ioctl(&camera->video_filp,
+	err = video->ops->unlocked_ioctl(&camera->capture_filp,
 	                                 VIDIOC_S_FMT,
 	                                 (unsigned long)&arg);
 	if (err) {
-		printk("Could not query video device: %d\n", err);
+		printk("Could not set capture video format: %d\n", err);
 		return err;
 	}
 
@@ -372,7 +409,7 @@ static int _setup_video_fmt(struct Camera *camera)
 
 static int _request_buffers(struct Camera *camera)
 {
-	struct cdev   *video  = camera->video0;
+	struct cdev   *video  = camera->video3;
 	struct Buffer *buffer = camera->buffer;
 	unsigned num_buffer   = camera->config.num_buffer;
 	struct v4l2_requestbuffers arg;
@@ -384,7 +421,7 @@ static int _request_buffers(struct Camera *camera)
 	arg.type   = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	arg.memory = V4L2_MEMORY_MMAP;
 
-	err = video->ops->unlocked_ioctl(&camera->video_filp, VIDIOC_REQBUFS,
+	err = video->ops->unlocked_ioctl(&camera->capture_filp, VIDIOC_REQBUFS,
 	                                 (unsigned long)&arg);
 	if (err) {
 		printk("Could not request buffers: %d\n", err);
@@ -402,9 +439,28 @@ static int _request_buffers(struct Camera *camera)
 			.memory = V4L2_MEMORY_MMAP,
 			.index  = i,
 		};
-		struct vm_area_struct vma;
 
-		err = video->ops->unlocked_ioctl(&camera->video_filp,
+		/*
+		 * Here be dragons: we only need the VMA object to mmap
+		 * the V4L2 buffer in this function but the infrastructure to
+		 * properly allocate it is not there (e.g., we omit kernel/fork.c).
+		 *
+		 * So prepare everything 'vm_set_flags()' needs as it is also
+		 * called within 'video->ops->mmap()'.
+		 */
+		struct vm_area_struct vma;
+		struct vma_lock vm_lock;
+		struct mm_struct mm;
+		memset(&vma, 0, sizeof(vma));
+		memset(&vm_lock, 0, sizeof(vm_lock));
+		memset(&mm, 0, sizeof(mm));
+		vma.vm_lock = &vm_lock;
+		vma.vm_mm = &mm;
+
+		init_rwsem(&vma.vm_lock->lock);
+		vma.vm_lock_seq = -1;
+
+		err = video->ops->unlocked_ioctl(&camera->capture_filp,
 		                                 VIDIOC_QUERYBUF,
 		                                 (unsigned long)&arg);
 		if (err) {
@@ -412,11 +468,10 @@ static int _request_buffers(struct Camera *camera)
 			return err;
 		}
 
-		memset(&vma, 0, sizeof(vma));
 		vma.vm_pgoff = arg.m.offset >> PAGE_SHIFT;
-		vma.vm_flags = VM_SHARED | VM_READ;
+		vm_flags_set(&vma, VM_SHARED | VM_READ);
 
-		err = video->ops->mmap(&camera->video_filp, &vma);
+		err = video->ops->mmap(&camera->capture_filp, &vma);
 		if (err) {
 			printk("Could not mmap buffer %u\n", i);
 			return err;
@@ -435,7 +490,7 @@ static int _request_buffers(struct Camera *camera)
 
 static int _queue_buffers(struct Camera *camera)
 {
-	struct cdev   *video  = camera->video0;
+	struct cdev   *video  = camera->video3;
 	struct Buffer *buffer = camera->buffer;
 	unsigned num_buffer   = camera->config.num_buffer;
 	int err;
@@ -448,7 +503,7 @@ static int _queue_buffers(struct Camera *camera)
 			.index  = buffer[i].index,
 		};
 
-		err = video->ops->unlocked_ioctl(&camera->video_filp,
+		err = video->ops->unlocked_ioctl(&camera->capture_filp,
 		                                 VIDIOC_QBUF,
 		                                 (unsigned long)&arg);
 		if (err) {
@@ -717,7 +772,7 @@ static void gui_display_image(struct genode_gui             *gui,
 
 static struct Buffer *get_buffer(struct Camera *camera)
 {
-	struct cdev *video = camera->video0;
+	struct cdev *video = camera->video3;
 	struct v4l2_buffer arg;
 	int err;
 
@@ -732,7 +787,7 @@ static struct Buffer *get_buffer(struct Camera *camera)
 	 * filp.f_flags |= O_NONBLOCK;
 	 */
 
-	err = video->ops->unlocked_ioctl(&camera->video_filp,
+	err = video->ops->unlocked_ioctl(&camera->capture_filp,
 	                                 VIDIOC_DQBUF,
 	                                 (unsigned long)&arg);
 	if (err) {
@@ -746,7 +801,7 @@ static struct Buffer *get_buffer(struct Camera *camera)
 
 static int put_buffer(struct Camera *camera, struct Buffer *b)
 {
-	struct cdev *video = camera->video0;
+	struct cdev *video = camera->video3;
 	struct v4l2_buffer arg;
 	int err;
 
@@ -755,7 +810,7 @@ static int put_buffer(struct Camera *camera, struct Buffer *b)
 	arg.memory = V4L2_MEMORY_MMAP;
 	arg.index  = b->index;
 
-	err = video->ops->unlocked_ioctl(&camera->video_filp,
+	err = video->ops->unlocked_ioctl(&camera->capture_filp,
 	                                 VIDIOC_QBUF,
 	                                 (unsigned long)&arg);
 	if (err) {
@@ -769,12 +824,12 @@ static int put_buffer(struct Camera *camera, struct Buffer *b)
 
 static int control_camera(struct Camera *camera, bool start)
 {
-	struct cdev *video = camera->video0;
+	struct cdev *video = camera->video3;
 
 	enum v4l2_buf_type const arg = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	int err;
 
-	err = video->ops->unlocked_ioctl(&camera->video_filp,
+	err = video->ops->unlocked_ioctl(&camera->capture_filp,
 	                                 start ? VIDIOC_STREAMON
 	                                       : VIDIOC_STREAMOFF,
 	                                 (unsigned long)&arg);
@@ -791,6 +846,7 @@ static bool setup_camera(struct Camera *camera)
 {
 	struct cdev *media0;
 	struct cdev *video0;
+	struct cdev *video3;
 	struct cdev *v4l_subdev_ov5640;
 	struct cdev *v4l_subdev_gc2145;
 
@@ -801,24 +857,31 @@ static bool setup_camera(struct Camera *camera)
 
 	media0            = lx_emul_get_cdev(MEDIA0_MAJOR, 0);
 	video0            = lx_emul_get_cdev(VIDEO_MAJOR,  0);
+	video3            = lx_emul_get_cdev(VIDEO_MAJOR,  3);
 	v4l_subdev_ov5640 = lx_emul_get_cdev(VIDEO_MAJOR,  1);
 	v4l_subdev_gc2145 = lx_emul_get_cdev(VIDEO_MAJOR,  2);
 
-	if (!media0 || !video0 || !v4l_subdev_gc2145 || !v4l_subdev_ov5640) {
+	if (!media0 || !video3 || !v4l_subdev_gc2145 || !v4l_subdev_ov5640) {
 		printk("Could not acquire video devices\n");
 		return false;
 	}
 
 	camera->media0            = media0;
 	camera->video0            = video0;
+	camera->video3            = video3;
 	camera->v4l_subdev_gc2145 = v4l_subdev_gc2145;
 	camera->v4l_subdev_ov5640 = v4l_subdev_ov5640;
 
 	/* prepare ioctl arguments */
-	memset(&camera->video_f_inode, 0, sizeof (camera->video_f_inode));
-	memset(&camera->video_filp,    0, sizeof (camera->video_filp));
-	camera->video_f_inode.i_rdev = video0->dev;
-	camera->video_filp.f_inode   = &camera->video_f_inode;
+	memset(&camera->capture_f_inode, 0, sizeof (camera->capture_f_inode));
+	memset(&camera->capture_filp,    0, sizeof (camera->capture_filp));
+	camera->capture_f_inode.i_rdev = video3->dev;
+	camera->capture_filp.f_inode   = &camera->capture_f_inode;
+
+	memset(&camera->bridge_f_inode, 0, sizeof (camera->bridge_f_inode));
+	memset(&camera->bridge_filp,    0, sizeof (camera->bridge_filp));
+	camera->bridge_f_inode.i_rdev = video0->dev;
+	camera->bridge_filp.f_inode   = &camera->bridge_f_inode;
 
 	if (_configure_capture(camera))
 		return false;
@@ -905,6 +968,7 @@ void lx_user_handle_io(void) { }
 void lx_user_init(void)
 {
 	int pid = kernel_thread(capture_task_function, capture_task_args,
+	                        "capture_task",
 	                        CLONE_FS | CLONE_FILES);
 	capture_task = find_task_by_pid_ns(pid, NULL);
 }

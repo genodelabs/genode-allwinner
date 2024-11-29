@@ -1,7 +1,7 @@
 /*
  * \brief  Dummy definitions of Linux Kernel functions
  * \author Automatically generated file - do no edit
- * \date   2023-06-13
+ * \date   2024-11-29
  */
 
 #include <lx_emul.h>
@@ -136,6 +136,11 @@ int _printk_deferred(const char * fmt,...)
 }
 
 
+#include <linux/mm.h>
+
+atomic_long_t _totalram_pages;
+
+
 #include <linux/random.h>
 
 void __init add_bootloader_randomness(const void * buf,size_t len)
@@ -184,6 +189,11 @@ struct file * anon_inode_getfile(const char * name,const struct file_operations 
 }
 
 
+#include <linux/blkdev.h>
+
+struct class block_class;
+
+
 #include <linux/init.h>
 
 char __initdata boot_command_line[] = {};
@@ -216,6 +226,22 @@ void cdev_device_del(struct cdev * cdev,struct device * dev)
 #include <linux/clk.h>
 
 void clk_rate_exclusive_put(struct clk * clk)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/cpumask.h>
+
+unsigned int cpumask_any_distribute(const struct cpumask * srcp)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/sched/topology.h>
+
+bool cpus_share_cache(int this_cpu,int that_cpu)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -287,7 +313,7 @@ struct dma_buf * dma_buf_get(int fd)
 
 #include <linux/dma-buf.h>
 
-struct sg_table * dma_buf_map_attachment(struct dma_buf_attachment * attach,enum dma_data_direction direction)
+struct sg_table * dma_buf_map_attachment_unlocked(struct dma_buf_attachment * attach,enum dma_data_direction direction)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -303,7 +329,7 @@ void dma_buf_put(struct dma_buf * dmabuf)
 
 #include <linux/dma-buf.h>
 
-void dma_buf_unmap_attachment(struct dma_buf_attachment * attach,struct sg_table * sg_table,enum dma_data_direction direction)
+void dma_buf_unmap_attachment_unlocked(struct dma_buf_attachment * attach,struct sg_table * sg_table,enum dma_data_direction direction)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -311,7 +337,7 @@ void dma_buf_unmap_attachment(struct dma_buf_attachment * attach,struct sg_table
 
 #include <linux/dma-buf.h>
 
-int dma_buf_vmap(struct dma_buf * dmabuf,struct iosys_map * map)
+int dma_buf_vmap_unlocked(struct dma_buf * dmabuf,struct iosys_map * map)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -319,7 +345,7 @@ int dma_buf_vmap(struct dma_buf * dmabuf,struct iosys_map * map)
 
 #include <linux/dma-buf.h>
 
-void dma_buf_vunmap(struct dma_buf * dmabuf,struct iosys_map * map)
+void dma_buf_vunmap_unlocked(struct dma_buf * dmabuf,struct iosys_map * map)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -431,6 +457,14 @@ asmlinkage __visible void dump_stack(void)
 }
 
 
+#include <linux/printk.h>
+
+asmlinkage __visible void dump_stack_lvl(const char * log_lvl)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
 #include <linux/file.h>
 
 void fd_install(unsigned int fd,struct file * file)
@@ -460,6 +494,14 @@ int firmware_request_nowarn(const struct firmware ** firmware,const char * name,
 }
 
 
+#include <linux/mmzone.h>
+
+struct pglist_data * first_online_pgdat(void)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
 #include <linux/file.h>
 
 void fput(struct file * file)
@@ -468,9 +510,25 @@ void fput(struct file * file)
 }
 
 
+#include <linux/kernel.h>
+
+int get_option(char ** str,int * pint)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
 #include <linux/file.h>
 
 int get_unused_fd_flags(unsigned flags)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/gfp.h>
+
+bool gfp_pfmemalloc_allowed(gfp_t gfp_mask)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -526,11 +584,6 @@ long __sched io_schedule_timeout(long timeout)
 }
 
 
-#include <linux/swiotlb.h>
-
-struct io_tlb_mem io_tlb_default_mem;
-
-
 #include <linux/ioport.h>
 
 struct resource iomem_resource;
@@ -575,14 +628,6 @@ bool is_software_node(const struct fwnode_handle * fwnode)
 #include <linux/kobject.h>
 
 struct kobject *kernel_kobj;
-
-
-#include <linux/slab.h>
-
-void * kmem_cache_alloc_lru(struct kmem_cache * cachep,struct list_lru * lru,gfp_t flags)
-{
-	lx_emul_trace_and_stop(__func__);
-}
 
 
 #include <linux/kobject.h>
@@ -635,97 +680,25 @@ unsigned long logic_pio_trans_hwaddr(struct fwnode_handle * fwnode,resource_size
 
 #include <linux/delay.h>
 
+unsigned long loops_per_jiffy;
+
+
+#include <linux/delay.h>
+
 unsigned long lpj_fine;
-
-
-#include <linux/memblock.h>
-
-struct memblock memblock;
-
-
-#include <linux/memblock.h>
-
-int __init_memblock memblock_add(phys_addr_t base,phys_addr_t size)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/memblock.h>
-
-void __init memblock_cap_memory_range(phys_addr_t base,phys_addr_t size)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/memblock.h>
-
-int __init_memblock memblock_clear_nomap(phys_addr_t base,phys_addr_t size)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/memblock.h>
-
-bool __init_memblock memblock_is_region_reserved(phys_addr_t base,phys_addr_t size)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/memblock.h>
-
-int __init_memblock memblock_mark_hotplug(phys_addr_t base,phys_addr_t size)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/memblock.h>
-
-int __init_memblock memblock_mark_nomap(phys_addr_t base,phys_addr_t size)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/memblock.h>
-
-bool __init_memblock memblock_overlaps_region(struct memblock_type * type,phys_addr_t base,phys_addr_t size)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/memblock.h>
-
-phys_addr_t __init memblock_phys_alloc_range(phys_addr_t size,phys_addr_t align,phys_addr_t start,phys_addr_t end)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/memblock.h>
-
-int __init_memblock memblock_phys_free(phys_addr_t base,phys_addr_t size)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/memblock.h>
-
-int __init_memblock memblock_reserve(phys_addr_t base,phys_addr_t size)
-{
-	lx_emul_trace_and_stop(__func__);
-}
 
 
 #include <linux/string.h>
 
 ssize_t memory_read_from_buffer(void * to,size_t count,loff_t * ppos,const void * from,size_t available)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/mmzone.h>
+
+struct pglist_data * next_online_pgdat(struct pglist_data * pgdat)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -755,6 +728,14 @@ loff_t noop_llseek(struct file * file,loff_t offset,int whence)
 #include <linux/irq.h>
 
 void note_interrupt(struct irq_desc * desc,irqreturn_t action_ret)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/of.h>
+
+ssize_t of_modalias(const struct device_node * np,char * str,ssize_t len)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -826,6 +807,20 @@ void put_unused_fd(unsigned int fd)
 }
 
 
+extern void raw_spin_rq_lock_nested(struct rq * rq,int subclass);
+void raw_spin_rq_lock_nested(struct rq * rq,int subclass)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+extern void raw_spin_rq_unlock(struct rq * rq);
+void raw_spin_rq_unlock(struct rq * rq)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
 #include <linux/firmware.h>
 
 void release_firmware(const struct firmware * fw)
@@ -837,6 +832,14 @@ void release_firmware(const struct firmware * fw)
 #include <linux/ioport.h>
 
 int release_resource(struct resource * old)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+#include <linux/mm.h>
+
+void __meminit reserve_bootmem_region(phys_addr_t start,phys_addr_t end,int nid)
 {
 	lx_emul_trace_and_stop(__func__);
 }
@@ -882,6 +885,20 @@ int set_page_dirty_lock(struct page * page)
 }
 
 
+extern void set_rq_offline(struct rq * rq);
+void set_rq_offline(struct rq * rq)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
+extern void set_rq_online(struct rq * rq);
+void set_rq_online(struct rq * rq)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
 #include <linux/smp.h>
 
 void smp_call_function_many(const struct cpumask * mask,smp_call_func_t func,void * info,bool wait)
@@ -909,6 +926,13 @@ void sort(void * base,size_t num,size_t size,cmp_func_t cmp_func,swap_func_t swa
 #include <linux/jump_label.h>
 
 bool static_key_initialized;
+
+
+extern struct gpio_desc * swnode_find_gpio(struct fwnode_handle * fwnode,const char * con_id,unsigned int idx,unsigned long * flags);
+struct gpio_desc * swnode_find_gpio(struct fwnode_handle * fwnode,const char * con_id,unsigned int idx,unsigned long * flags)
+{
+	lx_emul_trace_and_stop(__func__);
+}
 
 
 #include <linux/sysctl.h>
@@ -978,6 +1002,13 @@ void unregister_irq_proc(unsigned int irq,struct irq_desc * desc)
 }
 
 
+extern void update_group_capacity(struct sched_domain * sd,int cpu);
+void update_group_capacity(struct sched_domain * sd,int cpu)
+{
+	lx_emul_trace_and_stop(__func__);
+}
+
+
 #include <linux/uuid.h>
 
 const u8 uuid_index[16] = {};
@@ -986,14 +1017,6 @@ const u8 uuid_index[16] = {};
 #include <linux/vmalloc.h>
 
 void vfree(const void * addr)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-#include <linux/sched/wake_q.h>
-
-void wake_q_add_safe(struct wake_q_head * head,struct task_struct * task)
 {
 	lx_emul_trace_and_stop(__func__);
 }
