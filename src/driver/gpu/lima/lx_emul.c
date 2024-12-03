@@ -133,20 +133,6 @@ void lx_emul_fput(unsigned int fd)
 }
 
 
-#include <linux/slab.h>
-
-struct kmem_cache * kmem_cache_create_usercopy(const char * name,
-                                               unsigned int size,
-                                               unsigned int align,
-                                               slab_flags_t flags,
-                                               unsigned int useroffset,
-                                               unsigned int usersize,
-                                               void (* ctor)(void *))
-{
-	return kmem_cache_create(name, size, align, flags, ctor);
-}
-
-
 #include <linux/sched.h>
 
 char * __get_task_comm(char * buf,size_t buf_size,struct task_struct * tsk)
@@ -746,12 +732,4 @@ int dma_map_sgtable(struct device *dev, struct sg_table *sgt,
 		return nents;
 	sgt->nents = nents;
 	return 0;
-}
-
-
-#include <linux/slab.h>
-
-void * kmem_cache_alloc_lru(struct kmem_cache * cachep,struct list_lru * lru,gfp_t flags)
-{
-	return kmem_cache_alloc(cachep, flags);
 }
