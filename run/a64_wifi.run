@@ -30,17 +30,15 @@ install_config {
 			<service name="IRQ"/>
 		</parent-provides>
 
-		<default caps="100"/>
+		<default caps="100" ram="1M"/>
 
 		<start name="timer">
-			<resource name="RAM" quantum="1M"/>
 			<route> <any-service> <parent/> </any-service> </route>
 			<provides> <service name="Timer"/> </provides>
 		</start>
 
-		<start name="platform" caps="150" managing_system="yes">
+		<start name="platform" caps="150" ram="2M" managing_system="yes">
 			<binary name="a64_platform"/>
-			<resource name="RAM" quantum="2M"/>
 			<provides> <service name="Platform"/> <service name="Scp"/> </provides>
 			<config devices_rom="config">
 				<device name="pio" type="allwinner,sun50i-a64-pinctrl">
@@ -74,7 +72,6 @@ install_config {
 		</start>
 
 		<start name="a64_pio">
-			<resource name="RAM" quantum="1M"/>
 			<provides>
 				<service name="Pin_state"/>
 				<service name="Pin_control"/>
@@ -101,8 +98,7 @@ install_config {
 			</config>
 		</start>
 
-		<start name="test-lwip_httpsrv">
-			<resource name="RAM" quantum="128M"/>
+		<start name="test-lwip_httpsrv" ram="128M">
 			<config>
 				<libc stdout="/dev/null" stderr="/dev/log" socket="/socket"/>
 				<vfs>
@@ -116,8 +112,7 @@ install_config {
 			</route>
 		</start>
 
-		<start name="nic_router" caps="150">
-			<resource name="RAM" quantum="8M"/>
+		<start name="nic_router" caps="150" ram="8M">
 			<provides>
 				<service name="Nic"/>
 				<service name="Uplink"/>
@@ -152,7 +147,6 @@ install_config {
 		</start>
 
 		<start name="dummy_rtc">
-			<resource name="RAM" quantum="1M"/>
 			<provides> <service name="Rtc"/> </provides>
 			<config year="2023" month="02" day="27" hour="12" minute="0" second="0"/>
 			<route>
@@ -160,9 +154,8 @@ install_config {
 			</route>
 		</start>
 
-		<start name="state_report_rom">
+		<start name="state_report_rom" ram="2M">
 			<binary name="report_rom"/>
-			<resource name="RAM" quantum="2M"/>
 			<provides> <service name="Report"/> <service name="ROM"/> </provides>
 			<config verbose="no"/>
 			<route>
@@ -174,9 +167,8 @@ install_config {
 			</route>
 		</start>
 
-		<start name="accesspoints_report_rom">
+		<start name="accesspoints_report_rom" ram="2M">
 			<binary name="report_rom"/>
-			<resource name="RAM" quantum="2M"/>
 			<provides> <service name="Report"/> <service name="ROM"/> </provides>
 			<config verbose="no"/>
 			<route>
@@ -188,9 +180,8 @@ install_config {
 			</route>
 		</start>
 
-		<start name="devices_report_rom">
+		<start name="devices_report_rom" ram="2M">
 			<binary name="report_rom"/>
-			<resource name="RAM" quantum="2M"/>
 			<provides> <service name="Report"/> <service name="ROM"/> </provides>
 			<config verbose="yes"/>
 			<route>
@@ -202,9 +193,8 @@ install_config {
 			</route>
 		</start>
 
-		<start name="config_rom">
+		<start name="config_rom" ram="4M">
 			<binary name="dynamic_rom"/>
-			<resource name="RAM" quantum="4M"/>
 			<provides><service name="ROM"/></provides>
 			<config verbose="yes">
 				<rom name="wifi_config">
@@ -236,8 +226,7 @@ install_config {
 			</route>
 		</start>
 
-		<start name="wifi" caps="250" priority="-1">
-			<resource name="RAM" quantum="32M"/>
+		<start name="wifi" caps="250" ram="32M" priority="-1">
 			<config ld_verbose="yes">
 				<report mac_address="true"/>
 				<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" rng="/dev/urandom"/>

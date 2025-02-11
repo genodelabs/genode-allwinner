@@ -27,26 +27,23 @@ install_config {
 			<service name="TRACE"/>
 		</parent-provides>
 
-		<default caps="100"/>
+		<default caps="100" ram="1M"/>
 		<default-route>
 			<any-service> <parent/> <any-child/> </any-service>
 		</default-route>
 
 		<start name="timer" priority="0">
-			<resource name="RAM" quantum="1M"/>
 			<resource name="CPU" quantum="20"/>
 			<route> <any-service> <parent/> </any-service> </route>
 			<provides> <service name="Timer"/> </provides>
 		</start>
 
 		<start name="report_rom" priority="-1">
-			<resource name="RAM" quantum="1M"/>
 			<provides> <service name="Report"/> <service name="ROM"/> </provides>
 			<config verbose="yes"/>
 		</start>
 
-		<start name="platform" caps="200" managing_system="yes" priority="-1">
-			<resource name="RAM" quantum="2M"/>
+		<start name="platform" caps="200" ram="2M" managing_system="yes" priority="-1">
 			<binary name="a64_platform"/>
 			<provides> <service name="Platform"/> <service name="Scp"/> </provides>
 			<config devices="yes">
@@ -67,7 +64,6 @@ install_config {
 		</start>
 
 		<start name="a64_pio" priority="-1">
-			<resource name="RAM" quantum="1M"/>
 			<provides>
 				<service name="Pin_state"/>
 				<service name="Pin_control"/>
@@ -88,7 +84,6 @@ install_config {
 
 		<start name="audio_control" priority="-1">
 			<binary name="pinephone_audio_control"/>
-			<resource name="RAM" quantum="1M"/>
 			<config>
 				<mic      volume="60"/>
 				<earpiece volume="100"/>
@@ -101,8 +96,7 @@ install_config {
 			</route>
 		</start>
 
-		<start name="mixer" priority="0">
-			<resource name="RAM" quantum="2M"/>
+		<start name="mixer" ram="2M" priority="0">
 			<resource name="CPU" quantum="20"/>
 			<binary name="record_play_mixer"/>
 			<provides> <service name="Record"/> <service name="Play"/> </provides>
@@ -120,7 +114,6 @@ install_config {
 		</start>
 
 		<start name="waveform_player" priority="0">
-			<resource name="RAM" quantum="1M"/>
 			<config period_ms="11">
 				<play label="left"  wave="sine"   hz="1000" sample_rate_hz="44100"/>
 				<play label="right" wave="square" hz="1000" sample_rate_hz="44100"/>
@@ -132,7 +125,6 @@ install_config {
 
 		<start name="audio" priority="0">
 			<binary name="a64_audio"/>
-			<resource name="RAM" quantum="1M"/>
 			<resource name="CPU" quantum="20"/>
 			<config record_play="yes"/>
 			<route>

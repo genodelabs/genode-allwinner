@@ -25,22 +25,19 @@ install_config {
 	<default-route>
 		<any-service> <parent/> <any-child/> </any-service>
 	</default-route>
-	<default caps="100"/>
+	<default caps="100" ram="1M"/>
 
 	<start name="timer">
-		<resource name="RAM" quantum="1M"/>
 		<provides><service name="Timer"/></provides>
 	</start>
 
 	<start name="event_dump">
-		<resource name="RAM" quantum="1M"/>
 		<provides> <service name="Event"/> </provides>
 		<config/>
 	</start>
 
 	<start name="platform" caps="150" managing_system="yes">
 		<binary name="a64_platform"/>
-		<resource name="RAM" quantum="1M"/>
 		<provides> <service name="Platform"/> <service name="Scp"/> </provides>
 		<config devices_rom="config">
 
@@ -75,7 +72,6 @@ install_config {
 	</start>
 
 	<start name="a64_pio">
-		<resource name="RAM" quantum="1M"/>
 		<provides>
 			<service name="Pin_state"/>
 			<service name="Pin_control"/>
@@ -100,8 +96,7 @@ install_config {
 		</config>
 	</start>
 
-	<start name="goodix_touch" caps="250">
-		<resource name="RAM" quantum="40M"/>
+	<start name="goodix_touch" caps="250" ram="40M">
 		<route>
 			<service name="ROM" label="dtb"> <parent label="goodix-pinephone.dtb"/> </service>
 			<service name="RM">          <parent/> </service>

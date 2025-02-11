@@ -113,9 +113,8 @@ proc uart_log_start_node { } {
 	if {![interactive_at_control]} { return "" }
 
 	return {
-		<start name="uart_log">
+		<start name="uart_log" ram="2M">
 			<binary name="ns16550_uart"/>
-			<resource name="RAM" quantum="2M"/>
 			<config carriage_return="true"/>
 			<route>
 				<service name="Terminal"> <child name="terminal_crosslink"/> </service>
@@ -132,9 +131,8 @@ proc network_related_start_nodes { } {
 	if {![test_network_connectivity]} { return "" }
 
 	return {
-		<start name="usb_host" caps="200">
+		<start name="usb_host" caps="200" ram="16M">
 			<binary name="a64_usb_host"/>
-			<resource name="RAM" quantum="16M"/>
 			<provides> <service name="Usb"/> </provides>
 			<config>
 				<policy label_prefix="cdc_ether">
@@ -151,9 +149,8 @@ proc network_related_start_nodes { } {
 			</route>
 		</start>
 
-		<start name="cdc_ether" caps="200">
+		<start name="cdc_ether" caps="200" ram="20M">
 			<binary name="usb_net"/>
-			<resource name="RAM" quantum="20M"/>
 			<config mac="02:00:00:00:01:05" ld_verbose="yes"/>
 			<route>
 				<service name="Uplink"><child name="nic_router"/></service>
@@ -161,8 +158,7 @@ proc network_related_start_nodes { } {
 			</route>
 		</start>
 
-		<start name="nic_router" caps="200">
-			<resource name="RAM" quantum="10M"/>
+		<start name="nic_router" caps="200" ram="10M">
 			<provides>
 				<service name="Nic"/>
 				<service name="Uplink"/>
@@ -190,8 +186,7 @@ proc network_related_start_nodes { } {
 			</config>
 		</start>
 
-		<start name="ping">
-			<resource name="RAM" quantum="8M"/>
+		<start name="ping" ram="8M">
 			<config period_sec="5"
 			        verbose="no"
 			        count="100"
@@ -218,25 +213,22 @@ install_config {
 			<service name="TRACE"/>
 		</parent-provides>
 
-		<default caps="100"/>
+		<default caps="100" ram="1M"/>
 		<default-route>
 			<any-service> <parent/> <any-child/> </any-service>
 		</default-route>
 
 		<start name="timer">
-			<resource name="RAM" quantum="1M"/>
 			<route> <any-service> <parent/> </any-service> </route>
 			<provides> <service name="Timer"/> </provides>
 		</start>
 
 		<start name="report_rom">
-			<resource name="RAM" quantum="1M"/>
 			<provides> <service name="Report"/> <service name="ROM"/> </provides>
 			<config verbose="yes"/>
 		</start>
 
-		<start name="platform" caps="200" managing_system="yes">
-			<resource name="RAM" quantum="2M"/>
+		<start name="platform" caps="200" ram="1M" managing_system="yes">
 			<binary name="a64_platform"/>
 			<provides> <service name="Platform"/> <service name="Scp"/> </provides>
 			<config>
@@ -263,7 +255,6 @@ install_config {
 		</start>
 
 		<start name="a64_pio">
-			<resource name="RAM" quantum="1M"/>
 			<provides>
 				<service name="Pin_state"/>
 				<service name="Pin_control"/>
@@ -315,7 +306,6 @@ install_config {
 
 		<start name="audio_control">
 			<binary name="pinephone_audio_control"/>
-			<resource name="RAM" quantum="1M"/>
 			<config>
 				<mic      volume="80"/>
 				<earpiece volume="100"/>
@@ -330,7 +320,6 @@ install_config {
 
 		<start name="modem">
 			<binary name="pinephone_modem"/>
-			<resource name="RAM" quantum="1M"/>
 			} [modem_config] {
 			<route>
 				<service name="Timer">       <child name="timer"/>              </service>
@@ -343,13 +332,11 @@ install_config {
 		</start>
 
 		<start name="terminal_crosslink">
-			<resource name="RAM" quantum="1M"/>
 			<provides> <service name="Terminal"/> </provides>
 		</start>
 
-		<start name="uart_phone">
+		<start name="uart_phone" ram="2M">
 			<binary name="ns16550_uart"/>
-			<resource name="RAM" quantum="2M"/>
 			<route>
 				<service name="Terminal"> <child name="terminal_crosslink"/> </service>
 				<service name="Platform"> <child name="platform"/> </service>

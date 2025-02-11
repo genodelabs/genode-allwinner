@@ -13,16 +13,14 @@ install_config {
 			<service name="IRQ"/>
 		</parent-provides>
 
-		<default caps="100"/>
+		<default caps="100" ram="1M"/>
 
 		<start name="timer">
-			<resource name="RAM" quantum="1M"/>
 			<route> <any-service> <parent/> </any-service> </route>
 			<provides> <service name="Timer"/> </provides>
 		</start>
 
 		<start name="a64_platform" caps="150" managing_system="yes">
-			<resource name="RAM" quantum="1M"/>
 			<provides> <service name="Platform"/> <service name="Scp"/> </provides>
 			<route> <any-service> <parent/> </any-service> </route>
 			<config devices_rom="config">
@@ -30,7 +28,6 @@ install_config {
 		</start>
 
 		<start name="test-scp">
-			<resource name="RAM" quantum="1M"/>
 			<route>
 				<service name="Scp"> <child name="a64_platform"/> </service>
 				<any-service> <parent/> </any-service>
@@ -40,7 +37,6 @@ install_config {
 
 		<start name="test-scp-2">
 			<binary name="test-scp"/>
-			<resource name="RAM" quantum="1M"/>
 			<route>
 				<service name="Scp"> <child name="a64_platform"/> </service>
 				<any-service> <parent/> </any-service>

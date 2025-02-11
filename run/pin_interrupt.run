@@ -13,10 +13,9 @@ install_config {
 			<service name="IRQ"/>
 		</parent-provides>
 
-		<default caps="100"/>
+		<default caps="100" ram="1M"/>
 
 		<start name="test-pin_interrupt">
-			<resource name="RAM" quantum="1M"/>
 			<route> <any-service> <parent/> </any-service> </route>
 		</start>
 	</config>

@@ -26,15 +26,13 @@ install_config {
 	<default-route>
 		<any-service> <parent/> <any-child/> </any-service>
 	</default-route>
-	<default caps="100"/>
+	<default caps="100" ram="1M"/>
 
 	<start name="timer">
-		<resource name="RAM" quantum="1M"/>
 		<provides><service name="Timer"/></provides>
 	</start>
 
-	<start name="platform" caps="200" managing_system="yes">
-		<resource name="RAM" quantum="2M"/>
+	<start name="platform" caps="200" ram="2M" managing_system="yes">
 		<binary name="a64_platform"/>
 		<provides> <service name="Platform"/> <service name="Scp"/> </provides>
 		<config devices_rom="config">
@@ -116,7 +114,6 @@ install_config {
 	</start>
 
 	<start name="a64_pio">
-		<resource name="RAM" quantum="1M"/>
 		<provides>
 			<service name="Pin_state"/>
 			<service name="Pin_control"/>
@@ -139,8 +136,7 @@ install_config {
 		</config>
 	</start>
 
-	<start name="dynamic_rom">
-		<resource name="RAM" quantum="4M"/>
+	<start name="dynamic_rom" ram="4M">
 		<provides><service name="ROM"/></provides>
 		<config verbose="yes">
 			<rom name="config">
@@ -156,9 +152,8 @@ install_config {
 							<service name="Capture"/>
 							<service name="Pin_control"/>
 						</parent-provides>
-						<start name="fb" caps="250">
+						<start name="fb" caps="250" ram="40M">
 							<binary name="de_fb"/>
-							<resource name="RAM" quantum="40M"/>
 							<route>
 								<any-service> <parent/> </any-service>
 							</route>
@@ -185,9 +180,8 @@ install_config {
 		</config>
 	</start>
 
-	<start name="dynamic_init" caps="300">
+	<start name="dynamic_init" caps="300" ram="45M">
 		<binary name="init"/>
-		<resource name="RAM" quantum="45M"/>
 		<route>
 			<service name="ROM" label="config">
 				<child name="dynamic_rom"/> </service>
@@ -205,8 +199,7 @@ install_config {
 		</route>
 	</start>
 
-	<start name="test-framebuffer">
-		<resource name="RAM" quantum="10M"/>
+	<start name="test-framebuffer" ram="10M">
 		<provides> <service name="Capture"/> </provides>
 		<config/>
 	</start>

@@ -29,15 +29,13 @@ install_config {
 	<default-route>
 		<any-service> <parent/> <any-child/> </any-service>
 	</default-route>
-	<default caps="100"/>
+	<default caps="100" ram="1M"/>
 
 	<start name="timer">
-		<resource name="RAM" quantum="1M"/>
 		<provides><service name="Timer"/></provides>
 	</start>
 
-	<start name="platform" caps="200" managing_system="yes">
-		<resource name="RAM" quantum="2M"/>
+	<start name="platform" caps="200" ram="2M" managing_system="yes">
 		<binary name="a64_platform"/>
 		<provides> <service name="Platform"/> <service name="Scp"/> </provides>
 		<config devices_rom="config">
@@ -140,7 +138,6 @@ install_config {
 	</start>
 
 	<start name="a64_pio">
-		<resource name="RAM" quantum="1M"/>
 		<provides>
 			<service name="Pin_state"/>
 			<service name="Pin_control"/>
@@ -199,7 +196,6 @@ install_config {
 	</start>
 
 	<start name="nitpicker">
-		<resource name="RAM" quantum="1M"/>
 		<provides>
 			<service name="Gui"/> <service name="Capture"/> <service name="Event"/>
 		</provides>
@@ -211,9 +207,8 @@ install_config {
 		</config>
 	</start>
 
-	<start name="fb" caps="250">
+	<start name="fb" caps="250" ram="40M">
 		<binary name="de_fb"/>
-		<resource name="RAM" quantum="40M"/>
 		<route>
 			<service name="ROM" label="dtb">     <parent label="de-pinephone.dtb"/> </service>
 			<service name="Platform">   <child name="platform"/> </service>
@@ -227,7 +222,6 @@ install_config {
 
 	<start name="dummy-log">
 		<binary name="dummy"/>
-		<resource name="RAM" quantum="1M"/>
 		<provides><service name="LOG"/></provides>
 		<config>
 			<log_service/>
@@ -237,8 +231,7 @@ install_config {
 		</route>
 	</start>
 
-	<start name="dynamic_rom">
-		<resource name="RAM" quantum="4M"/>
+	<start name="dynamic_rom" ram="4M">
 		<provides><service name="ROM"/></provides>
 		<config verbose="yes">
 			<rom name="config">
@@ -256,9 +249,8 @@ install_config {
 							<service name="Pin_state"/>
 							<service name="Gui"/>
 						</parent-provides>
-						<start name="camera" caps="250">
+						<start name="camera" caps="250" ram="80M">
 							<binary name="pinephone_camera"/>
-							<resource name="RAM" quantum="80M"/>
 							<config width="640" height="480" fps="15" format="yuv" camera="front"/>
 							<route>
 								<service name="ROM" label="dtb"> <parent label="camera.dtb"/> </service>
@@ -282,9 +274,8 @@ install_config {
 							<service name="Pin_state"/>
 							<service name="Gui"/>
 						</parent-provides>
-						<start name="camera" version="2" caps="250">
+						<start name="camera" version="2" caps="250" ram="80M">
 							<binary name="pinephone_camera"/>
-							<resource name="RAM" quantum="80M"/>
 							<config width="640" height="480" fps="15" format="yuv" camera="rear"/>
 							<route>
 								<service name="ROM" label="dtb"> <parent label="camera.dtb"/> </service>
@@ -298,9 +289,8 @@ install_config {
 		</config>
 	</start>
 
-	<start name="dynamic_init" caps="1000">
+	<start name="dynamic_init" caps="1000" ram="128M">
 		<binary name="init"/>
-		<resource name="RAM" quantum="128M"/>
 		<route>
 			<service name="ROM" label="config"> <child name="dynamic_rom"/> </service>
 

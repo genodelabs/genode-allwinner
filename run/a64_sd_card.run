@@ -18,17 +18,15 @@ install_config {
 			<service name="IRQ"/>
 		</parent-provides>
 
-		<default caps="100"/>
+		<default caps="100" ram="1M"/>
 
 		<start name="timer">
-			<resource name="RAM" quantum="1M"/>
 			<route> <any-service> <parent/> </any-service> </route>
 			<provides> <service name="Timer"/> </provides>
 		</start>
 
 		<start name="platform" caps="150" managing_system="yes">
 			<binary name="a64_platform"/>
-			<resource name="RAM" quantum="1M"/>
 			<provides> <service name="Platform"/> <service name="Scp"/> </provides>
 			<config devices_rom="config">
 				<device name="sd_card" type="allwinner,sun50i-a64-mmc">
@@ -53,8 +51,7 @@ install_config {
 			<route> <any-service> <parent/> </any-service> </route>
 		</start>
 
-		<start name="a64_sd_card" caps="500">
-			<resource name="RAM" quantum="16M"/>
+		<start name="a64_sd_card" caps="500" ram="16M">
 			<provides> <service name="Block"/> </provides>
 			<config>
 				<default-policy device="mmcblk0" writeable="yes"/>
@@ -71,8 +68,7 @@ install_config {
 			</route>
 		</start>
 
-		<start name="block_tester">
-			<resource name="RAM" quantum="64M" />
+		<start name="block_tester" ram="64M">
 			<config verbose="no" report="no" log="yes" stop_on_error="no">
 				<tests>
 					<sequential length="256M" size="1M" io_buffer="8M" batch="4"/>

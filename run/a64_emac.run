@@ -13,16 +13,14 @@ install_config {
 			<service name="IRQ"/>
 		</parent-provides>
 
-		<default caps="100"/>
+		<default caps="100" ram="1M"/>
 
 		<start name="timer">
-			<resource name="RAM" quantum="1M"/>
 			<route> <any-service> <parent/> </any-service> </route>
 			<provides> <service name="Timer"/> </provides>
 		</start>
 
 		<start name="platform" caps="150" managing_system="yes">
-			<resource name="RAM" quantum="1M"/>
 			<provides> <service name="Platform"/> </provides>
 			<route> <any-service> <parent/> </any-service> </route>
 			<config devices_rom="config">
@@ -40,8 +38,7 @@ install_config {
 			</config>
 		</start>
 
-		<start name="emac_nic" caps="2000">
-			<resource name="RAM" quantum="10M"/>
+		<start name="emac_nic" caps="2000" ram="10M">
 			<route>
 				<service name="ROM" label="dtb">
 					<parent label="emac-pine_a64lts.dtb"/> </service>
@@ -56,8 +53,7 @@ install_config {
 			<config/>
 		</start>
 
-		<start name="nic_router" caps="200">
-			<resource name="RAM" quantum="10M"/>
+		<start name="nic_router" caps="200" ram="10M">
 			<provides>
 				<service name="Nic"/>
 				<service name="Uplink"/>

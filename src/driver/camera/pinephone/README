@@ -8,8 +8,7 @@ Usage
 The driver renders its captured camera image data into a Gui session.
 To start the driver the following configuration snippet can be used:
 
-!<start name="pinephone_camera" caps="500">
-!  <resource name="RAM" quantum="16M"/>
+!<start name="pinephone_camera" caps="500" ram="16M">
 !  <config width="640" height="480" fps="30" format="yuv"
 !          convert="yes" rotate="yes"/>
 !</start>

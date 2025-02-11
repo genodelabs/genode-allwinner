@@ -14,16 +14,14 @@ install_config {
 			<service name="IRQ"/>
 		</parent-provides>
 
-		<default caps="100"/>
+		<default caps="100" ram="1M"/>
 
 		<start name="timer">
-			<resource name="RAM" quantum="1M"/>
 			<route> <any-service> <parent/> </any-service> </route>
 			<provides> <service name="Timer"/> </provides>
 		</start>
 
 		<start name="platform" caps="150" managing_system="yes">
-			<resource name="RAM" quantum="1M"/>
 			<provides> <service name="Platform"/> </provides>
 			<route> <any-service> <parent/> </any-service> </route>
 			<config devices_rom="config">
@@ -42,7 +40,6 @@ install_config {
 		</start>
 
 		<start name="dynamic_rom">
-			<resource name="RAM" quantum="1M"/>
 			<provides> <service name="ROM"/> </provides>
 			<route>
 				<service name="Timer"> <child name="timer"/> </service>
@@ -80,7 +77,6 @@ install_config {
 		</start>
 
 		<start name="a64_pio">
-			<resource name="RAM" quantum="1M"/>
 			<provides>
 				<service name="Pin_state"/>
 				<service name="Pin_control"/>
@@ -98,7 +94,6 @@ install_config {
 		</start>
 
 		<start name="pin_pulse">
-			<resource name="RAM" quantum="1M"/>
 			<route>
 				<service name="Timer">       <child name="timer"/>   </service>
 				<service name="Pin_control"> <child name="a64_pio"/> </service>
@@ -111,7 +106,6 @@ install_config {
 		</start>
 
 		<start name="pin_event">
-			<resource name="RAM" quantum="1M"/>
 			<route>
 				<service name="Pin_state"> <child name="a64_pio"/> </service>
 				<service name="IRQ">       <child name="a64_pio"/> </service>

@@ -13,32 +13,28 @@ install_config {
 			<service name="IRQ"/>
 		</parent-provides>
 
-		<default caps="100"/>
+		<default caps="100" ram="1M"/>
 
 		<default-route>
 			<any-service> <parent/> <any-child/> </any-service>
 		</default-route>
 
 		<start name="timer">
-			<resource name="RAM" quantum="1M"/>
 			<route> <any-service> <parent/> </any-service> </route>
 			<provides> <service name="Timer"/> </provides>
 		</start>
 
 		<start name="terminal_crosslink">
-			<resource name="RAM" quantum="1M"/>
 			<provides> <service name="Terminal"/> </provides>
 		</start>
 
 		<start name="modem">
 			<binary name="test-at_protocol"/>
-			<resource name="RAM" quantum="1M"/>
 			<config role="modem"/>
 		</start>
 
 		<start name="driver">
 			<binary name="test-at_protocol"/>
-			<resource name="RAM" quantum="1M"/>
 			<config role="driver"/>
 		</start>
 

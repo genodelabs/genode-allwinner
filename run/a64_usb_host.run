@@ -20,16 +20,14 @@ install_config {
 			<service name="IRQ"/>
 		</parent-provides>
 
-		<default caps="100"/>
+		<default caps="100" ram="1M"/>
 
 		<start name="timer">
-			<resource name="RAM" quantum="1M"/>
 			<route> <any-service> <parent/> </any-service> </route>
 			<provides> <service name="Timer"/> </provides>
 		</start>
 
 		<start name="report_rom">
-			<resource name="RAM" quantum="1M"/>
 			<provides> <service name="Report"/> <service name="ROM"/> </provides>
 			<config verbose="yes">
 				<default-policy report="usb -> usb -> devices"/>
@@ -41,7 +39,6 @@ install_config {
 
 		<start name="platform" caps="150" managing_system="yes">
 			<binary name="a64_platform"/>
-			<resource name="RAM" quantum="1M"/>
 			<provides> <service name="Platform"/> <service name="Scp"/> </provides>
 			<config devices_rom="config">
 				<device name="usb_phy">
@@ -71,9 +68,8 @@ install_config {
 			</route>
 		</start>
 
-		<start name="usb_host" caps="200">
+		<start name="usb_host" caps="200" ram="16M">
 			<binary name="a64_usb_host"/>
-			<resource name="RAM" quantum="16M"/>
 			<provides> <service name="Usb"/> </provides>
 			<config>
 				<report devices="yes"/>
@@ -89,8 +85,7 @@ install_config {
 			</route>
 		</start>
 
-		<start name="usb_block">
-			<resource name="RAM" quantum="4M"/>
+		<start name="usb_block" ram="4M">
 			<provides> <service name="Block"/> </provides>
 			<!-- XXX the label is probably only valid when a USB storage device
 			         is plugged in directly to the second port of the LTS board -->
@@ -102,8 +97,7 @@ install_config {
 			</route>
 		</start>
 
-		<start name="block_tester">
-			<resource name="RAM" quantum="64M" />
+		<start name="block_tester" ram="64M">
 			<config verbose="no" report="no" log="yes" stop_on_error="no">
 				<tests>
 					<sequential length="256M" write="no" size="1M" io_buffer="8M" batch="4"/>
