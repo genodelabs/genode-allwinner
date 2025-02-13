@@ -36,11 +36,11 @@
 			<libc stdin="/report/log" stdout="/dev/terminal"/>
 			<vfs>
 				<dir name="dev"> <terminal/> </dir>
-				<dir name="report"> <fs label="report"/> </dir>
+				<dir name="report"> <fs label="report -> /"/> </dir>
 			</vfs>
 		</config>
 		<route>
-			<service name="File_system"> <parent label="report"/> </service>
+			<service name="File_system"> <parent identity="report"/> </service>
 			<service name="Terminal"> <child name="log_terminal"/> </service>
 		</route>
 	</start>
@@ -106,7 +106,7 @@
 		<route>
 			<service name="Gui"> <parent label="touch_keyboard"/> </service>
 			<service name="Event"> <parent label="global"/> </service>
-			<service name="File_system" label="fonts"> <child name="fonts_fs"/> </service>
+			<service name="File_system" label_prefix="fonts ->"> <child name="fonts_fs"/> </service>
 		</route>
 	</start>
 
@@ -151,10 +151,10 @@
 			<service name="Nic">
 				<child name="nic_router"/>
 			</service>
-			<service name="File_system" label="config">
+			<service name="File_system" label_prefix="config ->">
 				<child name="morph_config_fs"/>
 			</service>
-			<service name="File_system" label="downloads">
+			<service name="File_system" label_prefix="downloads ->">
 				<child name="ram_fs"/>
 			</service>
 			<service name="Gui" label_last="QGenodeScreen">

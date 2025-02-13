@@ -4,6 +4,6 @@
 		<service name="Gui"> <parent/> </service>
 		<service name="Event">   <parent label="global"/>  </service>
 		<service name="Capture"> <parent label="global"/>  </service>
-		<service name="File_system" label="target"> <child name="default_fs_rw"/> </service>
+		<service name="File_system" label_prefix="target ->"> <child name="default_fs_rw"/> </service>
 	</route>
 </launcher>
