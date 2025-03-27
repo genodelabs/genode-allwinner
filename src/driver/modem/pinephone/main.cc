@@ -77,7 +77,7 @@ struct Modem::Main : private Delayer
 
 		At_protocol::Qcfg::Entry _qcfg_usbnet_ecm { this->qcfg, "usbnet", "1" };
 
-		void apply(Xml_node config)
+		void apply(Xml_node const &config)
 		{
 			Driver<256>::apply(config, modem, modem);
 		}
@@ -273,7 +273,7 @@ struct Modem::Main : private Delayer
 	{
 		_config.update();
 
-		Xml_node const config = _config.xml();
+		Xml_node const &config = _config.xml();
 
 		_verbose = config.attribute_value("verbose", false);
 

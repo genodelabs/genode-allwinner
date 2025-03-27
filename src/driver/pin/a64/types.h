@@ -25,7 +25,7 @@ struct Pio_driver::Bank
 
 	class Invalid : Exception { };
 
-	static Bank from_xml(Xml_node node)
+	static Bank from_xml(Xml_node const &node)
 	{
 		typedef String<2> Name;
 		Name name = node.attribute_value("bank", Name());

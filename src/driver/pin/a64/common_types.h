@@ -49,7 +49,7 @@ struct Pin_driver::Index
 
 	class Invalid : Exception { };
 
-	static Index from_xml(Xml_node node)
+	static Index from_xml(Xml_node const &node)
 	{
 		if (!node.has_attribute("index")) {
 			warning("pin declarion lacks 'index' attribute: ", node);
@@ -70,7 +70,7 @@ struct Pin_driver::Function
 
 	class Invalid : Exception { };
 
-	static Function from_xml(Xml_node node)
+	static Function from_xml(Xml_node const &node)
 	{
 		if (node.has_type("in"))
 			return node.has_attribute("irq") ? Function { IRQ }
@@ -137,7 +137,7 @@ struct Pin_driver::Pull
 
 	class Invalid : Exception { };
 
-	static Pull from_xml(Xml_node node)
+	static Pull from_xml(Xml_node const &node)
 	{
 		if (!node.has_attribute("pull"))
 			return Pull { DISABLE };
@@ -161,7 +161,7 @@ struct Pin_driver::Irq_trigger
 
 	class Invalid : Exception { };
 
-	static Irq_trigger from_xml(Xml_node node)
+	static Irq_trigger from_xml(Xml_node const &node)
 	{
 		if (!node.has_attribute("irq"))
 			return Irq_trigger { RISING };
