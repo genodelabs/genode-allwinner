@@ -223,7 +223,7 @@ struct Buffer_object
 	              Genode::uint32_t                 handle,
 	              Genode::uint32_t                 va,
 	              Genode::Dataspace_capability     cap,
-	              Genode::Region_map              &rm)
+	              Genode::Env::Local_rm           &rm)
 	:
 		_elem       { *this, space,
 		              Genode::Id_space<Buffer_object>::Id { .value = id.value } },
@@ -289,7 +289,7 @@ struct Buffer_object_space : Genode::Id_space<Buffer_object>
 	}
 
 	void insert(Gpu::Vram_id id, Genode::uint32_t handle, Genode::uint32_t va,
-	            Genode::Dataspace_capability cap, Genode::Region_map &rm)
+	            Genode::Dataspace_capability cap, Genode::Env::Local_rm &rm)
 	{
 		// XXX assert id is not assosicated with other handle and
 		//     handle is not already present in registry
@@ -525,7 +525,7 @@ struct Syncobj_notifier : Genode::Interface
 
 struct Gpu::Worker_args
 {
-	Region_map   &rm;
+	Env::Local_rm       &rm;
 	Buffer_object_space &buffers;
 	Vram_local_space    &vram_local_space;
 
@@ -541,7 +541,7 @@ struct Gpu::Worker_args
 
 	Gpu::Info_lima info { };
 
-	Worker_args(Region_map &rm, Buffer_object_space &buffers,
+	Worker_args(Env::Local_rm &rm, Buffer_object_space &buffers,
 	            Vram_local_space &vram_local_space,
 	            Syncobj_notifier &notifier)
 	:
@@ -629,7 +629,7 @@ extern "C" int gpu_task_func(void *p)
 		 * and export) is only called by the primary session.
 		 */
 		Buffer_object_space &buffers          = args.buffers;
-		Region_map          &rm               = args.rm;
+		Env::Local_rm       &rm               = args.rm;
 
 		/*
 		 * 'vram_local_space' is used for submitting and only used
