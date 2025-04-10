@@ -64,7 +64,7 @@ struct Framebuffer::Driver
 				_size{xres, yres},
 				_captured_screen(_capture, env.rm(), { .px       = _size,
 				                                       .mm       = { },
-				                                       .viewport = _size,
+				                                       .viewport = { { }, _size },
 				                                       .rotate   = { },
 				                                       .flip     = { } }),
 				_base(base) {}
