@@ -5,6 +5,7 @@
 		<service name="ROM" label_last="init">      <parent/> </service>
 		<service name="CPU">   <parent/> </service>
 		<service name="PD">    <parent/> </service>
+		<service name="RM">    <parent/> </service>
 		<service name="LOG">   <parent/> </service>
 		<service name="Timer"> <parent/> </service>
 	</common_routes>
@@ -145,7 +146,7 @@
 		</config>
 	</start>
 
-	<start ram="1350M" name="morph_browser" pkg="cproc/pkg/morph_browser_pinephone-jemalloc/2024-10-28">
+	<start ram="1350M" name="morph_browser" pkg="cproc/pkg/morph_browser_pinephone-jemalloc/2025-04-16">
 		<affinity xpos="1" width="2"/>
 		<route>
 			<service name="Nic">
