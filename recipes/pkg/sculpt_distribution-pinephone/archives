@@ -22,3 +22,4 @@ _/pkg/stdin2out
 _/pkg/terminal
 _/pkg/vfs
 _/pkg/nitpicker
+_/pkg/record_play_mixer
