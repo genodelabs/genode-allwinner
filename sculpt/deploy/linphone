@@ -9,7 +9,7 @@
 		<service name="Timer"> <parent/> </service>
 	</common_routes>
 
-	<start name="linphone_loading_backdrop" pkg="ssumpf/pkg/linphone_loading_backdrop/2024-10-29">
+	<start name="linphone_loading_backdrop" pkg="ssumpf/pkg/linphone_loading_backdrop/2025-04-11">
 		<route>
 			<service name="Gui"> <parent label="backdrop"/> </service>
 		</route>
@@ -28,15 +28,14 @@
 		</route>
 	</start>
 
-	<start name="gpu" caps="2000" pkg="ssumpf/pkg/a64_lima_gpu-pinephone/2024-10-28" priority="-1">
+	<start name="gpu" caps="2000" pkg="a64_lima_gpu-pinephone" priority="-1">
 		<affinity xpos="0" width="1"/>
 		<route>
 			<service name="Platform"> <parent label="gpu"/> </service>
 		</route>
 	</start>
 
-	<start name="audio" pkg="a64_audio" priority="0" cpu="20">
-		<resource name="CPU" quantum="40"/>
+	<start name="audio" pkg="a64_audio" priority="0" cpu="10">
 		<affinity xpos="0" ypos="0" width="1" height="1"/>
 		<config record_play="yes"/>
 		<route>
@@ -46,7 +45,7 @@
 		</route>
 	</start>
 
-	<start name="mixer" pkg="record_play_mixer" priority="0" cpu="20">
+	<start name="mixer" pkg="record_play_mixer" priority="0" cpu="10">
 		<affinity xpos="0" ypos="0" width="1" height="1"/>
 		<config jitter_ms="23">
 			<mix name="linphone_left">  <play label_suffix="linphonec -> left" /> </mix>
@@ -82,11 +81,11 @@
 		<route> <service name="RM"> <parent/> </service> </route>
 	</start>
 
-	<start name="terminal_crosslink" pkg="ssumpf/pkg/terminal_crosslink/2024-10-07" priority="-2">
+	<start name="terminal_crosslink" pkg="ssumpf/pkg/terminal_crosslink/2025-04-09" priority="-2">
 		<route/>
 	</start>
 
-	<start name="linphone_gui" pkg="ssumpf/pkg/linphone-simple/2024-10-29" priority="-2">
+	<start name="linphone_gui" pkg="ssumpf/pkg/linphone-simple/2025-04-11" priority="-2">
 		<affinity xpos="1" ypos="0" width="1" height="1"/>
 		<route>
 			<service name="Gui" label_last="QGenodeScreen"> <parent/> </service>
@@ -108,7 +107,7 @@
 		<config> <default-policy path="/recall/linphone" writeable="yes"/> </config>
 	</start>
 
-	<start name="linphone_daemon" pkg="ssumpf/pkg/linphonec_daemon/2024-10-29" cpu="40" priority="-1">
+	<start name="linphone_daemon" pkg="ssumpf/pkg/linphonec_daemon/2025-04-11" cpu="40" priority="-1">
 		<affinity xpos="1" ypos="0" width="1" height="1"/>
 		<route>
 			<service name="Nic"> <child name="nic_router"/> </service>
