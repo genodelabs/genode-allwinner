@@ -11,7 +11,8 @@ SRC_C += lx_emul/a64/pmic.c
 SRC_C += lx_emul/a64/pio-dummy.c
 SRC_C += lx_emul/a64/r_pio.c
 
-SRC_C  += block.c
+SRC_C += lx_emul/block.c
+
 SRC_C  += clock.c
 SRC_CC += main.cc
 SRC_CC += lx_emul/shared_dma_buffer.cc
