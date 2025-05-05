@@ -83,14 +83,6 @@ void __printk_safe_exit(void)
 }
 
 
-#include <linux/sched/task.h>
-
-void __put_task_struct(struct task_struct * tsk)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
 #include <linux/rhashtable.h>
 
 struct rhash_lock_head __rcu ** __rht_bucket_nested(const struct bucket_table * tbl,unsigned int hash)
