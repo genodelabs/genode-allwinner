@@ -336,15 +336,18 @@ struct Test::Driver : Noncopyable
 	void _handle_read_from_modem()
 	{
 		/* express current AT status as XML report */
-		char report_buffer[1024] { };
-		Xml_generator xml(report_buffer, sizeof(report_buffer), "modem", [&] {
-			_protocol_driver.generate_report(xml); });
+		char buf[1024] { };
+
+		Xml_generator::generate({ buf, sizeof(buf) }, "modem",
+			[&] (Xml_generator &xml) { _protocol_driver.generate_report(xml); }
+		).with_error([] (Buffer_error) {
+			warning("modem report buffer exceeds maximum size"); });
 
 		/* simulate behavior of modem-driver user based on the report */
 		for (;;) {
 			Status::Version orig_version = _protocol_driver.status.version();
 
-			_apply_state_changes(Xml_node(report_buffer));
+			_apply_state_changes(Xml_node(buf));
 
 			if (orig_version.value == _protocol_driver.status.version().value) {
 				break;
