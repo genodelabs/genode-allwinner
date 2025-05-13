@@ -1700,28 +1700,25 @@ struct Gpu::Root : Gpu::Root_component
 
 	protected:
 
-		Session_component *_create_session(char const *args) override
+		Create_result _create_session(char const *args) override
 		{
-			Session::Label const label  { session_label_from_args(args) };
-
-			Session_component *sc =
-				new (_alloc) Session_component(_env, _env.ep(),
-			                                   session_resources_from_args(args),
-			                                   label,
-			                                   session_diag_from_args(args),
-			                                   _session_space);
-			return sc;
+			return *new (_alloc)
+				Session_component(_env, _env.ep(),
+				                  session_resources_from_args(args),
+				                  session_label_from_args(args),
+				                  session_diag_from_args(args),
+				                  _session_space);
 		}
 
-		void _upgrade_session(Session_component *sc, char const *args) override
+		void _upgrade_session(Session_component &sc, char const *args) override
 		{
-			sc->upgrade(ram_quota_from_args(args));
-			sc->upgrade(cap_quota_from_args(args));
+			sc.upgrade(ram_quota_from_args(args));
+			sc.upgrade(cap_quota_from_args(args));
 		}
 
-		void _destroy_session(Session_component *sc) override
+		void _destroy_session(Session_component &sc) override
 		{
-			Genode::destroy(md_alloc(), sc);
+			Genode::destroy(md_alloc(), &sc);
 		}
 
 	public:
