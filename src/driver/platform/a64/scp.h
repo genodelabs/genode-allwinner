@@ -297,7 +297,7 @@ struct Scp::Root : Root_component<Session_component>
 	Sessions  &_sessions;
 	Scheduler &_scheduler;
 
-	Session_component *_create_session(const char *args) override
+	Create_result _create_session(const char *args) override
 	{
 		Session_component &session = *new (md_alloc())
 			Registered<Session_component>(_sessions,
@@ -306,12 +306,12 @@ struct Scp::Root : Root_component<Session_component>
 			                              label_from_args(args),
 			                              session_diag_from_args(args),
 			                              _scheduler);
-		return &session;
+		return session;
 	}
 
-	void _destroy_session(Session_component *session) override
+	void _destroy_session(Session_component &s) override
 	{
-		Genode::destroy(md_alloc(), session);
+		Genode::destroy(md_alloc(), &s);
 	}
 
 	Root(Env &env, Allocator &md_alloc, Sessions &sessions, Scheduler &scheduler)
