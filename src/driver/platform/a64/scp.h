@@ -156,8 +156,16 @@ struct Scp::Session_component : Session_object<Scp::Session, Session_component>
 		Session_object(env.ep(), resources, label, diag),
 		_env(env), _scheduler(scheduler)
 	{
-		_cap_quota_guard().withdraw(Cap_quota{1});
-		_ram_quota_guard().withdraw(Ram_quota{DS_SIZE});
+		_ram_quota_guard().reserve(Ram_quota{DS_SIZE}).with_result(
+			[&] (Ram_quota_guard::Reservation &reserved_ram) {
+				_cap_quota_guard().reserve(Cap_quota{1}).with_result(
+					[&] (Cap_quota_guard::Reservation &reserved_caps) {
+						reserved_ram .deallocate = false;
+						reserved_caps.deallocate = false;
+					},
+					[&] (Cap_quota_guard::Error) { throw Out_of_caps(); });
+			},
+			[&] (Ram_quota_guard::Error) { throw Out_of_ram(); });
 	}
 
 	/*
