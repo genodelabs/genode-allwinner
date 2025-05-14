@@ -174,7 +174,7 @@ class Audio_out::Out
  */
 struct Audio_out::Root_policy
 {
-	using Result = Genode::Attempt<Genode::Ok, Genode::Service::Create_error>;
+	using Result = Genode::Attempt<Genode::Ok, Genode::Session_error>;
 
 	Result aquire(const char *args)
 	{
@@ -187,7 +187,7 @@ struct Audio_out::Root_policy
 		    (sizeof(Stream) > ram_quota - session_size)) {
 			Genode::error("insufficient 'ram_quota', got ", ram_quota,
 			              " need ", sizeof(Stream) + session_size);
-			return Genode::Service::Create_error::INSUFFICIENT_RAM;
+			return Genode::Session_error::INSUFFICIENT_RAM;
 		}
 
 		char channel_name[16];
@@ -198,12 +198,12 @@ struct Audio_out::Root_policy
 		if (!Out::channel_number(channel_name, &channel_number)) {
 			Genode::error("invalid output channel '",(char const *)channel_name,"' requested, "
 			              "denying '",Genode::label_from_args(args),"'");
-			return Genode::Service::Create_error::DENIED;
+			return Genode::Session_error::DENIED;
 		}
 		if (Audio_out::channel_acquired[channel_number]) {
 			Genode::error("output channel '",(char const *)channel_name,"' is unavailable, "
 			              "denying '",Genode::label_from_args(args),"'");
-			return Genode::Service::Create_error::DENIED;
+			return Genode::Session_error::DENIED;
 		}
 		return Genode::Ok();
 	}
@@ -349,7 +349,7 @@ class Audio_in::In
 
 struct Audio_in::Root_policy
 {
-	using Result = Genode::Attempt<Genode::Ok, Genode::Service::Create_error>;
+	using Result = Genode::Attempt<Genode::Ok, Genode::Session_error>;
 
 	Result aquire(char const *args)
 	{
@@ -361,7 +361,7 @@ struct Audio_in::Root_policy
 			Genode::error("insufficient 'ram_quota', got ", ram_quota,
 			              " need ", sizeof(Stream) + session_size,
 			              ", denying '",Genode::label_from_args(args),"'");
-			return Genode::Service::Create_error::INSUFFICIENT_RAM;
+			return Genode::Session_error::INSUFFICIENT_RAM;
 		}
 
 		char channel_name[16];
@@ -372,12 +372,12 @@ struct Audio_in::Root_policy
 		if (!In::channel_number(channel_name, &channel_number)) {
 			Genode::error("invalid input channel '",(char const *)channel_name,"' requested, "
 			              "denying '",Genode::label_from_args(args),"'");
-			return Genode::Service::Create_error::DENIED;
+			return Genode::Session_error::DENIED;
 		}
 		if (Audio_in::channel_acquired) {
 			Genode::error("input channel '",(char const *)channel_name,"' is unavailable, "
 			              "denying '",Genode::label_from_args(args),"'");
-			return Genode::Service::Create_error::DENIED;
+			return Genode::Session_error::DENIED;
 		}
 		return Ok();
 	}
