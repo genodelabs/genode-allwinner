@@ -1702,7 +1702,7 @@ struct Gpu::Root : Gpu::Root_component
 
 		Create_result _create_session(char const *args) override
 		{
-			return new (_alloc)
+			return *new (_alloc)
 				Session_component(_env, _env.ep(),
 				                  session_resources_from_args(args),
 				                  session_label_from_args(args),
