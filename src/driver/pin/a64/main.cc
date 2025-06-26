@@ -258,18 +258,14 @@ struct Pio_driver::Main : Pin::Driver<Pin_id>, Irq_handler::Fn
 Pio_driver::Pin_id Pio_driver::Main::assigned_pin(Session_label label,
                                                   Pin::Direction dir) const
 {
-	/*
-	 * \throw Service_denied
-	 */
-	Session_policy policy { label, _config.xml() };
-
-	Name const name { policy.attribute_value("pin", Name::String()) };
-
 	Constructible<Pin_id> pin_id { };
 
-	_pins.for_each([&] (Pin_declaration const &pin) {
-		if (pin.name == name && pin.attr.function.direction() == dir)
-			pin_id.construct(*pin.id); });
+	with_matching_policy(label, _config.xml(), [&] (Xml_node const &policy) {
+		Name const name { policy.attribute_value("pin", Name::String()) };
+		_pins.for_each([&] (Pin_declaration const &pin) {
+			if (pin.name == name && pin.attr.function.direction() == dir)
+				pin_id.construct(*pin.id); });
+	}, [] { });
 
 	if (!pin_id.constructed()) {
 		char const *node_type = (dir == Pin::Direction::IN) ? "<in>" : "<out>";
