@@ -40,7 +40,7 @@ struct Main
 	void handle_config()
 	{
 		config.update();
-		genode_block_apply_config(config.xml());
+		genode_block_apply_config(config.node());
 	}
 
 

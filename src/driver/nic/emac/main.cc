@@ -42,7 +42,7 @@ struct Emac_driver::Main
 	void _handle_config()
 	{
 		_config.update();
-		genode_mac_address_reporter_config(_config.xml());
+		genode_mac_address_reporter_config(_config.node());
 	}
 
 	/**
