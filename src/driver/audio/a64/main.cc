@@ -172,12 +172,12 @@ struct Audio::I2s_dma
 
 	I2s_dma(Platform::Connection &platform)
 	{
-		platform.with_xml([&] (Xml_node & xml) {
-			xml.for_each_sub_node("device", [&] (Xml_node node) {
+		platform.with_node([&] (Node const &node) {
+			node.for_each_sub_node("device", [&] (Node const &node) {
 				Name name = node.attribute_value("name", Name());
 				if (name != "audio_interface") return;
 
-				node.for_each_sub_node("io_mem", [&] (Xml_node node) {
+				node.for_each_sub_node("io_mem", [&] (Node const &node) {
 					addr = node.attribute_value("phys_addr", 0UL);
 				});
 			});

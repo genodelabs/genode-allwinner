@@ -102,7 +102,7 @@ class At_protocol::Driver : Noncopyable
 
 	public:
 
-		void apply(Xml_node const &config,
+		void apply(Node const &config,
 		           Command_channel  &command_channel,
 		           Response_channel &response_channel)
 		{

@@ -25,7 +25,7 @@ struct Pio_driver::Bank
 
 	class Invalid : Exception { };
 
-	static Bank from_xml(Xml_node const &node)
+	static Bank from_node(Node const &node)
 	{
 		typedef String<2> Name;
 		Name name = node.attribute_value("bank", Name());
@@ -53,9 +53,9 @@ struct Pio_driver::Pin_id
 	Bank  bank;
 	Index index;
 
-	static Pin_id from_xml(Xml_node const &node)
+	static Pin_id from_node(Node const &node)
 	{
-		return { Bank ::from_xml(node), Index::from_xml(node) };
+		return { Bank ::from_node(node), Index::from_node(node) };
 	}
 
 	bool operator == (Pin_id const &other) const

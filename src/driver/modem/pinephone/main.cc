@@ -77,7 +77,7 @@ struct Modem::Main : private Delayer
 
 		At_protocol::Qcfg::Entry _qcfg_usbnet_ecm { this->qcfg, "usbnet", "1" };
 
-		void apply(Xml_node const &config)
+		void apply(Node const &config)
 		{
 			Driver<256>::apply(config, modem, modem);
 		}
@@ -172,7 +172,7 @@ struct Modem::Main : private Delayer
 			_at_protocol_driver->generate_report(xml);
 	}
 
-	void _apply_power_state(Xml_node const &config)
+	void _apply_power_state(Node const &config)
 	{
 		bool const use_at_protocol = config.attribute_value("at_protocol", true);
 
@@ -273,7 +273,7 @@ struct Modem::Main : private Delayer
 	{
 		_config.update();
 
-		Xml_node const &config = _config.xml();
+		Node const &config = _config.node();
 
 		_verbose = config.attribute_value("verbose", false);
 

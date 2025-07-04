@@ -360,7 +360,7 @@ struct Power::Main
 	Signal_handler<Main> _config_handler {
 		_env.ep(), *this, &Main::_handle_config };
 
-	void _apply_system(Xml_node const &system)
+	void _apply_system(Node const &system)
 	{
 		using State = String<32>;
 		State const state = system.attribute_value("state", State());
@@ -421,7 +421,7 @@ struct Power::Main
 	{
 		_config.update();
 
-		Xml_node const config = _config.xml();
+		Node const config = _config.node();
 
 		/*
 		 * Request system ROM depending on the configured 'system_rom' label
@@ -440,7 +440,7 @@ struct Power::Main
 
 		if (_system.constructed()) {
 			_system->update();
-			_apply_system(_system->xml());
+			_apply_system(_system->node());
 		}
 
 		uint64_t const orig_period_ms = _period_ms;

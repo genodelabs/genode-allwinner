@@ -37,7 +37,7 @@ struct Audio_control::Main
 	void _handle_config()
 	{
 		_config.update();
-		_device.apply_config(_config.xml());
+		_device.apply_config(_config.node());
 	}
 
 	Main(Env &env) : _env(env)
