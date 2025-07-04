@@ -8,7 +8,7 @@
 #define _COMMON_TYPES_H_
 
 /* Genode includes */
-#include <util/xml_node.h>
+#include <base/node.h>
 #include <base/log.h>
 
 namespace Pin_driver {
@@ -31,7 +31,7 @@ struct Pin_driver::Name
 
 	String string;
 
-	static Name from_xml(Xml_node const &node)
+	static Name from_node(Node const &node)
 	{
 		return { node.attribute_value("name", String()) };
 	}
@@ -49,7 +49,7 @@ struct Pin_driver::Index
 
 	class Invalid : Exception { };
 
-	static Index from_xml(Xml_node const &node)
+	static Index from_node(Node const &node)
 	{
 		if (!node.has_attribute("index")) {
 			warning("pin declarion lacks 'index' attribute: ", node);
@@ -70,7 +70,7 @@ struct Pin_driver::Function
 
 	class Invalid : Exception { };
 
-	static Function from_xml(Xml_node const &node)
+	static Function from_node(Node const &node)
 	{
 		if (node.has_type("in"))
 			return node.has_attribute("irq") ? Function { IRQ }
@@ -137,7 +137,7 @@ struct Pin_driver::Pull
 
 	class Invalid : Exception { };
 
-	static Pull from_xml(Xml_node const &node)
+	static Pull from_node(Node const &node)
 	{
 		if (!node.has_attribute("pull"))
 			return Pull { DISABLE };
@@ -161,7 +161,7 @@ struct Pin_driver::Irq_trigger
 
 	class Invalid : Exception { };
 
-	static Irq_trigger from_xml(Xml_node const &node)
+	static Irq_trigger from_node(Node const &node)
 	{
 		if (!node.has_attribute("irq"))
 			return Irq_trigger { RISING };
@@ -194,9 +194,9 @@ struct Pin_driver::Attr
 	bool output() const { return function.value == Function::OUTPUT; }
 	bool irq()    const { return function.value == Function::IRQ; }
 
-	static Attr from_xml(Xml_node const &node)
+	static Attr from_node(Node const &node)
 	{
-		auto default_state_from_xml = [] (Xml_node const &node)
+		auto default_state_from_node = [] (Node const &node)
 		{
 			if (!node.has_attribute("default"))
 				return Pin::Level::HIGH_IMPEDANCE;
@@ -205,11 +205,11 @@ struct Pin_driver::Attr
 			       ? Pin::Level::HIGH : Pin::Level::LOW;
 		};
 
-		return { Pull::from_xml(node),
-		         Function::from_xml(node),
-		         Irq_trigger::from_xml(node),
+		return { Pull::from_node(node),
+		         Function::from_node(node),
+		         Irq_trigger::from_node(node),
 		         !node.has_attribute("default"),
-		         default_state_from_xml(node) };
+		         default_state_from_node(node) };
 	}
 
 	static Attr disabled()

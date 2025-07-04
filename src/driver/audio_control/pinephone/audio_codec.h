@@ -515,12 +515,12 @@ class Audio_control::Device
 		Device(Platform::Connection &platform) : _platform(platform)
 		{ }
 
-		void apply_config(Xml_node const &config)
+		void apply_config(Node const &config)
 		{
 			unsigned mic = 0, earpiece = 0, speaker = 0, headphone = 0;
 			bool config_soc = true;
 
-			config.for_each_sub_node([&] (Xml_node node) {
+			config.for_each_sub_node([&] (Node const &node) {
 
 				if (node.has_type("mic"))
 					mic = node.attribute_value("volume", 0u);

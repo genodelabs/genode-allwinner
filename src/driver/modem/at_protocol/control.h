@@ -15,7 +15,7 @@
 #define _AT_PROTOCOL__CONTROL_H_
 
 /* Genode includes */
-#include <util/xml_node.h>
+#include <base/node.h>
 
 /* AT-protocol includes */
 #include <at_protocol/types.h>
@@ -361,12 +361,12 @@ class At_protocol::Control : Noncopyable
 				_request_call_list.construct();
 		}
 
-		bool _call_has_state(Xml_node const &call, char const *expected)
+		bool _call_has_state(Node const &call, char const *expected)
 		{
 			return (call.attribute_value("state", String<32>()) == expected);
 		}
 
-		void _apply_hang_up(Xml_node const &config)
+		void _apply_hang_up(Node const &config)
 		{
 			/* hang up in progress */
 			if (_hang_up.constructed())
@@ -375,7 +375,7 @@ class At_protocol::Control : Noncopyable
 			auto call_node_rejected = [&]
 			{
 				bool rejected = false;
-				config.with_optional_sub_node("call", [&] (Xml_node const &call) {
+				config.with_optional_sub_node("call", [&] (Node const &call) {
 					rejected = _call_has_state(call, "rejected"); });
 				return rejected;
 			};
@@ -397,7 +397,7 @@ class At_protocol::Control : Noncopyable
 					_hang_up.construct();
 		}
 
-		void _apply_call(Xml_node const &call)
+		void _apply_call(Node const &call)
 		{
 			if (!_ready_for_telephony())
 				return;
@@ -460,7 +460,7 @@ class At_protocol::Control : Noncopyable
 				_power_down.construct();
 		}
 
-		void _apply_ring(Xml_node const &ring)
+		void _apply_ring(Node const &ring)
 		{
 			if (_current_ring_count != _status.ring_count) {
 				_current_ring_count = _status.ring_count;
@@ -494,7 +494,7 @@ class At_protocol::Control : Noncopyable
 			}
 		}
 
-		void _apply_config(Xml_node const &config, Qcfg const &qcfg)
+		void _apply_config(Node const &config, Qcfg const &qcfg)
 		{
 			/* don't issue AT commands during modem reboot */
 			if (_reboot.constructed() || !_status.rdy)
@@ -516,10 +516,10 @@ class At_protocol::Control : Noncopyable
 
 			_keep_call_list_up_to_date();
 
-			config.with_optional_sub_node("call", [&] (Xml_node const &call) {
+			config.with_optional_sub_node("call", [&] (Node const &call) {
 				_apply_call(call); });
 
-			config.with_optional_sub_node("ring", [&] (Xml_node const &ring) {
+			config.with_optional_sub_node("ring", [&] (Node const &ring) {
 				_apply_ring(ring); });
 		}
 
@@ -529,7 +529,7 @@ class At_protocol::Control : Noncopyable
 
 		struct Verbose { bool value; };
 
-		void apply_config(Xml_node const &config, Qcfg const &qcfg,
+		void apply_config(Node const &config, Qcfg const &qcfg,
 		                  Command_channel &command_channel,
 		                  Verbose const verbose)
 		{

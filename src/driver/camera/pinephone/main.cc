@@ -31,7 +31,7 @@ using namespace Genode;
 extern struct lx_user_config_t *lx_user_config;
 
 
-static unsigned check_and_constrain_value(Xml_node const &node,
+static unsigned check_and_constrain_value(Node const &node,
                                           char const *attr,
                                           unsigned min, unsigned max)
 {
@@ -71,7 +71,7 @@ struct Main
 			return;
 
 		config_rom.update();
-		Xml_node const config = config_rom.xml();
+		Node const config = config_rom.node();
 
 		lx_user_config_t &lx_config = *lx_user_config;
 
