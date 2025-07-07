@@ -190,9 +190,9 @@ struct Test::Driver : Noncopyable
 	/*
 	 * State machine for the second test stage
 	 */
-	void _apply_state_changes(Xml_node const &state)
+	void _apply_state_changes(Node const &state)
 	{
-		auto apply_config = [&] (Xml_node const &config)
+		auto apply_config = [&] (Node const &config)
 		{
 			log("apply config: ", config);
 			_protocol_driver.apply(config, _modem, _modem);
@@ -206,17 +206,19 @@ struct Test::Driver : Noncopyable
 		auto call_state = [&] (auto number, auto expected)
 		{
 			bool result = false;
-			state.with_optional_sub_node("call", [&] (Xml_node const &call) {
+			state.with_optional_sub_node("call", [&] (Node const &call) {
 				result = (call.attribute_value("number", Value()) == number)
 				      && (call.attribute_value("state",  Value()) == expected); });
 			return result;
 		};
 
+		using Xml = String<200>;
+
 		switch (_step) {
 
 		case Step::WRONG_PIN:
 
-			apply_config(Xml_node("<config pin=\"4321\" />"));
+			apply_config(Node(Xml("<config pin=\"4321\" />")));
 
 			if (state.attribute_value("pin", Value()) != "required")
 				return;
@@ -229,9 +231,9 @@ struct Test::Driver : Noncopyable
 
 		case Step::INITIATE_DENIED_CALL:
 
-			apply_config(Xml_node("<config pin=\"1234\">"
+			apply_config(Node(Xml("<config pin=\"1234\">"
 			                      "  <call number=\"03519999\"/>"
-			                      "</config>"));
+			                      "</config>")));
 
 			if (state.attribute_value("pin", Value()) != "ok")
 				return;
@@ -244,9 +246,9 @@ struct Test::Driver : Noncopyable
 
 		case Step::INITIATE_ACCEPTED_CALL:
 
-			apply_config(Xml_node("<config pin=\"1234\">"
+			apply_config(Node(Xml("<config pin=\"1234\">"
 			                      "  <call number=\"+49123123123\"/>"
-			                      "</config>"));
+			                      "</config>")));
 
 			if (!call_state("+49123123123", "active"))
 				return;
@@ -256,9 +258,9 @@ struct Test::Driver : Noncopyable
 
 		case Step::HANGUP:
 
-			apply_config(Xml_node("<config pin=\"1234\">"
+			apply_config(Node(Xml("<config pin=\"1234\">"
 			                      "  <call number=\"+49123123123\" state=\"rejected\"/>"
-			                      "</config>"));
+			                      "</config>")));
 
 			if (state.has_sub_node("call"))
 				return;
@@ -269,9 +271,9 @@ struct Test::Driver : Noncopyable
 
 		case Step::INCOMING_CALL:
 
-			apply_config(Xml_node("<config pin=\"1234\">"
+			apply_config(Node(Xml("<config pin=\"1234\">"
 			                      "  <ring>AT+QLDTMF=5,\"4,3,6,#,D,3\",1</ring>"
-			                      "</config>"));
+			                      "</config>")));
 
 			if (state.attribute_value("ring_count", 0u) < 3)
 				return;
@@ -284,9 +286,9 @@ struct Test::Driver : Noncopyable
 
 		case Step::ACCEPT_INCOMING_CALL:
 
-			apply_config(Xml_node("<config pin=\"1234\">"
+			apply_config(Node(Xml("<config pin=\"1234\">"
 			                      "  <call number=\"+49123123123\"/>"
-			                      "</config>"));
+			                      "</config>")));
 
 			if (!call_state("+49123123123", "active"))
 				return;
@@ -297,9 +299,9 @@ struct Test::Driver : Noncopyable
 
 		case Step::REMOTE_HANGS_UP:
 
-			apply_config(Xml_node("<config pin=\"1234\">"
+			apply_config(Node(Xml("<config pin=\"1234\">"
 			                      "  <call number=\"+49123123123\"/>"
-			                      "</config>"));
+			                      "</config>")));
 
 			if (!call_state("+49123123123", "rejected"))
 				return;
@@ -309,7 +311,7 @@ struct Test::Driver : Noncopyable
 
 		case Step::POWERING_DOWN:
 
-			apply_config(Xml_node("<config power=\"off\"/>"));
+			apply_config(Node(Xml("<config power=\"off\"/>")));
 
 			if (!_protocol_driver.powering_down())
 				return;
@@ -319,7 +321,7 @@ struct Test::Driver : Noncopyable
 
 		case Step::POWERED_DOWN:
 
-			apply_config(Xml_node("<config power=\"off\"/>"));
+			apply_config(Node(Xml("<config power=\"off\"/>")));
 
 			if (!_protocol_driver.powered_down())
 				return;
@@ -347,7 +349,7 @@ struct Test::Driver : Noncopyable
 		for (;;) {
 			Status::Version orig_version = _protocol_driver.status.version();
 
-			_apply_state_changes(Xml_node(buf));
+			_apply_state_changes(Node(Const_byte_range_ptr(buf, strlen(buf))));
 
 			if (orig_version.value == _protocol_driver.status.version().value) {
 				break;
