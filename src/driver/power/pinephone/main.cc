@@ -135,27 +135,27 @@ struct Power::Pmic_info
 	float    voltage, charge_current, discharge_current;
 	unsigned remaining_capacity;
 
-	void generate(Xml_generator &xml) const
+	void generate(Generator &g) const
 	{
-		xml.attribute("voltage", voltage);
+		g.attribute("voltage", voltage);
 
 		if (ac_present)
-			xml.attribute("ac_present", "yes");
+			g.attribute("ac_present", "yes");
 
 		if (charging)
-			xml.attribute("charging", "yes");
+			g.attribute("charging", "yes");
 
 		if (battery_present) {
-			xml.node("battery", [&] {
+			g.node("battery", [&] {
 
-				xml.attribute("remaining_capacity", remaining_capacity);
+				g.attribute("remaining_capacity", remaining_capacity);
 
 				if (charging > 0)
-					xml.attribute("charge_current", charge_current);
+					g.attribute("charge_current", charge_current);
 
 				if (discharge_current > 0) {
-					xml.attribute("discharge_current", discharge_current);
-					xml.attribute("power_draw", discharge_current*voltage);
+					g.attribute("discharge_current", discharge_current);
+					g.attribute("power_draw", discharge_current*voltage);
 				}
 			});
 		}
@@ -263,7 +263,7 @@ struct Power::Main
 	Signal_handler<Main> _timer_handler {
 		_env.ep(), *this, &Main::_handle_timer };
 
-	void _gen_battery(Xml_generator &, Scp &) const;
+	void _gen_battery(Generator &, Scp &) const;
 
 	Pmic_info _pmic_info { };
 
@@ -321,14 +321,14 @@ struct Power::Main
 			return (result*100)/1024;
 		};
 
-		_reporter.generate([&] (Xml_generator &xml) {
+		_reporter.generate([&] (Generator &g) {
 
-			xml.attribute("brightness", brightness_from_scp());
+			g.attribute("brightness", brightness_from_scp());
 
 			if (_power_profile.length() > 1)
-				xml.attribute("power_profile", _power_profile);
+				g.attribute("power_profile", _power_profile);
 
-			_pmic_info.generate(xml);
+			_pmic_info.generate(g);
 		});
 	}
 

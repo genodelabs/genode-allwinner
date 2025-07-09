@@ -273,11 +273,11 @@ class At_protocol::Control : Noncopyable
 			Call     call;
 			unsigned no_carrier_count;
 
-			void gen_state_attr(Xml_generator &xml) const
+			void gen_state_attr(Generator &g) const
 			{
-				if      (call.active())   xml.attribute("state", "active");
-				else if (call.alerting()) xml.attribute("state", "alerting");
-				else if (call.outbound()) xml.attribute("state", "outbound");
+				if      (call.active())   g.attribute("state", "active");
+				else if (call.alerting()) g.attribute("state", "alerting");
+				else if (call.outbound()) g.attribute("state", "outbound");
 			}
 		};
 
@@ -572,20 +572,20 @@ class At_protocol::Control : Noncopyable
 
 		bool power_down_scheduled() const { return _power_down.constructed(); }
 
-		void gen_outbound_call(Xml_generator &xml) const
+		void gen_outbound_call(Generator &g) const
 		{
 			if (!outbound())
 				return;
 
-			xml.node("call", [&] {
-				xml.attribute("number", _outbound_info->call.number);
+			g.node("call", [&] {
+				g.attribute("number", _outbound_info->call.number);
 
 				if (_rejected(_outbound_info->call.number)) {
-					xml.attribute("state", "rejected");
+					g.attribute("state", "rejected");
 					return;
 				}
 
-				_outbound_info->gen_state_attr(xml);
+				_outbound_info->gen_state_attr(g);
 			});
 		}
 };

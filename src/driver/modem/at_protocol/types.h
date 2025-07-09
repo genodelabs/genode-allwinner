@@ -14,7 +14,7 @@
 #ifndef _AT_PROTOCOL__TYPES_H_
 #define _AT_PROTOCOL__TYPES_H_
 
-#include <util/xml_generator.h>
+#include <base/node.h>
 
 namespace At_protocol {
 

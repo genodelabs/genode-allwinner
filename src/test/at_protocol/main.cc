@@ -39,7 +39,7 @@ struct Test::Main
 	Main(Env &env) : _env(env)
 	{
 		using Role = String<16>;
-		Role const role = _config.xml().attribute_value("role", Role());
+		Role const role = _config.node().attribute_value("role", Role());
 
 		_modem .conditional(role == "modem",  _env);
 		_driver.conditional(role == "driver", _env);

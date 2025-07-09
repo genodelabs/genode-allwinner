@@ -48,8 +48,8 @@ struct Pin_pulse::Main
 	{
 		_config.update();
 
-		_pcm_period_ms = _config.xml().attribute_value("pcm_period_ms", 15U);
-		_pulse_ms      = _config.xml().attribute_value("pulse_ms",     500U);
+		_pcm_period_ms = _config.node().attribute_value("pcm_period_ms", 15U);
+		_pulse_ms      = _config.node().attribute_value("pulse_ms",     500U);
 
 		if (_pcm_period_ms == 0 || _pulse_ms == 0)
 			warning("invalid configuration");
