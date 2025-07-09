@@ -68,7 +68,7 @@ class At_protocol::Driver : Noncopyable
 
 		Constructible<Status::Current_call> _current_call { };
 
-		void _gen_current_call(Xml_generator &xml) const
+		void _gen_current_call(Generator &g) const
 		{
 			if (!_current_call.constructed())
 				return;
@@ -92,9 +92,9 @@ class At_protocol::Driver : Noncopyable
 				return "unsupported";
 			};
 
-			xml.node("call", [&] {
-				xml.attribute("number", call.number);
-				xml.attribute("state", state_name(call.stat));
+			g.node("call", [&] {
+				g.attribute("number", call.number);
+				g.attribute("state", state_name(call.stat));
 			});
 		}
 
@@ -136,27 +136,27 @@ class At_protocol::Driver : Noncopyable
 			}
 		}
 
-		void generate_report(Xml_generator &xml) const
+		void generate_report(Generator &g) const
 		{
 			if (status.ring_count > 0)
-				xml.attribute("ring_count", status.ring_count);
+				g.attribute("ring_count", status.ring_count);
 
 			if (status.no_carrier_count > 0)
-				xml.attribute("no_carrier_count", status.no_carrier_count);
+				g.attribute("no_carrier_count", status.no_carrier_count);
 
 			/* pin information */
 			if (status.cpin.constructed()) {
 
-				xml.attribute("sim", "yes");
+				g.attribute("sim", "yes");
 
 				if (status.cpin->value == "READY") {
-					xml.attribute("pin", "ok");
+					g.attribute("pin", "ok");
 				}
 				else if (status.cpin->value == "SIM PIN") {
-					xml.attribute("pin", "required");
+					g.attribute("pin", "required");
 					if (status.sim_pin_count.constructed())
-						xml.attribute("pin_remaining_attempts",
-						              status.sim_pin_count->value);
+						g.attribute("pin_remaining_attempts",
+						            status.sim_pin_count->value);
 				}
 			}
 
@@ -166,9 +166,9 @@ class At_protocol::Driver : Noncopyable
 			 * freshly initiated call, or when an initiated call got rejected.
 			 */
 			if (_control.outbound())
-				_control.gen_outbound_call(xml);
+				_control.gen_outbound_call(g);
 			else
-				_gen_current_call(xml);
+				_gen_current_call(g);
 		}
 
 		/**

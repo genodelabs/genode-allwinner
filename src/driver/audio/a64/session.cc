@@ -573,7 +573,7 @@ struct Record_play_aggregator : Audio::Session
 Audio::Session &Audio::Session::construct(Env &env, Allocator &alloc)
 {
 	bool const use_record_play_interface =
-		Attached_rom_dataspace(env, "config").xml().attribute_value("record_play", false);
+		Attached_rom_dataspace(env, "config").node().attribute_value("record_play", false);
 
 	if (!use_record_play_interface) {
 		static Audio_aggregator _audio { env, alloc };

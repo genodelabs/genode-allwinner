@@ -33,7 +33,7 @@ struct Uart::Main
 
 	Attached_rom_dataspace _config { _env, "config" };
 	bool _carriage_return {
-		_config.xml().attribute_value("carriage_return", false) };
+		_config.node().attribute_value("carriage_return", false) };
 
 	Platform::Connection  _platform { _env };
 	Platform::Device      _device { _platform };

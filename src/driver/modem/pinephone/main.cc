@@ -119,8 +119,8 @@ struct Modem::Main : private Delayer
 
 	void _update_state_report()
 	{
-		_reporter.generate([&] (Xml_generator &xml) {
-			_generate_report(xml); });
+		_reporter.generate([&] (Generator &g) {
+			_generate_report(g); });
 	}
 
 	bool _starting_up() const
@@ -141,7 +141,7 @@ struct Modem::Main : private Delayer
 		    || (_power_state == Power_state::AT_SHUTDOWN);
 	}
 
-	void _generate_report(Xml_generator &xml) const
+	void _generate_report(Generator &g) const
 	{
 		auto attr_value = [] (Power_state state)
 		{
@@ -160,16 +160,16 @@ struct Modem::Main : private Delayer
 		};
 
 		if (_power_state != Power_state::UNKNOWN)
-			xml.attribute("power", attr_value(_power_state));
+			g.attribute("power", attr_value(_power_state));
 
 		if (_starting_up())
-			xml.attribute("startup_seconds", _seconds_since(_startup_triggered_ms));
+			g.attribute("startup_seconds", _seconds_since(_startup_triggered_ms));
 
 		if (_shutting_down())
-			xml.attribute("shutdown_seconds", _seconds_since(_shutdown_triggered_ms));
+			g.attribute("shutdown_seconds", _seconds_since(_shutdown_triggered_ms));
 
 		if (_at_protocol_driver.constructed())
-			_at_protocol_driver->generate_report(xml);
+			_at_protocol_driver->generate_report(g);
 	}
 
 	void _apply_power_state(Node const &config)

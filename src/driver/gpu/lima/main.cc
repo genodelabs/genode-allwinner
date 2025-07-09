@@ -1761,7 +1761,7 @@ struct Driver::Main
 
 	using Dtb_name = Genode::String<64>;
 	Dtb_name              _dtb_name {
-		_config_rom.xml().attribute_value("dtb", Dtb_name("dtb")) };
+		_config_rom.node().attribute_value("dtb", Dtb_name("dtb")) };
 	Attached_rom_dataspace _dtb_rom { _env, _dtb_name.string() };
 
 	Signal_handler<Main> _signal_handler {

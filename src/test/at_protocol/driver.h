@@ -340,8 +340,8 @@ struct Test::Driver : Noncopyable
 		/* express current AT status as XML report */
 		char buf[1024] { };
 
-		Xml_generator::generate({ buf, sizeof(buf) }, "modem",
-			[&] (Xml_generator &xml) { _protocol_driver.generate_report(xml); }
+		Generator::generate({ buf, sizeof(buf) }, "modem",
+			[&] (Generator &g) { _protocol_driver.generate_report(g); }
 		).with_error([] (Buffer_error) {
 			warning("modem report buffer exceeds maximum size"); });
 
