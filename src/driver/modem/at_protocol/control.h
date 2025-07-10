@@ -464,7 +464,7 @@ class At_protocol::Control : Noncopyable
 		{
 			if (_current_ring_count != _status.ring_count) {
 				_current_ring_count = _status.ring_count;
-				_ring.construct(ring.decoded_content<Command>());
+				_ring.construct(Command(Node::Quoted_content(ring)));
 			}
 		}
 
