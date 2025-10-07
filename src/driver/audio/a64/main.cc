@@ -172,6 +172,7 @@ struct Audio::I2s_dma
 
 	I2s_dma(Platform::Connection &platform)
 	{
+		platform.update();
 		platform.with_node([&] (Node const &node) {
 			node.for_each_sub_node("device", [&] (Node const &node) {
 				Name name = node.attribute_value("name", Name());
