@@ -77,7 +77,14 @@ void cdev_del(struct cdev * p)
 struct kernfs_node * kernfs_find_and_get_ns(struct kernfs_node * parent,const char * name,const void * ns)
 {
 	lx_emul_trace(__func__);
-	return NULL;
+	static struct kernfs_node node;
+	return &node;
+}
+
+
+void kernfs_notify(struct kernfs_node * kn)
+{
+	lx_emul_trace(__func__);
 }
 
 

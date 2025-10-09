@@ -406,14 +406,6 @@ bool is_software_node(const struct fwnode_handle * fwnode)
 struct kobject *kernel_kobj;
 
 
-#include <linux/kernfs.h>
-
-void kernfs_notify(struct kernfs_node * kn)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
 #include <linux/sched/signal.h>
 
 int kill_pid_usb_asyncio(int sig,int errno,sigval_t addr,struct pid * pid,const struct cred * cred)
