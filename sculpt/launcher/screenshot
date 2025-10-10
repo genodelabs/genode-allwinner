@@ -1,4 +1,4 @@
-<launcher name="screenshot" pkg="ssumpf/pkg/screenshot_with_trigger/2025-04-14" priority="-2">
+<launcher name="screenshot" pkg="ssumpf/pkg/screenshot_with_trigger/2025-10-10" priority="-2">
 	<route>
 		<service name="Gui" label="trigger"> <parent label="overlay"/> </service>
 		<service name="Gui"> <parent/> </service>
