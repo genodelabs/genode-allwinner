@@ -28,7 +28,8 @@ namespace Board {
 		static void wake_up_all_cpus(void*);
 	};
 
-	using Pic = Hw::Gicv2;
+	using Hw::Global_interrupt_controller;
+	using Hw::Local_interrupt_controller;
 
 	Hw::size_t detect_ram_size();
 
