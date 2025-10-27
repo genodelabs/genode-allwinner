@@ -33,7 +33,6 @@ install_config {
 		</default-route>
 
 		<start name="timer" priority="0">
-			<resource name="CPU" quantum="20"/>
 			<route> <any-service> <parent/> </any-service> </route>
 			<provides> <service name="Timer"/> </provides>
 		</start>
@@ -97,7 +96,6 @@ install_config {
 		</start>
 
 		<start name="mixer" ram="2M" priority="0">
-			<resource name="CPU" quantum="20"/>
 			<binary name="record_play_mixer"/>
 			<provides> <service name="Record"/> <service name="Play"/> </provides>
 			<config jitter_ms="10">
@@ -125,7 +123,6 @@ install_config {
 
 		<start name="audio" priority="0">
 			<binary name="a64_audio"/>
-			<resource name="CPU" quantum="20"/>
 			<config record_play="yes"/>
 			<route>
 				<service name="Platform"> <child name="platform"/> </service>
