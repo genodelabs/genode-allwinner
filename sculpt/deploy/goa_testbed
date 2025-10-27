@@ -26,7 +26,7 @@
 		<route/>
 	</start>
 
-	<start name="sntp_dummy_rtc" pkg="sntp_dummy_rtc">
+	<start name="sntp_dummy_rtc" pkg="ssumpf/pkg/sntp_dummy_rtc/2025-10-27">
 		<route>
 			<service name="Nic"> <child name="nic_router"/> </service>
 		</route>
