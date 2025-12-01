@@ -181,7 +181,7 @@ struct Audio_out::Root_policy
 		size_t ram_quota =
 			Arg_string::find_arg(args, "ram_quota"  ).ulong_value(0);
 		size_t session_size =
-			align_addr(sizeof(Audio_out::Session_component), 12);
+			align_addr(sizeof(Audio_out::Session_component), AT_PAGE);
 
 		if ((ram_quota < session_size) ||
 		    (sizeof(Stream) > ram_quota - session_size)) {
@@ -354,7 +354,7 @@ struct Audio_in::Root_policy
 	Result aquire(char const *args)
 	{
 		size_t ram_quota = Arg_string::find_arg(args, "ram_quota").ulong_value(0);
-		size_t session_size = align_addr(sizeof(Audio_in::Session_component), 12);
+		size_t session_size = align_addr(sizeof(Audio_in::Session_component), AT_PAGE);
 
 		if ((ram_quota < session_size) ||
 		    (sizeof(Stream) > (ram_quota - session_size))) {
