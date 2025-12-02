@@ -331,7 +331,7 @@ class Audio_in::In
 
 			float * const content = p->content();
 			short * const data    = packet.data;
-			memset(content, 0, Audio_in::PERIOD * sizeof(float));
+			bzero(content, Audio_in::PERIOD * sizeof(float));
 
 			for (unsigned long i = 0; i < packet.size/sizeof(short); i += 2) {
 				float sample = data[i] + data[i+1];

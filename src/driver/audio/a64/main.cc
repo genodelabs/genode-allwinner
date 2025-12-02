@@ -518,7 +518,7 @@ struct Audio::Main
 		if (packet.valid())
 			memcpy((void *)buffer, packet.data, packet.size);
 		else
-			memset((void *)buffer, 0, packet.size);
+			bzero((void *)buffer, packet.size);
 	}
 
 	void tx()
