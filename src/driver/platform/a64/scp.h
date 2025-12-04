@@ -150,10 +150,9 @@ struct Scp::Session_component : Session_object<Scp::Session, Session_component>
 	Session_component(Env             &env,
 	                  Resources const &resources,
 	                  Label     const &label,
-	                  Diag      const &diag,
 	                  Scheduler       &scheduler)
 	:
-		Session_object(env.ep(), resources, label, diag),
+		Session_object(env.ep(), resources, label),
 		_env(env), _scheduler(scheduler)
 	{
 		_ram_quota_guard().reserve(Ram_quota{DS_SIZE}).with_result(
@@ -257,7 +256,7 @@ struct Scp::Local_connection : Noncopyable
 
 	Local_connection(Env &env, Sessions &sessions, Scheduler &scheduler)
 	:
-		_session(sessions, env, _resources, "local", Session::Diag { }, scheduler)
+		_session(sessions, env, _resources, "local", scheduler)
 	{ }
 
 	using Response = String<128>;
@@ -312,7 +311,6 @@ struct Scp::Root : Root_component<Session_component>
 			                              _env,
 			                              session_resources_from_args(args),
 			                              label_from_args(args),
-			                              session_diag_from_args(args),
 			                              _scheduler);
 		return session;
 	}

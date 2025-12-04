@@ -1265,10 +1265,9 @@ struct Gpu::Session_component : public Genode::Session_object<Gpu::Session>
 		                  Genode::Entrypoint &ep,
 		                  Resources    const &resources,
 		                  Label        const &label,
-		                  Diag                diag,
 		                  Genode::Id_space<Session_component> &space)
 		:
-			Session_object { ep, resources, label, diag },
+			Session_object { ep, resources, label },
 			_env           { env },
 			_ep            { ep },
 			_elem          { *this, space },
@@ -1706,7 +1705,6 @@ struct Gpu::Root : Gpu::Root_component
 				Session_component(_env, _env.ep(),
 				                  session_resources_from_args(args),
 				                  session_label_from_args(args),
-				                  session_diag_from_args(args),
 				                  _session_space);
 		}
 
